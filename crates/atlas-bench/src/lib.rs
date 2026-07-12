@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fmt;
 use std::fs;
 use std::hint::black_box;
@@ -30,6 +31,93 @@ pub struct BenchmarkSettings {
     pub measured_runs: usize,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AdaptiveBenchmarkSettings {
+    pub minimum_warmup_rounds: usize,
+    pub maximum_warmup_rounds: usize,
+    pub stability_window: usize,
+    pub required_stable_windows: usize,
+    pub stability_tolerance_per_million: u32,
+    pub measured_rounds: usize,
+    pub target_sample_time_ns: u128,
+    pub maximum_batch_memory_bytes: usize,
+    pub calibration_runs: usize,
+    pub maximum_recalibrations: usize,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BenchmarkSuite {
+    pub warmup_rounds: usize,
+    pub recalibrations: usize,
+    pub diagnostics_before: SystemDiagnostics,
+    pub diagnostics_after: SystemDiagnostics,
+    pub results: Vec<BenchmarkResult>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SystemDiagnostics {
+    pub load_average: Option<[String; 3]>,
+    pub allowed_cpus: Option<String>,
+    pub voluntary_context_switches: Option<u64>,
+    pub nonvoluntary_context_switches: Option<u64>,
+    pub scheduler_migrations: Option<u64>,
+    pub minor_page_faults: Option<u64>,
+    pub major_page_faults: Option<u64>,
+    pub scaling_governors: Vec<String>,
+    pub minimum_observed_frequency_khz: Option<u64>,
+    pub maximum_observed_frequency_khz: Option<u64>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DiagnosticDelta {
+    pub voluntary_context_switches: Option<u64>,
+    pub nonvoluntary_context_switches: Option<u64>,
+    pub scheduler_migrations: Option<u64>,
+    pub minor_page_faults: Option<u64>,
+    pub major_page_faults: Option<u64>,
+}
+
+impl BenchmarkSuite {
+    pub fn quality_errors(&self) -> Vec<String> {
+        self.results
+            .iter()
+            .filter(|result| !result.quality_warnings.is_empty())
+            .map(|result| {
+                format!(
+                    "{}: {}",
+                    result.implementation_id,
+                    result.quality_warnings.join("; ")
+                )
+            })
+            .collect()
+    }
+
+    pub fn diagnostic_delta(&self) -> DiagnosticDelta {
+        DiagnosticDelta {
+            voluntary_context_switches: counter_delta(
+                self.diagnostics_before.voluntary_context_switches,
+                self.diagnostics_after.voluntary_context_switches,
+            ),
+            nonvoluntary_context_switches: counter_delta(
+                self.diagnostics_before.nonvoluntary_context_switches,
+                self.diagnostics_after.nonvoluntary_context_switches,
+            ),
+            scheduler_migrations: counter_delta(
+                self.diagnostics_before.scheduler_migrations,
+                self.diagnostics_after.scheduler_migrations,
+            ),
+            minor_page_faults: counter_delta(
+                self.diagnostics_before.minor_page_faults,
+                self.diagnostics_after.minor_page_faults,
+            ),
+            major_page_faults: counter_delta(
+                self.diagnostics_before.major_page_faults,
+                self.diagnostics_after.major_page_faults,
+            ),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SampleSummary {
     pub minimum_ns: u128,
@@ -46,8 +134,13 @@ pub struct BenchmarkResult {
     pub element_count: usize,
     pub seed: u64,
     pub settings: BenchmarkSettings,
+    pub adaptive_settings: Option<AdaptiveBenchmarkSettings>,
     pub context: BenchmarkContext,
     pub correction_checked: bool,
+    pub invocations_per_sample: usize,
+    pub warmup_samples_ns: Vec<u128>,
+    pub batch_elapsed_ns: Vec<u128>,
+    pub sample_positions: Vec<usize>,
     pub samples_ns: Vec<u128>,
     pub summary: SampleSummary,
     pub quality_warnings: Vec<&'static str>,
@@ -66,6 +159,17 @@ impl SortImplementation {
             Self::MergeAllocating => "sort.merge.rust.slice.v1",
             Self::MergeCallerScratch => "sort.merge_with_scratch.rust.slice.v1",
             Self::InsertionInPlace => "sort.insertion.rust.slice.v1",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Result<Self, BenchmarkError> {
+        match id {
+            "sort.merge.rust.slice.v1" => Ok(Self::MergeAllocating),
+            "sort.merge_with_scratch.rust.slice.v1" => Ok(Self::MergeCallerScratch),
+            "sort.insertion.rust.slice.v1" => Ok(Self::InsertionInPlace),
+            _ => Err(BenchmarkError(format!(
+                "unknown sorting implementation {id:?}"
+            ))),
         }
     }
 }
@@ -143,12 +247,404 @@ pub fn benchmark_sort(
         element_count: dataset.values.len(),
         seed: dataset.seed,
         settings,
+        adaptive_settings: None,
         context,
         correction_checked: true,
+        invocations_per_sample: 1,
+        warmup_samples_ns: Vec::new(),
+        batch_elapsed_ns: samples_ns.clone(),
+        sample_positions: vec![0; samples_ns.len()],
         samples_ns,
         summary,
         quality_warnings,
     })
+}
+
+pub fn benchmark_sort_suite(
+    dataset: &GeneratedDataset,
+    implementations: &[SortImplementation],
+    settings: AdaptiveBenchmarkSettings,
+    context: BenchmarkContext,
+) -> Result<BenchmarkSuite, BenchmarkError> {
+    validate_adaptive_settings(implementations, settings)?;
+    let diagnostics_before = capture_system_diagnostics();
+    for implementation in implementations {
+        validate_correction(dataset, *implementation)?;
+    }
+    let mut invocations_per_sample: Vec<_> = implementations
+        .iter()
+        .map(|implementation| calibrate_batch(dataset, *implementation, settings))
+        .collect::<Result<_, _>>()?;
+    let mut batches: Vec<_> = implementations
+        .iter()
+        .zip(&invocations_per_sample)
+        .map(|(implementation, invocations)| {
+            PreparedBatch::new(dataset, *implementation, *invocations)
+        })
+        .collect();
+
+    let mut warmups = vec![Vec::new(); implementations.len()];
+    let mut stable_counts = vec![0_usize; implementations.len()];
+    let mut warmup_rounds = 0;
+    let mut recalibrations = 0;
+    while warmup_rounds < settings.maximum_warmup_rounds {
+        for index in rotated_indices(implementations.len(), warmup_rounds) {
+            let (_, normalized) = batches[index].measure(dataset);
+            warmups[index].push(normalized);
+        }
+        warmup_rounds += 1;
+        if warmups[0].len() < settings.minimum_warmup_rounds {
+            continue;
+        }
+        for (index, samples) in warmups.iter().enumerate() {
+            if recent_windows_are_stable(
+                samples,
+                settings.stability_window,
+                settings.stability_tolerance_per_million,
+            ) {
+                stable_counts[index] += 1;
+            } else {
+                stable_counts[index] = 0;
+            }
+        }
+        if stable_counts
+            .iter()
+            .all(|count| *count >= settings.required_stable_windows)
+        {
+            if recalibrations < settings.maximum_recalibrations {
+                let recalibrated: Vec<_> = implementations
+                    .iter()
+                    .enumerate()
+                    .map(|(index, implementation)| {
+                        let mut samples = warmups[index].clone();
+                        samples.sort_unstable();
+                        let buffers = if *implementation == SortImplementation::MergeCallerScratch {
+                            2
+                        } else {
+                            1
+                        };
+                        let bytes = dataset
+                            .values
+                            .len()
+                            .saturating_mul(std::mem::size_of::<i32>())
+                            .saturating_mul(buffers);
+                        calibrated_invocations(
+                            median(&samples),
+                            settings.target_sample_time_ns,
+                            bytes,
+                            settings.maximum_batch_memory_bytes,
+                        )
+                        .expect("initial calibration proved one input fits")
+                    })
+                    .collect::<Vec<_>>();
+                let changed = recalibrated
+                    .iter()
+                    .zip(&invocations_per_sample)
+                    .any(|(new, old)| new.abs_diff(*old).saturating_mul(10) > *old);
+                if changed {
+                    invocations_per_sample = recalibrated;
+                    batches = implementations
+                        .iter()
+                        .zip(&invocations_per_sample)
+                        .map(|(implementation, invocations)| {
+                            PreparedBatch::new(dataset, *implementation, *invocations)
+                        })
+                        .collect();
+                    for samples in &mut warmups {
+                        samples.clear();
+                    }
+                    stable_counts.fill(0);
+                    recalibrations += 1;
+                    continue;
+                }
+            }
+            break;
+        }
+    }
+    if stable_counts
+        .iter()
+        .any(|count| *count < settings.required_stable_windows)
+    {
+        let unstable: Vec<_> = implementations
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| stable_counts[*index] < settings.required_stable_windows)
+            .map(|(index, implementation)| {
+                let start = warmups[index]
+                    .len()
+                    .saturating_sub(settings.stability_window * 2);
+                format!(
+                    "{} invocations={} recent={:?}",
+                    implementation.id(),
+                    invocations_per_sample[index],
+                    &warmups[index][start..]
+                )
+            })
+            .collect();
+        return Err(BenchmarkError(format!(
+            "adaptive warmup did not stabilize within {} rounds after {} recalibration(s): {}; diagnostics before={diagnostics_before:?}; diagnostics after={:?}",
+            settings.maximum_warmup_rounds,
+            recalibrations,
+            unstable.join(", "),
+            capture_system_diagnostics(),
+        )));
+    }
+
+    let mut measured = vec![Vec::with_capacity(settings.measured_rounds); implementations.len()];
+    let mut batch_elapsed =
+        vec![Vec::with_capacity(settings.measured_rounds); implementations.len()];
+    let mut sample_positions =
+        vec![Vec::with_capacity(settings.measured_rounds); implementations.len()];
+    for round in 0..settings.measured_rounds {
+        for (position, index) in
+            rotated_indices(implementations.len(), warmup_rounds + round).enumerate()
+        {
+            let (elapsed, normalized) = batches[index].measure(dataset);
+            batch_elapsed[index].push(elapsed);
+            measured[index].push(normalized);
+            sample_positions[index].push(position);
+        }
+    }
+    let result_settings = BenchmarkSettings {
+        warmup_runs: warmup_rounds,
+        measured_runs: settings.measured_rounds,
+    };
+    let mut results = Vec::with_capacity(implementations.len());
+    for (index, implementation) in implementations.iter().enumerate() {
+        let summary = summarize(&measured[index])?;
+        let mut warnings = quality_warnings(&measured[index], &summary);
+        if position_bias_exceeds(
+            &measured[index],
+            &sample_positions[index],
+            settings.stability_tolerance_per_million,
+        ) {
+            warnings.push("sample medians differ by execution position");
+        }
+        results.push(BenchmarkResult {
+            implementation_id: implementation.id(),
+            dataset_case_id: dataset.case_id,
+            dataset_digest_sha256: dataset.content_digest_sha256.clone(),
+            element_count: dataset.values.len(),
+            seed: dataset.seed,
+            settings: result_settings,
+            adaptive_settings: Some(settings),
+            context: context.clone(),
+            correction_checked: true,
+            invocations_per_sample: invocations_per_sample[index],
+            warmup_samples_ns: warmups[index].clone(),
+            batch_elapsed_ns: batch_elapsed[index].clone(),
+            sample_positions: sample_positions[index].clone(),
+            quality_warnings: warnings,
+            samples_ns: measured[index].clone(),
+            summary,
+        });
+    }
+    let diagnostics_after = capture_system_diagnostics();
+    Ok(BenchmarkSuite {
+        warmup_rounds,
+        recalibrations,
+        diagnostics_before,
+        diagnostics_after,
+        results,
+    })
+}
+
+pub fn capture_system_diagnostics() -> SystemDiagnostics {
+    let status = fs::read_to_string("/proc/self/status").ok();
+    let scheduler = fs::read_to_string("/proc/self/sched").ok();
+    let process_stat = fs::read_to_string("/proc/self/stat").ok();
+    let load_average = fs::read_to_string("/proc/loadavg")
+        .ok()
+        .and_then(|contents| {
+            let mut fields = contents.split_whitespace();
+            Some([
+                fields.next()?.to_owned(),
+                fields.next()?.to_owned(),
+                fields.next()?.to_owned(),
+            ])
+        });
+    let allowed_cpus = status
+        .as_deref()
+        .and_then(|contents| proc_value(contents, "Cpus_allowed_list"));
+    let cpus = allowed_cpus
+        .map(parse_cpu_list)
+        .filter(|cpus| !cpus.is_empty())
+        .unwrap_or_else(|| (0..256).collect());
+    let mut governors = BTreeSet::new();
+    let mut frequencies = Vec::new();
+    for cpu in cpus {
+        let root = format!("/sys/devices/system/cpu/cpu{cpu}/cpufreq");
+        if let Ok(governor) = fs::read_to_string(format!("{root}/scaling_governor")) {
+            governors.insert(governor.trim().to_owned());
+        }
+        if let Ok(frequency) = fs::read_to_string(format!("{root}/scaling_cur_freq"))
+            && let Ok(frequency) = frequency.trim().parse()
+        {
+            frequencies.push(frequency);
+        }
+    }
+    SystemDiagnostics {
+        load_average,
+        allowed_cpus: allowed_cpus.map(str::to_owned),
+        voluntary_context_switches: status.as_deref().and_then(|contents| {
+            proc_value(contents, "voluntary_ctxt_switches").and_then(|value| value.parse().ok())
+        }),
+        nonvoluntary_context_switches: status.as_deref().and_then(|contents| {
+            proc_value(contents, "nonvoluntary_ctxt_switches").and_then(|value| value.parse().ok())
+        }),
+        scheduler_migrations: scheduler.as_deref().and_then(|contents| {
+            proc_value(contents, "se.nr_migrations").and_then(|value| value.parse().ok())
+        }),
+        minor_page_faults: process_stat
+            .as_deref()
+            .and_then(|contents| process_stat_counter(contents, 10)),
+        major_page_faults: process_stat
+            .as_deref()
+            .and_then(|contents| process_stat_counter(contents, 12)),
+        scaling_governors: governors.into_iter().collect(),
+        minimum_observed_frequency_khz: frequencies.iter().min().copied(),
+        maximum_observed_frequency_khz: frequencies.iter().max().copied(),
+    }
+}
+
+fn process_stat_counter(contents: &str, field_number: usize) -> Option<u64> {
+    let after_name = contents.rsplit_once(") ")?.1;
+    after_name
+        .split_whitespace()
+        .nth(field_number.checked_sub(3)?)?
+        .parse()
+        .ok()
+}
+
+fn proc_value<'a>(contents: &'a str, key: &str) -> Option<&'a str> {
+    contents.lines().find_map(|line| {
+        let (candidate, value) = line.split_once(':')?;
+        (candidate.trim() == key).then(|| value.trim())
+    })
+}
+
+fn parse_cpu_list(value: &str) -> Vec<usize> {
+    let mut cpus = Vec::new();
+    for part in value.split(',') {
+        if let Some((start, end)) = part.split_once('-') {
+            if let (Ok(start), Ok(end)) = (start.parse::<usize>(), end.parse::<usize>()) {
+                cpus.extend(start..=end);
+            }
+        } else if let Ok(cpu) = part.parse() {
+            cpus.push(cpu);
+        }
+    }
+    cpus
+}
+
+fn counter_delta(before: Option<u64>, after: Option<u64>) -> Option<u64> {
+    Some(after?.saturating_sub(before?))
+}
+
+fn validate_adaptive_settings(
+    implementations: &[SortImplementation],
+    settings: AdaptiveBenchmarkSettings,
+) -> Result<(), BenchmarkError> {
+    if implementations.is_empty() {
+        return Err(BenchmarkError(
+            "adaptive benchmark requires at least one implementation".to_owned(),
+        ));
+    }
+    if settings.stability_window < 2
+        || settings.required_stable_windows == 0
+        || settings.minimum_warmup_rounds < settings.stability_window * 2
+        || settings.maximum_warmup_rounds < settings.minimum_warmup_rounds
+        || settings.measured_rounds < 3
+        || settings.target_sample_time_ns == 0
+        || settings.maximum_batch_memory_bytes == 0
+        || settings.calibration_runs < 3
+        || settings.maximum_recalibrations > 4
+    {
+        return Err(BenchmarkError(
+            "invalid adaptive benchmark settings".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+fn calibrate_batch(
+    dataset: &GeneratedDataset,
+    implementation: SortImplementation,
+    settings: AdaptiveBenchmarkSettings,
+) -> Result<usize, BenchmarkError> {
+    let mut calibration: Vec<_> = (0..settings.calibration_runs)
+        .map(|_| run_once(dataset, implementation))
+        .collect();
+    calibration.sort_unstable();
+    let single_ns = median(&calibration).max(1);
+    let buffers = if implementation == SortImplementation::MergeCallerScratch {
+        2
+    } else {
+        1
+    };
+    let bytes_per_invocation = dataset
+        .values
+        .len()
+        .saturating_mul(std::mem::size_of::<i32>())
+        .saturating_mul(buffers);
+    let Some(invocations) = calibrated_invocations(
+        single_ns,
+        settings.target_sample_time_ns,
+        bytes_per_invocation,
+        settings.maximum_batch_memory_bytes,
+    ) else {
+        return Err(BenchmarkError(format!(
+            "batch memory limit is smaller than one prepared input for {}",
+            implementation.id()
+        )));
+    };
+    Ok(invocations)
+}
+
+fn calibrated_invocations(
+    single_ns: u128,
+    target_ns: u128,
+    bytes_per_invocation: usize,
+    maximum_memory_bytes: usize,
+) -> Option<usize> {
+    let maximum_by_memory = maximum_memory_bytes / bytes_per_invocation.max(1);
+    if maximum_by_memory == 0 {
+        return None;
+    }
+    let single_ns = single_ns.max(1);
+    let desired = target_ns.saturating_add(single_ns - 1) / single_ns;
+    Some(
+        usize::try_from(desired)
+            .unwrap_or(usize::MAX)
+            .clamp(1, maximum_by_memory),
+    )
+}
+
+fn rotated_indices(length: usize, round: usize) -> impl Iterator<Item = usize> {
+    let start = round % length;
+    (0..length).map(move |offset| (start + offset) % length)
+}
+
+pub fn recent_windows_are_stable(
+    samples: &[u128],
+    window: usize,
+    tolerance_per_million: u32,
+) -> bool {
+    if window == 0 || samples.len() < window * 2 {
+        return false;
+    }
+    let split = samples.len() - window;
+    let mut previous = samples[split - window..split].to_vec();
+    let mut current = samples[split..].to_vec();
+    previous.sort_unstable();
+    current.sort_unstable();
+    let previous_median = median(&previous);
+    let current_median = median(&current);
+    let scale = previous_median.max(current_median).max(1);
+    previous_median
+        .abs_diff(current_median)
+        .saturating_mul(1_000_000)
+        <= scale.saturating_mul(u128::from(tolerance_per_million))
 }
 
 pub fn comparability_errors(left: &BenchmarkResult, right: &BenchmarkResult) -> Vec<&'static str> {
@@ -159,8 +655,15 @@ pub fn comparability_errors(left: &BenchmarkResult, right: &BenchmarkResult) -> 
     if left.dataset_digest_sha256 != right.dataset_digest_sha256 {
         errors.push("dataset digests differ");
     }
-    if left.settings != right.settings {
-        errors.push("benchmark settings differ");
+    match (left.adaptive_settings, right.adaptive_settings) {
+        (Some(left), Some(right)) if left != right => {
+            errors.push("adaptive benchmark settings differ");
+        }
+        (None, None) if left.settings != right.settings => {
+            errors.push("benchmark settings differ");
+        }
+        (Some(_), None) | (None, Some(_)) => errors.push("benchmark protocols differ"),
+        _ => {}
     }
     errors
 }
@@ -190,6 +693,19 @@ pub fn quality_warnings(samples: &[u128], summary: &SampleSummary) -> Vec<&'stat
     if summary.median_absolute_deviation_ns.saturating_mul(20) > summary.median_ns {
         warnings.push("median absolute deviation exceeds 5% of median");
     }
+    if summary
+        .maximum_ns
+        .abs_diff(summary.median_ns)
+        .saturating_mul(5)
+        > summary.median_ns
+        || summary
+            .minimum_ns
+            .abs_diff(summary.median_ns)
+            .saturating_mul(5)
+            > summary.median_ns
+    {
+        warnings.push("an extreme sample differs from median by more than 20%");
+    }
     if samples.len() >= 6 {
         let middle = samples.len() / 2;
         let mut first = samples[..middle].to_vec();
@@ -203,6 +719,37 @@ pub fn quality_warnings(samples: &[u128], summary: &SampleSummary) -> Vec<&'stat
         }
     }
     warnings
+}
+
+pub fn position_bias_exceeds(
+    samples: &[u128],
+    positions: &[usize],
+    tolerance_per_million: u32,
+) -> bool {
+    if samples.len() != positions.len() || samples.is_empty() {
+        return true;
+    }
+    let position_count = positions.iter().max().copied().unwrap_or(0) + 1;
+    let mut medians = Vec::with_capacity(position_count);
+    for position in 0..position_count {
+        let mut group: Vec<_> = samples
+            .iter()
+            .zip(positions)
+            .filter(|(_, candidate)| **candidate == position)
+            .map(|(sample, _)| *sample)
+            .collect();
+        if group.is_empty() {
+            return true;
+        }
+        group.sort_unstable();
+        medians.push(median(&group));
+    }
+    let minimum = *medians.iter().min().unwrap();
+    let maximum = *medians.iter().max().unwrap();
+    maximum.abs_diff(minimum).saturating_mul(1_000_000)
+        > maximum
+            .max(1)
+            .saturating_mul(u128::from(tolerance_per_million))
 }
 
 fn median(sorted: &[u128]) -> u128 {
@@ -233,25 +780,67 @@ fn validate_correction(
 }
 
 fn run_once(dataset: &GeneratedDataset, implementation: SortImplementation) -> u128 {
-    let mut values = dataset.values.clone();
-    let mut scratch = if implementation == SortImplementation::MergeCallerScratch {
-        values.clone()
-    } else {
-        Vec::new()
-    };
-    black_box(&mut values);
-    black_box(&mut scratch);
-    let start = Instant::now();
-    match implementation {
-        SortImplementation::MergeAllocating => merge_sort_by(&mut values, i32::cmp),
-        SortImplementation::MergeCallerScratch => {
-            merge_sort_by_with_scratch(&mut values, &mut scratch, i32::cmp).unwrap();
+    PreparedBatch::new(dataset, implementation, 1)
+        .measure(dataset)
+        .0
+}
+
+struct PreparedSort {
+    values: Vec<i32>,
+    scratch: Vec<i32>,
+}
+
+struct PreparedBatch {
+    implementation: SortImplementation,
+    states: Vec<PreparedSort>,
+}
+
+impl PreparedBatch {
+    fn new(
+        dataset: &GeneratedDataset,
+        implementation: SortImplementation,
+        invocations: usize,
+    ) -> Self {
+        let states = (0..invocations)
+            .map(|_| PreparedSort {
+                values: dataset.values.clone(),
+                scratch: if implementation == SortImplementation::MergeCallerScratch {
+                    dataset.values.clone()
+                } else {
+                    Vec::new()
+                },
+            })
+            .collect();
+        Self {
+            implementation,
+            states,
         }
-        SortImplementation::InsertionInPlace => insertion_sort_by(&mut values, i32::cmp),
     }
-    let elapsed = start.elapsed().as_nanos();
-    black_box(values);
-    elapsed
+
+    fn measure(&mut self, dataset: &GeneratedDataset) -> (u128, u128) {
+        for state in &mut self.states {
+            state.values.clone_from_slice(&dataset.values);
+        }
+        black_box(&mut self.states);
+        let start = Instant::now();
+        for state in &mut self.states {
+            match self.implementation {
+                SortImplementation::MergeAllocating => {
+                    merge_sort_by(&mut state.values, i32::cmp);
+                }
+                SortImplementation::MergeCallerScratch => {
+                    merge_sort_by_with_scratch(&mut state.values, &mut state.scratch, i32::cmp)
+                        .unwrap();
+                }
+                SortImplementation::InsertionInPlace => {
+                    insertion_sort_by(&mut state.values, i32::cmp);
+                }
+            }
+        }
+        let elapsed = start.elapsed().as_nanos();
+        black_box(&self.states);
+        (elapsed, elapsed / self.states.len() as u128)
+    }
 }
 
 fn execute(values: &mut [i32], implementation: SortImplementation) {
@@ -298,8 +887,10 @@ mod tests {
     use atlas::datasets::SORT_BENCHMARK_SPEC;
 
     use super::{
-        BenchmarkContext, BenchmarkSettings, SortImplementation, benchmark_sort,
-        comparability_errors, quality_warnings, summarize,
+        AdaptiveBenchmarkSettings, BenchmarkContext, BenchmarkSettings, SortImplementation,
+        benchmark_sort, calibrated_invocations, comparability_errors, parse_cpu_list,
+        position_bias_exceeds, proc_value, process_stat_counter, quality_warnings,
+        recent_windows_are_stable, rotated_indices, summarize,
     };
 
     fn context() -> BenchmarkContext {
@@ -382,6 +973,42 @@ mod tests {
     }
 
     #[test]
+    fn adaptive_runs_remain_comparable_with_different_convergence_lengths() {
+        let dataset = SORT_BENCHMARK_SPEC
+            .generate(&SORT_BENCHMARK_SPEC.cases[0])
+            .unwrap();
+        let fixed = BenchmarkSettings {
+            warmup_runs: 1,
+            measured_runs: 3,
+        };
+        let mut first = benchmark_sort(
+            &dataset,
+            SortImplementation::MergeAllocating,
+            fixed,
+            context(),
+        )
+        .unwrap();
+        let mut second = first.clone();
+        second.settings.warmup_runs = 99;
+        let adaptive = AdaptiveBenchmarkSettings {
+            minimum_warmup_rounds: 20,
+            maximum_warmup_rounds: 100,
+            stability_window: 5,
+            required_stable_windows: 3,
+            stability_tolerance_per_million: 50_000,
+            measured_rounds: 21,
+            target_sample_time_ns: 10_000_000,
+            maximum_batch_memory_bytes: 64 * 1024 * 1024,
+            calibration_runs: 5,
+            maximum_recalibrations: 2,
+        };
+        first.adaptive_settings = Some(adaptive);
+        second.adaptive_settings = Some(adaptive);
+
+        assert!(comparability_errors(&first, &second).is_empty());
+    }
+
+    #[test]
     fn quality_checks_flag_dispersion_and_series_drift() {
         let samples = [100, 102, 98, 200, 202, 198];
         let summary = summarize(&samples).unwrap();
@@ -390,5 +1017,90 @@ mod tests {
 
         assert!(warnings.contains(&"median absolute deviation exceeds 5% of median"));
         assert!(warnings.contains(&"sample-series half medians differ by more than 5%"));
+        assert!(warnings.contains(&"an extreme sample differs from median by more than 20%"));
+    }
+
+    #[test]
+    fn adaptive_stability_compares_two_recent_windows() {
+        assert!(recent_windows_are_stable(
+            &[100, 101, 99, 100, 102, 101, 100, 99],
+            4,
+            50_000
+        ));
+        assert!(!recent_windows_are_stable(
+            &[200, 205, 195, 200, 100, 102, 98, 100],
+            4,
+            50_000
+        ));
+    }
+
+    #[test]
+    fn rotated_order_gives_each_implementation_every_position() {
+        let rounds: Vec<Vec<_>> = (0..3)
+            .map(|round| rotated_indices(3, round).collect())
+            .collect();
+
+        assert_eq!(rounds, [vec![0, 1, 2], vec![1, 2, 0], vec![2, 0, 1]]);
+    }
+
+    #[test]
+    fn parses_proc_key_value_lines_without_platform_calls() {
+        let fixture = concat!(
+            "Name:\tatlas\n",
+            "Cpus_allowed_list:\t0-7\n",
+            "voluntary_ctxt_switches:\t42\n",
+            "se.nr_migrations : 3\n",
+        );
+
+        assert_eq!(proc_value(fixture, "Cpus_allowed_list"), Some("0-7"));
+        assert_eq!(proc_value(fixture, "voluntary_ctxt_switches"), Some("42"));
+        assert_eq!(proc_value(fixture, "se.nr_migrations"), Some("3"));
+        assert_eq!(proc_value(fixture, "missing"), None);
+    }
+
+    #[test]
+    fn parses_page_fault_counters_from_proc_stat() {
+        let fixture = "123 (atlas worker) R 1 2 3 4 5 6 7 8 9 10 11";
+
+        assert_eq!(process_stat_counter(fixture, 10), Some(7));
+        assert_eq!(process_stat_counter(fixture, 12), Some(9));
+    }
+
+    #[test]
+    fn calibration_targets_duration_without_exceeding_memory() {
+        assert_eq!(
+            calibrated_invocations(50_000, 10_000_000, 8_192, 64 * 1024 * 1024),
+            Some(200)
+        );
+        assert_eq!(calibrated_invocations(1, 10_000, 8_192, 16_384), Some(2));
+        assert_eq!(calibrated_invocations(1, 10_000, 32_768, 16_384), None);
+    }
+
+    #[test]
+    fn parses_linux_cpu_lists() {
+        assert_eq!(parse_cpu_list("0-3,8,10-11"), [0, 1, 2, 3, 8, 10, 11]);
+        assert!(parse_cpu_list("invalid").is_empty());
+    }
+
+    #[test]
+    fn resolves_only_registered_sorting_implementation_ids() {
+        assert_eq!(
+            SortImplementation::from_id("sort.merge.rust.slice.v1").unwrap(),
+            SortImplementation::MergeAllocating
+        );
+        assert!(SortImplementation::from_id("sort.unknown").is_err());
+    }
+
+    #[test]
+    fn detects_execution_position_bias() {
+        let samples = [100, 200, 300, 102, 198, 302, 99, 201, 298];
+        let positions = [0, 1, 2, 0, 1, 2, 0, 1, 2];
+
+        assert!(position_bias_exceeds(&samples, &positions, 50_000));
+        assert!(!position_bias_exceeds(
+            &[100, 101, 99, 102, 100, 101],
+            &[0, 1, 2, 0, 1, 2],
+            50_000
+        ));
     }
 }

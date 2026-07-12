@@ -815,3 +815,165 @@ The first clean-context attempt was also rejected as a candidate observation:
 the caller-scratch sample series drifted substantially during measurement. The
 harness now reports dispersion and half-series drift automatically rather than
 leaving this anomaly to manual inspection.
+
+## 2026-07-12 - Adaptive and interleaved benchmark protocol
+
+### Result
+
+- Replaced fixed warmup in the comparison example with a bounded adaptive gate.
+- Required three consecutive stable-window checks for every implementation.
+- Rotated implementation order deterministically on every warmup and measured
+  round.
+- Refused to emit measured results when warmup does not stabilize.
+- Added a suite-level rejection when any measured series fails dispersion or
+  drift checks.
+- Added extreme-sample and execution-position bias checks after a pinned run
+  exposed cases missed by MAD and half-series medians.
+
+### Limits
+
+- Stability uses a documented 5% median-window tolerance; it is a quality gate,
+  not a statistical proof of stationarity.
+- CPU affinity, frequency control, and process isolation remain outside the
+  current portable harness.
+
+### Verification
+
+```sh
+cargo test -p atlas-bench --locked --offline
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo run --release -q -p atlas-bench --locked --offline --example compare_sorts
+```
+
+The workspace has 118 tests. On the current host, adaptive warmup completed but
+the subsequent measured series still failed dispersion or drift checks. The run
+is correctly rejected rather than promoted to an observation candidate.
+
+## 2026-07-12 - Non-invasive benchmark environment diagnostics
+
+### Result
+
+- Captured load averages, effective CPU affinity, context switches, scheduler
+  migrations, governors, and visible frequency range before and after a suite.
+- Added counter deltas and included both snapshots in warmup-failure errors.
+- Kept Linux diagnostics optional and performed no system-state modification.
+
+### Limits
+
+- Frequencies are boundary snapshots, not continuous telemetry.
+- Diagnostics can explain correlations but do not prove the cause of an
+  unstable run.
+
+### Verification
+
+```sh
+cargo test -p atlas-bench --locked --offline
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo clippy -p atlas-bench --all-targets --locked --offline -- -D warnings
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo run --release -q -p atlas-bench --locked --offline --example compare_sorts
+```
+
+The workspace has 119 tests. The current diagnostic run was rejected during
+adaptive warmup after 100 rounds. It observed CPUs `0-23`, the `powersave`
+governor, a roughly 0.6-3.6 GHz boundary frequency range, moderate system load,
+and additional involuntary context switches. These are context observations,
+not a causal performance conclusion.
+
+## 2026-07-12 - Calibrated benchmark batches
+
+### Result
+
+- Calibrated invocations per sample toward 10 ms independently for each sort.
+- Prepared all independent input and scratch buffers before starting the clock.
+- Retained total batch durations, invocation counts, and normalized durations.
+- Bounded prepared batch memory to 64 MiB and added minor/major page-fault
+  diagnostics.
+- Added up to two post-stability recalibrations so cold calibration cannot leave
+  measured batches materially below the target duration.
+- Reused prepared pools across samples after diagnostics exposed excessive minor
+  page faults caused by recreating them for every batch.
+
+### Limits
+
+- Normalized durations are integer nanoseconds per invocation.
+- Allocation internal to the allocating merge sort remains intentionally timed.
+
+### Verification
+
+```sh
+cargo test -p atlas-bench --locked --offline
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo clippy -p atlas-bench --all-targets --locked --offline -- -D warnings
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo run --release -q -p atlas-bench --locked --offline --example compare_sorts
+```
+
+The workspace has 121 tests. Reusing pools reduced minor page faults from about
+153,000 to 563 in the diagnostic run. The suite still failed adaptive warmup
+while observing 66 scheduler migrations, 116 additional involuntary context
+switches, and a roughly 0.6-5.1 GHz boundary frequency range. This isolates the
+former harness allocation churn from the remaining scheduler/frequency effects;
+it does not by itself prove which remaining effect dominates.
+
+## 2026-07-12 - Linux pinned benchmark runner
+
+### Result
+
+- Added an explicit-CPU Linux runner around `taskset`.
+- Built before pinning and checked CPU availability, system load, governor, and
+  maximum frequency without modifying system state.
+- Kept the Linux policy outside the portable benchmark and knowledge crates.
+- Restricted frequency diagnostics to the process's effective CPU set and added
+  recent warmup windows, recalibration count, and batch sizes to failures.
+
+### Limits
+
+- CPU selection remains a human experiment parameter because this machine has
+  core groups with different maximum frequencies.
+- Pinning prevents migration but does not prevent preemption or frequency
+  scaling on the selected CPU.
+
+### Verification
+
+```sh
+sh -n scripts/run-benchmark-linux.sh
+scripts/run-benchmark-linux.sh 0
+scripts/run-benchmark-linux.sh 1
+scripts/run-benchmark-linux.sh 4
+```
+
+The workspace has 123 tests. CPU pinning reduced scheduler migrations to zero.
+CPU 0 experienced heavy preemption; CPU 1 improved but did not stabilize. CPU 4
+reached stable warmup with low preemption, then exposed an execution-position
+bias for both merge variants. Insertion sort passed all measured-series checks.
+No cross-CPU timing comparison is inferred from these runs.
+
+## 2026-07-12 - Per-implementation process isolation
+
+### Result
+
+- Changed the release example to accept exactly one registered sorting
+  implementation ID.
+- Made the Linux runner launch three fresh pinned processes after one build.
+- Preserved independent calibration, warmup, diagnostics, and quality verdicts
+  and combined only process exit statuses.
+
+### Limits
+
+- The wrapper does not rank or aggregate results across processes.
+- Structured cross-process observations require a separate persistent-format
+  decision; human-readable output is not parsed as a protocol.
+- Requested adaptive settings are separated from observed convergence counts so
+  independently isolated runs are not marked incomparable merely because their
+  warmup lengths differ.
+
+### Verification
+
+```sh
+cargo test -p atlas-bench --locked --offline
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+scripts/run-benchmark-linux.sh 4
+```
+
+The workspace has 126 tests. On CPU 4, all three isolated processes passed
+warmup and measured-series quality checks with zero scheduler migrations and
+3-7 involuntary context switches each. Batches remained near 10 ms and the
+former execution-position bias disappeared. The run is diagnostic rather than
+a candidate observation because the captured worktree is dirty.

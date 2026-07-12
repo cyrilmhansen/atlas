@@ -36,7 +36,8 @@ scripts/check-mvp1.sh
 cargo run -p atlas --example dataset_specs
 cargo run -p atlas --example semantic_traces
 cargo run -p atlas --example pseudocode_ast
-cargo run --release -p atlas-bench --example compare_sorts
+cargo run --release -p atlas-bench --example compare_sorts -- sort.merge.rust.slice.v1
+scripts/run-benchmark-linux.sh 0
 ```
 
 `scripts/check-mvp1.sh` is the complete offline MVP 1 acceptance gate. It checks
@@ -51,6 +52,8 @@ The `pseudocode_ast` example renders the two experimental backend-independent
 algorithm descriptions.
 The release-only `compare_sorts` example emits raw-context empirical summaries;
 its output is not a persistent benchmark conclusion.
+The Linux-only wrapper requires an explicit CPU, performs a non-invasive
+preflight, and pins only the benchmark process without changing the governor.
 
 The YAML files committed to Git are authoritative. The validator loads the
 aggregate registry in memory and checks its schema, cross-references, local

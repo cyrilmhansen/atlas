@@ -614,6 +614,57 @@ fn cli_search_requires_one_non_empty_term() {
 }
 
 #[test]
+fn cli_qualifies_stable_non_allocating_sort_implementations() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "sequence.sort",
+            "--stable",
+            "--allocation",
+            "none",
+        ])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("implementation\tsort.merge_with_scratch.rust.slice.v1\n"));
+    assert!(stdout.contains("implementation\tsort.insertion.rust.slice.v1\n"));
+    assert!(stdout.contains("stable\ttrue\ttested\t"));
+    assert!(stdout.contains("allocation\tnone\tdeclared\t"));
+    assert!(!stdout.contains("sort.merge.rust.slice.v1\n"));
+}
+
+#[test]
+fn cli_qualify_returns_no_output_when_no_implementation_matches() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["qualify", "sequence.search", "--stable"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn cli_qualify_rejects_unknown_constraints() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["qualify", "sequence.sort", "--fast"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown qualify constraint"));
+}
+
+#[test]
 fn cli_explains_binary_search_chain_with_requirements_and_effects() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))

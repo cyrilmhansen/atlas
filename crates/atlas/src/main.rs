@@ -24,6 +24,7 @@ fn main() -> ExitCode {
         Some("show") => show_command(arguments),
         Some("search") => search_command(arguments),
         Some("explain") => explain_command(arguments),
+        Some("qualify") => qualify_command(arguments),
         Some("index") => index_command(arguments),
         _ => {
             eprintln!("unknown command {:?}", command);
@@ -139,6 +140,117 @@ fn explain_implementation(registry: &Registry, id: &str) -> Result<(), String> {
     println!("\nproblem contract:");
     print_problem(problem);
     Ok(())
+}
+
+#[derive(Default)]
+struct QualificationConstraints {
+    stable: bool,
+    allocation_none: bool,
+}
+
+fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
+    let Some(problem_id) = arguments.next() else {
+        eprintln!("qualify requires a problem ID and at least one constraint");
+        print_usage();
+        return ExitCode::from(2);
+    };
+    let Some(problem_id) = problem_id.to_str() else {
+        eprintln!("problem ID must be valid UTF-8");
+        return ExitCode::from(2);
+    };
+    let mut constraints = QualificationConstraints::default();
+    while let Some(argument) = arguments.next() {
+        match argument.to_str() {
+            Some("--stable") => constraints.stable = true,
+            Some("--allocation") => {
+                match arguments.next().as_deref().and_then(|value| value.to_str()) {
+                    Some("none") => constraints.allocation_none = true,
+                    Some(value) => {
+                        eprintln!("unsupported allocation constraint {value:?}; expected none");
+                        return ExitCode::from(2);
+                    }
+                    None => {
+                        eprintln!("--allocation requires the value none");
+                        return ExitCode::from(2);
+                    }
+                }
+            }
+            Some(value) => {
+                eprintln!(
+                    "unknown qualify constraint {value:?}; expected --stable or --allocation none"
+                );
+                return ExitCode::from(2);
+            }
+            None => {
+                eprintln!("qualify constraints must be valid UTF-8");
+                return ExitCode::from(2);
+            }
+        }
+    }
+    if !constraints.stable && !constraints.allocation_none {
+        eprintln!("qualify requires at least one constraint");
+        return ExitCode::from(2);
+    }
+
+    match load_registry(Path::new(DEFAULT_REGISTRY)) {
+        Ok(registry) => {
+            if !registry
+                .problems
+                .iter()
+                .any(|problem| problem.id == problem_id)
+            {
+                eprintln!("problem {problem_id:?} not found in {DEFAULT_REGISTRY}");
+                return ExitCode::FAILURE;
+            }
+            print_qualified_implementations(&registry, problem_id, &constraints);
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("{DEFAULT_REGISTRY}: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn print_qualified_implementations(
+    registry: &Registry,
+    problem_id: &str,
+    constraints: &QualificationConstraints,
+) {
+    for implementation in &registry.implementations {
+        let Some(algorithm) = registry
+            .algorithms
+            .iter()
+            .find(|algorithm| algorithm.id == implementation.implements)
+        else {
+            continue;
+        };
+        if algorithm.solves != problem_id {
+            continue;
+        }
+        let stable = algorithm.stable.as_ref();
+        if constraints.stable && !matches!(stable, Some(claim) if claim.value) {
+            continue;
+        }
+        if constraints.allocation_none && implementation.effects.value.allocation != "none" {
+            continue;
+        }
+
+        println!("implementation\t{}", implementation.id);
+        println!("algorithm\t{}", algorithm.id);
+        if let Some(stable) = stable {
+            println!(
+                "stable\t{}\t{}\t{}",
+                stable.value, stable.level, stable.source
+            );
+        }
+        println!(
+            "allocation\t{}\t{}\t{}",
+            implementation.effects.value.allocation,
+            implementation.effects.level,
+            implementation.effects.source
+        );
+    }
 }
 
 fn search_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
@@ -436,6 +548,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--allocation none]\n  atlas index [DB_PATH]"
     );
 }

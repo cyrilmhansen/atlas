@@ -1131,3 +1131,31 @@ taskset --cpu-list 4 cargo run --release -q -p atlas-bench --locked --offline --
 
 The workspace has 134 tests. Synthetic tests verify that all raw evidence is
 retained and that quality warnings reject serialization.
+
+## 2026-07-12 - Minimal constrained qualification
+
+### Result
+
+- Added `atlas qualify sequence.sort --stable --allocation none`.
+- Joined algorithm stability with implementation allocation explicitly and
+  printed the selected evidence value, level, and source.
+- Treated absent properties as non-matches rather than inferring compatibility.
+- Kept empty successful results distinct from invalid constraints.
+
+### Limits
+
+- Only `--stable` and `--allocation none` are supported.
+- This is recorded-property filtering, not a benchmark ranking, cost model, or
+  general selection language.
+
+### Verification
+
+```sh
+cargo test --workspace --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline -- qualify sequence.sort --stable --allocation none
+```
+
+The workspace has 137 tests. The sort query returns only implementations with
+both an explicit stable algorithm claim and an explicit `allocation: none`
+implementation effect, with their actual evidence levels preserved.

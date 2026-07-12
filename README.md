@@ -30,6 +30,7 @@ cargo run -p atlas -- list algorithm
 cargo run -p atlas -- show search.linear
 cargo run -p atlas -- search "merge sort"
 cargo run -p atlas -- explain search.binary.rust.slice.v1
+cargo run -p atlas -- qualify sequence.sort --stable --allocation none
 cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh
@@ -74,6 +75,9 @@ preflight, and pins only the benchmark process without changing the governor.
 The YAML files committed to Git are authoritative. The validator loads the
 aggregate registry in memory and checks its schema, cross-references, local
 files, implementation evidence, and Rust test symbols.
+
+`qualify` is intentionally narrow: it filters recorded properties and prints
+their evidence; it does not rank implementations or infer missing metadata.
 
 ## Runtime boundary
 

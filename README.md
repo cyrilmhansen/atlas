@@ -34,6 +34,7 @@ cargo run -p atlas -- qualify sequence.sort --stable --in-place --allocation non
 cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh
+scripts/check-mvp2.sh
 cargo run -p atlas --example dataset_specs
 cargo run -p atlas --example semantic_traces
 cargo run -p atlas --example pseudocode_ast

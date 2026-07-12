@@ -1186,3 +1186,24 @@ cargo run -q -p atlas --locked --offline -- qualify sequence.sort --stable --in-
 
 The workspace has 138 tests. Missing or false `in_place` claims do not satisfy
 the new constraint.
+
+## 2026-07-12 - MVP 2 review and local gate
+
+### Result
+
+- Added `scripts/check-mvp2.sh`, which composes the MVP 1 gate with deterministic
+  dataset generation, two correction recipes, and the constrained qualification
+  demonstration.
+- Added `docs/mvp2-review.md` with every MVP 2 exit criterion classified as
+  complete, partial, or deferred.
+- Kept timing out of the acceptance gate: benchmark execution remains an
+  explicit human experiment with an environment and CPU choice.
+
+### Verification
+
+```sh
+sh -n scripts/check-mvp2.sh
+scripts/check-mvp2.sh
+```
+
+The gate creates only ignored generated observations under `build/executions/`.

@@ -8,7 +8,8 @@
 ## Current slice
 
 Qualify deterministic dataset specifications and regenerable execution
-observations without changing the Git-authoritative schema 0.1.
+observations without changing the Git-authoritative schema 0.1. The current
+slice has a local gate at `scripts/check-mvp2.sh`; it does not run timing.
 
 Current corpus progress:
 
@@ -24,7 +25,8 @@ Current corpus progress:
 - Git-authoritative manifests with a rebuildable SQLite projection
 - `list`, `show`, `validate`, `search`, and `explain` commands
 
-Implemented commands: `validate`, `list`, `show`, `search`, `explain`.
+Implemented commands: `validate`, `list`, `show`, `search`, `explain`, and
+`qualify`.
 
 Runtime boundary: algorithm implementations live in the `std`-independent
 `atlas-algorithms` crate. Its core subset has no dependencies; its default
@@ -47,3 +49,17 @@ remain in the `std`-based `atlas` crate.
 | Single local acceptance command | Complete: `scripts/check-mvp1.sh` |
 
 See `docs/mvp1-review.md` for evidence and recommended closure order.
+
+## MVP 2 exit criteria
+
+| Criterion | Status |
+|---|---|
+| Deterministic dataset matrices for sorting and partitioning | Complete |
+| Regenerable correction observations | Complete |
+| Qualified generated sorting benchmark observation | Complete, non-normative |
+| Stable in-place sort with no allocation qualification | Complete |
+| Replay from an execution identifier alone | Partial |
+| Numeric memory, allocation, and traversal measurements | Deferred |
+| Persistent comparison report across implementations | Deferred |
+
+See `docs/mvp2-review.md` for evidence, limits, and closure order.

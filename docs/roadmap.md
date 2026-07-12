@@ -87,6 +87,10 @@ Status: the first release-only comparison harness records raw samples, robust
 dispersion, complete local context, and dataset identity under DEC-031. Results
 remain ephemeral and non-normative.
 
+MVP 2 review: `docs/mvp2-review.md` records demonstrated criteria and the
+remaining closure decisions. `scripts/check-mvp2.sh` validates the current
+non-timing acceptance slice.
+
 ## Algorithm representation research
 
 After MVP 1 closure, prototype the accepted structured algorithm AST on two

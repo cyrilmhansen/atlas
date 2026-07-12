@@ -1,0 +1,1497 @@
+schema_version: "0.1"
+
+problems:
+  - id: sequence.sort
+    input:
+      value: "sequence: Sequence<T>; order: TotalOrder<T>"
+      level: declared
+      source: "vision:0.1#6"
+    output:
+      value: "result: PermutationOf<input.sequence>"
+      level: declared
+      source: "vision:0.1#6"
+    ensures:
+      value:
+        - "sorted(result, order)"
+        - "permutation(result, input.sequence)"
+      level: tested
+      source: "test:merge_sort::sorts_and_preserves_the_input_permutation"
+  - id: sequence.search
+    input:
+      value: "sequence: Sequence<T>; needle: T; equivalent: Equivalence<T>"
+      level: declared
+      source: "implementation:search.linear.rust.slice.v1"
+    output:
+      value: "result: Option<Index<input.sequence>>"
+      level: declared
+      source: "implementation:search.linear.rust.slice.v1"
+    ensures:
+      value:
+        - "result is the first position equivalent to needle when one exists"
+        - "result is none when no position is equivalent to needle"
+      level: tested
+      source: "tests:linear_search::returns_the_first_matching_position;linear_search::returns_none_when_no_element_matches"
+  - id: sequence.minimum
+    input:
+      value: "sequence: Sequence<T>; order: TotalOrder<T>"
+      level: declared
+      source: "implementation:select.minimum.linear.rust.slice.v1"
+    output:
+      value: "result: Option<ElementOf<input.sequence>>"
+      level: declared
+      source: "implementation:select.minimum.linear.rust.slice.v1"
+    ensures:
+      value:
+        - "result is none if and only if input.sequence is empty"
+        - "result is the first element no greater than any input element"
+      level: tested
+      source: "tests:minimum::returns_the_minimum_element;minimum::returns_the_first_equivalent_minimum;minimum::handles_empty_and_single_element_slices"
+  - id: sequence.maximum
+    input:
+      value: "sequence: Sequence<T>; order: TotalOrder<T>"
+      level: declared
+      source: "implementation:select.maximum.linear.rust.slice.v1"
+    output:
+      value: "result: Option<ElementOf<input.sequence>>"
+      level: declared
+      source: "implementation:select.maximum.linear.rust.slice.v1"
+    ensures:
+      value:
+        - "result is none if and only if input.sequence is empty"
+        - "result is the first element no less than any input element"
+      level: tested
+      source: "tests:maximum::returns_the_maximum_element;maximum::returns_the_first_equivalent_maximum;maximum::handles_empty_and_single_element_slices"
+  - id: sequence.filter
+    input:
+      value: "sequence: Sequence<T>; predicate: Predicate<T>"
+      level: declared
+      source: "implementations:filter.copy.rust.vec.v1;filter.copy_into.rust.vec.v1;filter.in_place.rust.vec.v1"
+    output:
+      value: "result: StableSubsequence<input.sequence>"
+      level: declared
+      source: "implementations:filter.copy.rust.vec.v1;filter.copy_into.rust.vec.v1;filter.in_place.rust.vec.v1"
+    ensures:
+      value:
+        - "result contains exactly the input elements satisfying predicate"
+        - "result preserves relative input order"
+      level: tested
+      source: "tests:filter::copy_preserves_matching_order;filter::in_place_compaction_preserves_matching_order"
+  - id: sequence.partition
+    input:
+      value: "sequence: Sequence<T>; predicate: Predicate<T>"
+      level: declared
+      source: "implementations:partition.copy.rust.vec.v1;partition.copy_into.rust.vec.v1;partition.in_place.rust.slice.v1"
+    output:
+      value: "result: PartitionOf<input.sequence>"
+      level: declared
+      source: "implementations:partition.copy.rust.vec.v1;partition.copy_into.rust.vec.v1;partition.in_place.rust.slice.v1"
+    ensures:
+      value:
+        - "the matching partition contains exactly elements satisfying predicate"
+        - "the rejected partition contains exactly elements not satisfying predicate"
+        - "both partitions together are a permutation of input.sequence"
+      level: tested
+      source: "tests:partition::copy_preserves_order_in_both_partitions;partition::in_place_returns_a_valid_boundary_and_permutation"
+  - id: sequence.reverse
+    input:
+      value: "sequence: Sequence<T>"
+      level: declared
+      source: "implementation:reverse.symmetric.rust.slice.v1"
+    output:
+      value: "result: ReverseOf<input.sequence>"
+      level: declared
+      source: "implementation:reverse.symmetric.rust.slice.v1"
+    ensures:
+      value:
+        - "result[i] equals input.sequence[n - 1 - i]"
+        - "reversing result restores input.sequence"
+      level: tested
+      source: "tests:reverse::reverses_element_order;reverse::applying_twice_restores_the_input"
+  - id: sequence.merge_sorted
+    input:
+      value: "left: Sequence<T>; right: Sequence<T>; order: TotalOrder<T>"
+      level: declared
+      source: "implementations:merge.sorted.rust.vec.v1;merge.sorted_into.rust.vec.v1"
+    requires:
+      value:
+        - "input.left is sorted according to input.order"
+        - "input.right is sorted according to input.order"
+      level: declared
+      source: "definition:sequence.merge_sorted"
+    output:
+      value: "result: Sequence<T>"
+      level: declared
+      source: "implementations:merge.sorted.rust.vec.v1;merge.sorted_into.rust.vec.v1"
+    ensures:
+      value:
+        - "result is sorted according to input.order"
+        - "result is a permutation of the concatenation of input.left and input.right"
+      level: tested
+      source: "test:merge_sorted::merges_in_sorted_order_and_preserves_elements"
+  - id: sequence.is_sorted
+    input:
+      value: "sequence: Sequence<T>; order: TotalOrder<T>"
+      level: declared
+      source: "implementation:order.is_sorted.rust.slice.v1"
+    output:
+      value: "result: bool"
+      level: declared
+      source: "implementation:order.is_sorted.rust.slice.v1"
+    ensures:
+      value:
+        - "result is true if and only if no adjacent pair is decreasing"
+      level: tested
+      source: "tests:is_sorted::accepts_sorted_values_and_duplicates;is_sorted::rejects_an_adjacent_inversion"
+  - id: sequence.deduplicate
+    input:
+      value: "sequence: Sequence<T>; equality: Equality<T>"
+      level: declared
+      source: "implementations:deduplicate.quadratic.rust.vec.v1;deduplicate.hash.rust.vec.v1;deduplicate.hash_into.rust.vec.v1"
+    output:
+      value: "result: StableUniqueSequence<T>"
+      level: declared
+      source: "implementations:deduplicate.quadratic.rust.vec.v1;deduplicate.hash.rust.vec.v1;deduplicate.hash_into.rust.vec.v1"
+    ensures:
+      value:
+        - "result contains exactly one representative of each input equivalence class"
+        - "result retains the first input occurrence and relative order"
+      level: tested
+      source: "tests:deduplicate::quadratic_preserves_first_occurrences;deduplicate::hash_preserves_first_occurrences"
+
+algorithms:
+  - id: sort.merge.top_down
+    solves: sequence.sort
+    name:
+      value: "top-down merge sort"
+      level: declared
+      source: "vision:0.1#6"
+    stable:
+      value: true
+      level: tested
+      source: "test:merge_sort::is_stable"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:sort.merge.rust.slice.v1"
+    in_place:
+      value: false
+      level: declared
+      source: "implementation:sort.merge.rust.slice.v1"
+    time_worst:
+      value: "O(n log n)"
+      level: declared
+      source: "vision:0.1#6"
+    auxiliary_memory:
+      value: "O(n)"
+      level: declared
+      source: "implementation:sort.merge.rust.slice.v1"
+  - id: sort.insertion
+    solves: sequence.sort
+    name:
+      value: "insertion sort"
+      level: declared
+      source: "implementation:sort.insertion.rust.slice.v1"
+    stable:
+      value: true
+      level: tested
+      source: "test:insertion_sort::is_stable"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:sort.insertion.rust.slice.v1"
+    in_place:
+      value: true
+      level: declared
+      source: "implementation:sort.insertion.rust.slice.v1"
+    time_worst:
+      value: "O(n^2)"
+      level: declared
+      source: "implementation:sort.insertion.rust.slice.v1"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "implementation:sort.insertion.rust.slice.v1"
+  - id: search.linear
+    solves: sequence.search
+    name:
+      value: "linear search"
+      level: declared
+      source: "implementation:search.linear.rust.slice.v1"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:search.linear.rust.slice.v1"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "implementation:search.linear.rust.slice.v1"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "implementation:search.linear.rust.slice.v1"
+  - id: search.binary.lower_bound
+    solves: sequence.search
+    name:
+      value: "binary search using a lower bound"
+      level: declared
+      source: "implementation:search.binary.rust.slice.v1"
+    requires:
+      value:
+        - "input.sequence is sorted according to the comparison order"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/binary_search.rs"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:search.binary.rust.slice.v1"
+    time_worst:
+      value: "O(log n)"
+      level: declared
+      source: "implementation:search.binary.rust.slice.v1"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "implementation:search.binary.rust.slice.v1"
+  - id: select.minimum.linear
+    solves: sequence.minimum
+    name:
+      value: "linear minimum scan"
+      level: declared
+      source: "implementation:select.minimum.linear.rust.slice.v1"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:select.minimum.linear.rust.slice.v1"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "implementation:select.minimum.linear.rust.slice.v1"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "implementation:select.minimum.linear.rust.slice.v1"
+  - id: select.maximum.linear
+    solves: sequence.maximum
+    name:
+      value: "linear maximum scan"
+      level: declared
+      source: "implementation:select.maximum.linear.rust.slice.v1"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:select.maximum.linear.rust.slice.v1"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "implementation:select.maximum.linear.rust.slice.v1"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "implementation:select.maximum.linear.rust.slice.v1"
+  - id: filter.copy.stable
+    solves: sequence.filter
+    name:
+      value: "stable filtering by copying matches"
+      level: declared
+      source: "implementations:filter.copy.rust.vec.v1;filter.copy_into.rust.vec.v1"
+    stable:
+      value: true
+      level: tested
+      source: "test:filter::copy_preserves_matching_order"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementations:filter.copy.rust.vec.v1;filter.copy_into.rust.vec.v1"
+    in_place:
+      value: false
+      level: declared
+      source: "implementations:filter.copy.rust.vec.v1;filter.copy_into.rust.vec.v1"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    auxiliary_memory:
+      value: "O(1) excluding output storage"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+  - id: filter.compact.in_place
+    solves: sequence.filter
+    name:
+      value: "stable in-place filter compaction"
+      level: declared
+      source: "implementation:filter.in_place.rust.vec.v1"
+    stable:
+      value: true
+      level: tested
+      source: "test:filter::in_place_compaction_preserves_matching_order"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:filter.in_place.rust.vec.v1"
+    in_place:
+      value: true
+      level: declared
+      source: "implementation:filter.in_place.rust.vec.v1"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+  - id: partition.copy.stable
+    solves: sequence.partition
+    name:
+      value: "stable partition by copying"
+      level: declared
+      source: "implementations:partition.copy.rust.vec.v1;partition.copy_into.rust.vec.v1"
+    stable:
+      value: true
+      level: tested
+      source: "test:partition::copy_preserves_order_in_both_partitions"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementations:partition.copy.rust.vec.v1;partition.copy_into.rust.vec.v1"
+    in_place:
+      value: false
+      level: declared
+      source: "implementations:partition.copy.rust.vec.v1;partition.copy_into.rust.vec.v1"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    auxiliary_memory:
+      value: "O(1) excluding output storage"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+  - id: partition.two_pointer.in_place
+    solves: sequence.partition
+    name:
+      value: "unstable in-place two-pointer partition"
+      level: declared
+      source: "implementation:partition.in_place.rust.slice.v1"
+    stable:
+      value: false
+      level: tested
+      source: "test:partition::in_place_does_not_guarantee_stability"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:partition.in_place.rust.slice.v1"
+    in_place:
+      value: true
+      level: declared
+      source: "implementation:partition.in_place.rust.slice.v1"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+  - id: reverse.symmetric.in_place
+    solves: sequence.reverse
+    name:
+      value: "in-place reversal by symmetric swaps"
+      level: declared
+      source: "implementation:reverse.symmetric.rust.slice.v1"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:reverse.symmetric.rust.slice.v1"
+    in_place:
+      value: true
+      level: declared
+      source: "implementation:reverse.symmetric.rust.slice.v1"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/reverse.rs"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/reverse.rs"
+  - id: merge.sorted.two_way
+    solves: sequence.merge_sorted
+    name:
+      value: "stable two-way merge"
+      level: declared
+      source: "implementations:merge.sorted.rust.vec.v1;merge.sorted_into.rust.vec.v1"
+    stable:
+      value: true
+      level: tested
+      source: "test:merge_sorted::is_stable_across_and_within_inputs"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementations:merge.sorted.rust.vec.v1;merge.sorted_into.rust.vec.v1"
+    in_place:
+      value: false
+      level: declared
+      source: "implementations:merge.sorted.rust.vec.v1;merge.sorted_into.rust.vec.v1"
+    time_worst:
+      value: "O(n + m)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+    auxiliary_memory:
+      value: "O(1) excluding output storage"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+  - id: order.is_sorted.adjacent
+    solves: sequence.is_sorted
+    name:
+      value: "adjacent sortedness scan"
+      level: declared
+      source: "implementation:order.is_sorted.rust.slice.v1"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:order.is_sorted.rust.slice.v1"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/is_sorted.rs"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/is_sorted.rs"
+  - id: deduplicate.quadratic.stable
+    solves: sequence.deduplicate
+    name:
+      value: "stable quadratic first-occurrence deduplication"
+      level: declared
+      source: "implementation:deduplicate.quadratic.rust.vec.v1"
+    stable:
+      value: true
+      level: tested
+      source: "test:deduplicate::quadratic_preserves_first_occurrences"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementation:deduplicate.quadratic.rust.vec.v1"
+    in_place:
+      value: false
+      level: declared
+      source: "implementation:deduplicate.quadratic.rust.vec.v1"
+    time_worst:
+      value: "O(n^2)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    auxiliary_memory:
+      value: "O(1) excluding output storage"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+  - id: deduplicate.hash.stable
+    solves: sequence.deduplicate
+    name:
+      value: "stable hash-based first-occurrence deduplication"
+      level: declared
+      source: "implementations:deduplicate.hash.rust.vec.v1;deduplicate.hash_into.rust.vec.v1"
+    requires:
+      value:
+        - "T implements Eq and Hash consistently"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    stable:
+      value: true
+      level: tested
+      source: "test:deduplicate::hash_preserves_first_occurrences"
+    deterministic:
+      value: true
+      level: declared
+      source: "implementations:deduplicate.hash.rust.vec.v1;deduplicate.hash_into.rust.vec.v1"
+    in_place:
+      value: false
+      level: declared
+      source: "implementations:deduplicate.hash.rust.vec.v1;deduplicate.hash_into.rust.vec.v1"
+    time_worst:
+      value: "O(n^2)"
+      level: declared
+      source: "analysis:adversarial-hash-collisions"
+    time_expected:
+      value: "O(n)"
+      level: declared
+      source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/"
+    auxiliary_memory:
+      value: "O(n) excluding output storage"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+
+implementations:
+  - id: sort.merge.rust.slice.v1
+    implements: sort.merge.top_down
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sort.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::merge_sort::merge_sort_by"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sort.rs"
+    signature:
+      value: "fn merge_sort_by<T: Clone, F: FnMut(&T, &T) -> Ordering>(&mut [T], F)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sort.rs"
+    effects:
+      value:
+        mutates: [input.sequence]
+        io: none
+        blocking: false
+        allocation: "one auxiliary Vec<T> of input length for n >= 2"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sort.rs"
+    tests:
+      value:
+        - "merge_sort::tests::sorts_and_preserves_the_input_permutation"
+        - "merge_sort::tests::is_stable"
+        - "merge_sort::tests::handles_empty_and_single_element_slices"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: sort.merge_with_scratch.rust.slice.v1
+    implements: sort.merge.top_down
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sort.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::merge_sort::merge_sort_by_with_scratch"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sort.rs"
+    signature:
+      value: "fn merge_sort_by_with_scratch<T: Clone, F: FnMut(&T, &T) -> Ordering>(&mut [T], &mut [T], F) -> Result<(), ScratchTooSmall>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sort.rs"
+    effects:
+      value:
+        mutates: [input.sequence, scratch.sequence]
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sort.rs"
+    tests:
+      value:
+        - "merge_sort::tests::caller_scratch_sorts_without_allocation"
+        - "merge_sort::tests::caller_scratch_preserves_stability"
+        - "merge_sort::tests::insufficient_scratch_does_not_mutate_input"
+      level: tested
+      source: "command:cargo test -p atlas-algorithms --no-default-features"
+  - id: sort.insertion.rust.slice.v1
+    implements: sort.insertion
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/insertion_sort.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::insertion_sort::insertion_sort_by"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/insertion_sort.rs"
+    signature:
+      value: "fn insertion_sort_by<T, F: FnMut(&T, &T) -> Ordering>(&mut [T], F)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/insertion_sort.rs"
+    effects:
+      value:
+        mutates: [input.sequence]
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/insertion_sort.rs"
+    tests:
+      value:
+        - "insertion_sort::tests::sorts_and_preserves_the_input_permutation"
+        - "insertion_sort::tests::is_stable"
+        - "insertion_sort::tests::handles_empty_and_single_element_slices"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: search.linear.rust.slice.v1
+    implements: search.linear
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/linear_search.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::linear_search::linear_search_by"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/linear_search.rs"
+    signature:
+      value: "fn linear_search_by<T, F: FnMut(&T, &T) -> bool>(&[T], &T, F) -> Option<usize>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/linear_search.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/linear_search.rs"
+    tests:
+      value:
+        - "linear_search::tests::returns_the_first_matching_position"
+        - "linear_search::tests::returns_none_when_no_element_matches"
+        - "linear_search::tests::handles_an_empty_slice"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: search.binary.rust.slice.v1
+    implements: search.binary.lower_bound
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/binary_search.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::binary_search::binary_search_by"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/binary_search.rs"
+    signature:
+      value: "fn binary_search_by<T, F: FnMut(&T, &T) -> Ordering>(&[T], &T, F) -> Option<usize>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/binary_search.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/binary_search.rs"
+    tests:
+      value:
+        - "binary_search::tests::returns_the_first_matching_position"
+        - "binary_search::tests::returns_none_when_no_element_matches"
+        - "binary_search::tests::handles_empty_and_boundary_matches"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: select.minimum.linear.rust.slice.v1
+    implements: select.minimum.linear
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/minimum.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::minimum::minimum_by"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/minimum.rs"
+    signature:
+      value: "fn minimum_by<T, F: FnMut(&T, &T) -> Ordering>(&[T], F) -> Option<&T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/minimum.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/minimum.rs"
+    tests:
+      value:
+        - "minimum::tests::returns_the_minimum_element"
+        - "minimum::tests::returns_the_first_equivalent_minimum"
+        - "minimum::tests::handles_empty_and_single_element_slices"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: select.maximum.linear.rust.slice.v1
+    implements: select.maximum.linear
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/maximum.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::maximum::maximum_by"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/maximum.rs"
+    signature:
+      value: "fn maximum_by<T, F: FnMut(&T, &T) -> Ordering>(&[T], F) -> Option<&T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/maximum.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/maximum.rs"
+    tests:
+      value:
+        - "maximum::tests::returns_the_maximum_element"
+        - "maximum::tests::returns_the_first_equivalent_maximum"
+        - "maximum::tests::handles_empty_and_single_element_slices"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: filter.copy.rust.vec.v1
+    implements: filter.copy.stable
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::filter::filter_copy"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    signature:
+      value: "fn filter_copy<T: Clone, F: FnMut(&T) -> bool>(&[T], F) -> Vec<T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: "allocates the output Vec<T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    tests:
+      value:
+        - "filter::tests::copy_preserves_matching_order"
+        - "filter::tests::copy_handles_no_matches_and_empty_input"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: filter.copy_into.rust.vec.v1
+    implements: filter.copy.stable
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::filter::filter_copy_into"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    signature:
+      value: "fn filter_copy_into<T: Clone, F: FnMut(&T) -> bool>(&[T], &mut Vec<T>, F)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    effects:
+      value:
+        mutates: [output.sequence]
+        io: none
+        blocking: false
+        allocation: "reuses output capacity; may grow when insufficient"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    tests:
+      value:
+        - "filter::tests::copy_into_replaces_contents_and_reuses_capacity"
+        - "filter::tests::copy_into_handles_all_and_no_matches"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: filter.in_place.rust.vec.v1
+    implements: filter.compact.in_place
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::filter::filter_in_place"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    signature:
+      value: "fn filter_in_place<T, F: FnMut(&T) -> bool>(&mut Vec<T>, F)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    effects:
+      value:
+        mutates: [input.sequence]
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/filter.rs"
+    tests:
+      value:
+        - "filter::tests::in_place_compaction_preserves_matching_order"
+        - "filter::tests::in_place_compaction_handles_all_and_no_matches"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: partition.copy.rust.vec.v1
+    implements: partition.copy.stable
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::partition::partition_copy"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    signature:
+      value: "fn partition_copy<T: Clone, F: FnMut(&T) -> bool>(&[T], F) -> (Vec<T>, Vec<T>)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: "allocates matching and rejected output Vec<T> values"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    tests:
+      value:
+        - "partition::tests::copy_preserves_order_in_both_partitions"
+        - "partition::tests::copy_handles_empty_all_and_no_matches"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: partition.copy_into.rust.vec.v1
+    implements: partition.copy.stable
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::partition::partition_copy_into"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    signature:
+      value: "fn partition_copy_into<T: Clone, F: FnMut(&T) -> bool>(&[T], &mut Vec<T>, &mut Vec<T>, F)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    effects:
+      value:
+        mutates: [output.matching, output.rejected]
+        io: none
+        blocking: false
+        allocation: "reuses both output capacities; either may grow when insufficient"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    tests:
+      value:
+        - "partition::tests::copy_into_replaces_contents_and_reuses_capacities"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: partition.in_place.rust.slice.v1
+    implements: partition.two_pointer.in_place
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::partition::partition_in_place"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    signature:
+      value: "fn partition_in_place<T, F: FnMut(&T) -> bool>(&mut [T], F) -> usize"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    effects:
+      value:
+        mutates: [input.sequence]
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/partition.rs"
+    tests:
+      value:
+        - "partition::tests::in_place_returns_a_valid_boundary_and_permutation"
+        - "partition::tests::in_place_does_not_guarantee_stability"
+        - "partition::tests::in_place_handles_empty_all_and_no_matches"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: reverse.symmetric.rust.slice.v1
+    implements: reverse.symmetric.in_place
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/reverse.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::reverse::reverse_in_place"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/reverse.rs"
+    signature:
+      value: "fn reverse_in_place<T>(&mut [T])"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/reverse.rs"
+    effects:
+      value:
+        mutates: [input.sequence]
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/reverse.rs"
+    tests:
+      value:
+        - "reverse::tests::reverses_element_order"
+        - "reverse::tests::handles_empty_and_single_element_slices"
+        - "reverse::tests::applying_twice_restores_the_input"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: merge.sorted.rust.vec.v1
+    implements: merge.sorted.two_way
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::merge_sorted::merge_sorted"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+    signature:
+      value: "fn merge_sorted<T: Clone, F: FnMut(&T, &T) -> Ordering>(&[T], &[T], F) -> Vec<T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: "allocates the merged output Vec<T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+    tests:
+      value:
+        - "merge_sorted::tests::merges_in_sorted_order_and_preserves_elements"
+        - "merge_sorted::tests::is_stable_across_and_within_inputs"
+        - "merge_sorted::tests::handles_empty_inputs"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: merge.sorted_into.rust.vec.v1
+    implements: merge.sorted.two_way
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::merge_sorted::merge_sorted_into"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+    signature:
+      value: "fn merge_sorted_into<T: Clone, F: FnMut(&T, &T) -> Ordering>(&[T], &[T], &mut Vec<T>, F)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+    effects:
+      value:
+        mutates: [output.sequence]
+        io: none
+        blocking: false
+        allocation: "reuses output capacity; may grow when insufficient"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/merge_sorted.rs"
+    tests:
+      value:
+        - "merge_sorted::tests::into_replaces_contents_and_reuses_capacity"
+        - "merge_sorted::tests::merges_in_sorted_order_and_preserves_elements"
+        - "merge_sorted::tests::is_stable_across_and_within_inputs"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: order.is_sorted.rust.slice.v1
+    implements: order.is_sorted.adjacent
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/is_sorted.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::is_sorted::is_sorted_by"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/is_sorted.rs"
+    signature:
+      value: "fn is_sorted_by<T, F: FnMut(&T, &T) -> Ordering>(&[T], F) -> bool"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/is_sorted.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: none
+      level: declared
+      source: "file:crates/atlas-algorithms/src/is_sorted.rs"
+    tests:
+      value:
+        - "is_sorted::tests::accepts_sorted_values_and_duplicates"
+        - "is_sorted::tests::rejects_an_adjacent_inversion"
+        - "is_sorted::tests::handles_empty_and_single_element_slices"
+        - "is_sorted::tests::stops_at_the_first_inversion"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: deduplicate.quadratic.rust.vec.v1
+    implements: deduplicate.quadratic.stable
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: []
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::deduplicate::deduplicate_quadratic"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    signature:
+      value: "fn deduplicate_quadratic<T: Clone + Eq>(&[T]) -> Vec<T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: "allocates the deduplicated output Vec<T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    tests:
+      value:
+        - "deduplicate::tests::quadratic_preserves_first_occurrences"
+        - "deduplicate::tests::quadratic_handles_empty_and_unique_inputs"
+      level: tested
+      source: "command:cargo test --workspace"
+  - id: deduplicate.hash.rust.vec.v1
+    implements: deduplicate.hash.stable
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: ["hashbrown 0.17.1", "foldhash 0.2.0"]
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::deduplicate::deduplicate_hash"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    signature:
+      value: "fn deduplicate_hash<T: Clone + Eq + Hash>(&[T]) -> Vec<T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    effects:
+      value:
+        mutates: []
+        io: none
+        blocking: false
+        allocation: "allocates an internal HashSet<&T> and output Vec<T>"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    tests:
+      value:
+        - "deduplicate::tests::hash_preserves_first_occurrences"
+        - "deduplicate::tests::hash_handles_empty_and_duplicate_only_inputs"
+      level: tested
+      source: "command:cargo test --workspace --features hash-dedup"
+  - id: deduplicate.hash_into.rust.vec.v1
+    implements: deduplicate.hash.stable
+    language:
+      value: rust
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    version:
+      value: "0.1.0"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "file:Cargo.toml"
+    target:
+      value: "Rust target with core + alloc and a global allocator"
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    dependencies:
+      value: ["hashbrown 0.17.1", "foldhash 0.2.0"]
+      level: declared
+      source: "file:crates/atlas-algorithms/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "atlas_algorithms::deduplicate::deduplicate_hash_into"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    signature:
+      value: "fn deduplicate_hash_into<T: Clone + Eq + Hash>(&[T], &mut Vec<T>)"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    effects:
+      value:
+        mutates: [output.sequence]
+        io: none
+        blocking: false
+        allocation: "allocates an internal HashSet<&T>; reuses output capacity and may grow"
+      level: declared
+      source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+    tests:
+      value:
+        - "deduplicate::tests::hash_into_replaces_contents_and_reuses_output_capacity"
+        - "deduplicate::tests::hash_preserves_first_occurrences"
+      level: tested
+      source: "command:cargo test --workspace --features hash-dedup"
+
+executions: []

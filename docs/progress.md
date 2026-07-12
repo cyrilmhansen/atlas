@@ -1259,6 +1259,10 @@ qualified observation remains unchanged.
   as a conclusion bounded to that exact campaign.
 - Made report identity independent of the input identifier order.
 
+The first clean demonstration attempt was rejected by the benchmark quality gate
+for an extreme sample. No clean campaign report was produced, and no retry was
+used to select a favorable measurement.
+
 ### Limits
 
 - A report describes one dataset, machine context, and requested protocol. It

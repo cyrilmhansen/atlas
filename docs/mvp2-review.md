@@ -26,7 +26,7 @@ generated executions part of the Git-authoritative registry.
 | Signal aberrant or non-comparable measurements | Complete for the sorting harness | The quality gate rejects dispersion, drift, outliers, and position bias before serialization. |
 | Capture machine, system, compiler, options, commit, and seed | Complete for the sorting harness | Generated benchmark observations contain these values and diagnostics. |
 | Measure time, peak memory, allocations, and traversed volume | Partial | Time and process resident/peak memory are captured; allocation count and traversed volume are explicitly unavailable. |
-| Compare implementations and report observed domains | Complete for one clean exact campaign | `atlas compare` rejects dirty or incomparable observations and writes a context-bounded generated report; broader domains remain deferred. |
+| Compare implementations and report observed domains | Partial | `atlas compare` rejects dirty or incomparable observations and writes a context-bounded generated report; a clean qualified campaign remains to be captured. Broader domains remain deferred. |
 
 ## Local gate
 

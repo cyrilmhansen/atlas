@@ -33,11 +33,24 @@ cargo run -p atlas -- explain search.binary.rust.slice.v1
 cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh
+cargo run -p atlas --example dataset_specs
+cargo run -p atlas --example semantic_traces
+cargo run -p atlas --example pseudocode_ast
+cargo run --release -p atlas-bench --example compare_sorts
 ```
 
 `scripts/check-mvp1.sh` is the complete offline MVP 1 acceptance gate. It checks
 formatting, feature profiles, tests, Clippy, registry evidence, and deterministic
 index reconstruction.
+
+The `dataset_specs` example materializes the first experimental MVP 2 sorting
+and partitioning datasets with their class, seed, size, and content digest.
+The `semantic_traces` example executes two small demonstrations and prints every
+typed semantic event and invariant checkpoint.
+The `pseudocode_ast` example renders the two experimental backend-independent
+algorithm descriptions.
+The release-only `compare_sorts` example emits raw-context empirical summaries;
+its output is not a persistent benchmark conclusion.
 
 The YAML files committed to Git are authoritative. The validator loads the
 aggregate registry in memory and checks its schema, cross-references, local

@@ -638,3 +638,180 @@ git log -1 --oneline
 ### Limits
 
 - CI and any remote publication require separate decisions.
+
+## 2026-07-12 - MVP 2 activation and first dataset specifications
+
+### Result
+
+- Closed MVP 1 at the human-approved local baseline and activated MVP 2 under
+  DEC-028.
+- Added separate experimental specifications for sorting and partitioning.
+- Covered typical, boundary, degenerate, adversarial, and regression cases.
+- Made generated instances carry parameters, seed, values, predicate, and a
+  canonical content digest without changing schema 0.1.
+- Added a Cargo example that materializes and identifies all ten instances.
+
+### Limits
+
+- Dataset types are experimental Rust structures, not a persistent public
+  format.
+- No benchmark or execution observation is recorded in this slice.
+
+### Verification
+
+```sh
+PKG_CONFIG_PATH=/usr/lib/pkgconfig scripts/check-mvp1.sh
+cargo run -q -p atlas --locked --offline --example dataset_specs
+```
+
+The workspace has 103 tests: 49 algorithm tests, 8 Atlas unit tests, and 46
+registry/CLI integration tests. The example materializes ten deterministic
+instances across the two problem specifications.
+
+## 2026-07-12 - Minimal semantic trace experiment
+
+### Result
+
+- Added a common typed event vocabulary for reads, writes, comparisons, swaps,
+  recursion, allocation, copies, partition boundaries, predicates, and asserts.
+- Traced caller-scratch merge sort and in-place two-pointer partition without
+  modifying the native `no_std` implementations.
+- Bound every trace to algorithm, implementation, dataset case, and content
+  digest, and checked results against the native implementation.
+- Added a human-readable demonstration example.
+
+### Limits
+
+- Trace version `experimental-0` is an in-memory Rust model, not a persistent
+  protocol or benchmark record.
+- The demonstrators currently operate on `i32` dataset instances.
+- The structured pseudocode AST remains unimplemented.
+
+### Verification
+
+```sh
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo test --workspace --locked --offline
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline --example semantic_traces
+```
+
+The workspace has 105 tests. The selected demonstrations produce 109 merge-sort
+events and 76 partition events with every invariant checkpoint passing.
+
+## 2026-07-12 - Experimental structured pseudocode AST
+
+### Result
+
+- Modeled merge sort and in-place partition with the same nested statement AST.
+- Made parameter modes, mutations, allocations, copies, semantic operations,
+  and invariant checkpoints explicit.
+- Added deterministic backend-independent rendering and unique node validation.
+- Verified that every emitted semantic trace event kind is represented by the
+  corresponding AST.
+
+### Limits
+
+- Expressions are readable strings rather than a typed expression sublanguage.
+- The AST is an in-memory experiment with no persistent serialization or MIR
+  mapping.
+
+### Verification
+
+```sh
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo test --workspace --locked --offline
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline --example pseudocode_ast
+```
+
+The workspace has 108 tests. Both ASTs validate, render deterministically, and
+cover every semantic operation kind emitted by their demonstration traces.
+
+## 2026-07-12 - Exact trace-to-AST linkage
+
+### Result
+
+- Replaced aggregate operation coverage with an exact AST node ID on every
+  trace step.
+- Added lookup and validation of node existence and semantic operation type.
+- Added explicit invocation and permutation-assertion nodes where the previous
+  global coverage had hidden missing correspondences.
+- Made the trace example render `ast_node_id -> event` for every step.
+
+### Verification
+
+```sh
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo test --workspace --locked --offline
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline --example semantic_traces
+```
+
+The workspace has 109 tests. Valid traces resolve all 185 demonstrated steps;
+targeted tests reject both an unknown node and an operation-kind mismatch.
+
+### Limits
+
+- Node IDs and trace steps remain experimental in-memory structures rather than
+  a persistent protocol.
+
+## 2026-07-12 - Minimal typed AST expressions
+
+### Result
+
+- Replaced structural expression strings with typed variables, constants,
+  lengths, indexes, ranges, operators, boolean logic, and abstract calls.
+- Added scope, operand, condition, binding, and parameter access-mode checks.
+- Made recursive subranges and all read/write operands structurally inspectable.
+- Preserved backend-independent pseudocode rendering.
+
+### Verification
+
+```sh
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo test --workspace --locked --offline
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline --example pseudocode_ast
+```
+
+The workspace has 112 tests. Negative tests reject unknown variables, invalid
+operand types, and writes through a read-only parameter.
+
+### Limits
+
+- Abstract calls carry an explicit result type but do not yet resolve against a
+  typed signature environment.
+- The expression tree is not an evaluator or persistent language.
+
+## 2026-07-12 - Minimal empirical sorting harness
+
+### Result
+
+- Added a separate `atlas-bench` adapter crate and a deterministic 2,048-element
+  sorting dataset.
+- Separated correction validation, preparation, warmup, and timed samples.
+- Captured raw samples, robust dispersion, complete local context, parameters,
+  seed, and dataset digest.
+- Rejected comparisons across different contexts, datasets, or settings.
+- Demonstrated release measurement while retaining all raw samples; the local
+  run identified its dirty worktree and is therefore not a reference result.
+
+### Limits
+
+- Results are ephemeral and do not populate public `Execution` records.
+- The harness supports only the three current sorting implementations.
+- No measured result is promoted to a general performance claim.
+
+### Verification
+
+```sh
+PKG_CONFIG_PATH=/usr/lib/pkgconfig scripts/check-mvp1.sh
+PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo run --release -q -p atlas-bench --locked --offline --example compare_sorts
+```
+
+The workspace has 116 tests. The demonstration records 21 raw samples for each
+of three implementations on the same 2,048-element dataset and context. Its
+numbers are intentionally not recorded as an Atlas observation because the
+captured worktree is dirty.
+
+The first clean-context attempt was also rejected as a candidate observation:
+the caller-scratch sample series drifted substantially during measurement. The
+harness now reports dispersion and half-series drift automatically rather than
+leaving this anomaly to manual inspection.

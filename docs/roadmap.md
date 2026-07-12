@@ -61,16 +61,22 @@ Required decisions: SQLite dependency, projection schema, and digest format.
 
 ## Prepare MVP 2
 
+Status: active under DEC-028.
+
 - Implement the accepted separate `DatasetSpec`, `DatasetCase`, and generated
-  instance model.
+  instance model. Experimental Rust model implemented for the first slice.
 - Begin with deterministic typical, boundary, degenerate, adversarial, and
-  regression cases for sorting and partitioning.
+  regression cases for sorting and partitioning. Complete for the first slice.
 - Introduce execution records only with compiler, target, parameters, seed,
   commit, environment, and result provenance.
 - Keep correction tests and benchmarks as separate execution modes.
 
 No benchmark conclusion is accepted before environment and dispersion are
 recorded.
+
+Status: the first release-only comparison harness records raw samples, robust
+dispersion, complete local context, and dataset identity under DEC-031. Results
+remain ephemeral and non-normative.
 
 ## Algorithm representation research
 
@@ -84,6 +90,11 @@ The experiment must demonstrate:
 - invariant checkpoints;
 - rendering independent of Rust;
 - minimal semantic traces over small dataset cases.
+
+Status: deterministic semantic traces and experimental structured pseudocode
+ASTs are implemented for merge sort and in-place partition under DEC-029. Every
+trace step is validated against its exact AST operation node. Structural
+expressions and parameter access modes are typed under DEC-030.
 
 The AST, dataset, and trace schemas remain non-public until this experiment
 shows one representation fits both cases without backend coupling.

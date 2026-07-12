@@ -11,6 +11,9 @@ serde_yaml.workspace = true
 rusqlite.workspace = true
 sha2.workspace = true
 
+[dev-dependencies]
+atlas-algorithms = { path = "../atlas-algorithms" }
+
 [[bin]]
 name = "atlas"
 path = "src/main.rs"

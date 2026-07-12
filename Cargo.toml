@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/atlas", "crates/atlas-algorithms"]
+members = ["crates/atlas", "crates/atlas-algorithms", "crates/atlas-bench"]
 resolver = "3"
 
 [workspace.package]

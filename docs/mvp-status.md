@@ -1,14 +1,14 @@
 # MVP status
 
-- Active MVP: **MVP 1 - executable documentary registry**
-- Status: in progress
-- Corpus status: complete
-- Activated: 2026-07-11
+- Active MVP: **MVP 2 - empirical qualification**
+- Status: experimental first slice
+- MVP 1: closed locally at baseline `8a2a520`
+- MVP 2 activated: 2026-07-12
 
 ## Current slice
 
-Harden and close an aggregate schema 0.1 registry containing ten problems,
-fifteen algorithms, and twenty tested Rust implementations.
+Prototype separate deterministic dataset specifications for `sequence.sort`
+and `sequence.partition` without changing schema 0.1.
 
 Current corpus progress:
 
@@ -16,7 +16,7 @@ Current corpus progress:
 - Algorithms: 15 / 15
 - Implementations: 20 / 20
 
-## MVP 1 target
+## MVP 1 closure
 
 - 10 problems
 - 15 algorithms

@@ -6,6 +6,7 @@ version = 4
 name = "atlas"
 version = "0.1.0"
 dependencies = [
+ "atlas-algorithms",
  "rusqlite",
  "serde",
  "serde_yaml_ng",
@@ -17,6 +18,14 @@ name = "atlas-algorithms"
 version = "0.1.0"
 dependencies = [
  "hashbrown",
+]
+
+[[package]]
+name = "atlas-bench"
+version = "0.1.0"
+dependencies = [
+ "atlas",
+ "atlas-algorithms",
 ]
 
 [[package]]

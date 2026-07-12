@@ -91,6 +91,9 @@ MVP 2 review: `docs/mvp2-review.md` records demonstrated criteria and the
 remaining closure decisions. `scripts/check-mvp2.sh` validates the current
 non-timing acceptance slice.
 
+Generated comparison reports are implemented under DEC-035. They remain local,
+dataset- and context-bounded observations rather than a ranking service.
+
 ## Algorithm representation research
 
 After MVP 1 closure, prototype the accepted structured algorithm AST on two

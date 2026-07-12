@@ -1244,3 +1244,30 @@ replay exposed that YAML could serialize but not parse `u128` scalars. Raw
 durations are now exact decimal strings. A replayed CPU-4 benchmark reached the
 quality gate and was correctly rejected for an extreme sample; the original
 qualified observation remains unchanged.
+
+## 2026-07-12 - Generated bounded comparison reports
+
+### Result
+
+- Added `atlas compare EXECUTION_ID EXECUTION_ID...` and an ignored YAML report
+  under `build/reports/`.
+- Required qualified benchmark observations with identical dataset, context,
+  parameters, environment, and requested protocol; dirty worktrees, duplicate
+  observations, and implementations are
+  rejected.
+- Sorted results by observed median only after validation and stated the result
+  as a conclusion bounded to that exact campaign.
+- Made report identity independent of the input identifier order.
+
+### Limits
+
+- A report describes one dataset, machine context, and requested protocol. It
+  does not establish a broad domain of dominance or a universal ranking.
+
+### Verification
+
+```sh
+cargo test --workspace --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+atlas compare EXECUTION_ID EXECUTION_ID
+```

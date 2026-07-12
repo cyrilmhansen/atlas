@@ -701,6 +701,19 @@ fn cli_replay_reports_a_missing_local_execution() {
 }
 
 #[test]
+fn cli_compare_requires_two_execution_ids() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compare", "execution.sha256.one"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("at least two execution IDs"));
+}
+
+#[test]
 fn cli_explains_binary_search_chain_with_requirements_and_effects() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))

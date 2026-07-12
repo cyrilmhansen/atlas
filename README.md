@@ -72,11 +72,16 @@ Replay a locally retained observation by its content-derived ID:
 ```sh
 cargo run -q -p atlas -- replay execution.sha256.EXAMPLE
 cargo run -q -p atlas -- replay execution.sha256.BENCHMARK --cpu 4
+cargo run -q -p atlas -- compare execution.sha256.FIRST execution.sha256.SECOND
 ```
 
 A replay regenerates the recipe under the current environment. A benchmark may
 therefore be rejected by its quality gate even when the original observation was
 qualified.
+
+`compare` writes a generated YAML report under `build/reports/` only when every
+input observation is qualified and uses the exact same dataset, context, and
+requested protocol from a clean worktree.
 
 The benchmark recipe writes an observation only after the harness accepts every
 quality check. Run it through the Linux pinning wrapper's CPU policy when a

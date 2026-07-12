@@ -4,6 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
+use atlas::comparisons::ComparisonReport;
 use atlas::executions::{ExecutionMode, ExecutionRecord};
 use atlas::index::rebuild_database;
 use atlas::registry::{
@@ -13,6 +14,7 @@ use atlas::registry::{
 const DEFAULT_REGISTRY: &str = "registry/atlas.yaml";
 const DEFAULT_DATABASE: &str = "build/atlas.sqlite3";
 const EXECUTION_DIRECTORY: &str = "build/executions";
+const REPORT_DIRECTORY: &str = "build/reports";
 
 fn main() -> ExitCode {
     let mut arguments = env::args_os().skip(1);
@@ -29,6 +31,7 @@ fn main() -> ExitCode {
         Some("explain") => explain_command(arguments),
         Some("qualify") => qualify_command(arguments),
         Some("replay") => replay_command(arguments),
+        Some("compare") => compare_command(arguments),
         Some("index") => index_command(arguments),
         _ => {
             eprintln!("unknown command {:?}", command);
@@ -70,6 +73,51 @@ fn index_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> Exi
         }
         Err(error) => {
             eprintln!("{}: {error}", database_path.display());
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn compare_command(arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
+    let mut ids = Vec::new();
+    for argument in arguments {
+        let Some(id) = argument.to_str() else {
+            eprintln!("execution IDs must be valid UTF-8");
+            return ExitCode::from(2);
+        };
+        ids.push(id.to_owned());
+    }
+    if ids.len() < 2 {
+        eprintln!("compare requires at least two execution IDs");
+        print_usage();
+        return ExitCode::from(2);
+    }
+    let mut records = Vec::with_capacity(ids.len());
+    for id in &ids {
+        match find_execution(id) {
+            Ok((_, record)) => records.push(record),
+            Err(message) => {
+                eprintln!("{message}");
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+    let report = match ComparisonReport::from_executions(&records) {
+        Ok(report) => report,
+        Err(error) => {
+            eprintln!("cannot compare executions: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let path = Path::new(REPORT_DIRECTORY).join(format!("{}.yaml", report.id));
+    match report.write_yaml(&path) {
+        Ok(()) => {
+            println!("Wrote {} to {}", report.id, path.display());
+            println!("{}", report.conclusion);
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("{}: {error}", path.display());
             ExitCode::FAILURE
         }
     }
@@ -738,6 +786,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas index [DB_PATH]"
     );
 }

@@ -7,8 +7,8 @@
 
 ## Current slice
 
-Prototype separate deterministic dataset specifications for `sequence.sort`
-and `sequence.partition` without changing schema 0.1.
+Qualify deterministic dataset specifications and regenerable execution
+observations without changing the Git-authoritative schema 0.1.
 
 Current corpus progress:
 

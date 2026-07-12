@@ -52,6 +52,16 @@ The `pseudocode_ast` example renders the two experimental backend-independent
 algorithm descriptions.
 The release-only `compare_sorts` example emits raw-context empirical summaries;
 its output is not a persistent benchmark conclusion.
+
+Execution observations are regenerable products outside the registry. The
+first deterministic correction recipe writes an ignored experimental record:
+
+```sh
+cargo run -q -p atlas --locked --offline --example record_sort_correction
+```
+
+The output is written under `build/executions/`; deleting it does not remove
+Git-authoritative knowledge.
 The Linux-only wrapper requires an explicit CPU, performs a non-invasive
 preflight, and pins only the benchmark process without changing the governor.
 

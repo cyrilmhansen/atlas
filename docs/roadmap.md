@@ -71,8 +71,9 @@ Status: active under DEC-028.
   matrix of 12 instances: 3 sizes and 4 input distributions.
 - Exercise partitioning with a matching deterministic matrix covering uniform,
   alternating, fully selected, and fully rejected inputs.
-- Introduce execution records only with compiler, target, parameters, seed,
-  commit, environment, and result provenance.
+- Generate execution observations outside Git authority with compiler, target,
+  parameters, seed, commit, environment, and result provenance. A deterministic
+  correction recipe is complete under DEC-033.
 - Keep correction tests and benchmarks as separate execution modes.
 
 No benchmark conclusion is accepted before environment and dispersion are

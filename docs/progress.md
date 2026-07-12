@@ -1036,3 +1036,35 @@ cargo run -q -p atlas --locked --offline --example dataset_specs
 
 The workspace has 130 tests. Partition generation is deterministic, IDs and
 digests are unique, and all 12 instances satisfy the partition contract.
+
+## 2026-07-12 - First regenerable correction execution
+
+### Result
+
+- Recorded DEC-033: executions are generated products under ignored `build/`,
+  while their Rust recipes, datasets, and scripts remain versioned.
+- Added a backend-independent experimental execution record with a
+  content-derived identity and integrity validation.
+- Added the versioned `sort.insertion.uniform.64.correction.v1` recipe. It
+  verifies the registered implementation and dataset before writing YAML.
+- Captured commit and dirty state, compiler, target, parameters, dataset seed
+  and digest, correction result, output digest, and provenance.
+
+### Limits
+
+- The generated YAML is deliberately internal and is not schema 0.1.
+- The first recipe covers correction only. Benchmark records remain deferred
+  until deletion and regeneration have been demonstrated for this boundary.
+- Environment or source-state changes legitimately change the execution ID.
+
+### Verification
+
+```sh
+cargo test --workspace --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline --example record_sort_correction
+```
+
+The workspace has 132 tests. Repeated generation in the same repository state
+produces byte-identical YAML under `build/executions/`, and modifying an
+observation invalidates its content-derived identity.

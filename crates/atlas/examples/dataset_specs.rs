@@ -1,10 +1,13 @@
-use atlas::datasets::{PARTITION_DATASET_SPEC, SORT_BENCHMARK_SPEC, SORT_DATASET_SPEC};
+use atlas::datasets::{
+    PARTITION_BENCHMARK_SPEC, PARTITION_DATASET_SPEC, SORT_BENCHMARK_SPEC, SORT_DATASET_SPEC,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     for spec in [
         &SORT_DATASET_SPEC,
         &PARTITION_DATASET_SPEC,
         &SORT_BENCHMARK_SPEC,
+        &PARTITION_BENCHMARK_SPEC,
     ] {
         println!("{} -> {}", spec.id, spec.problem_id);
         for dataset in spec.generate_all()? {

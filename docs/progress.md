@@ -1007,3 +1007,32 @@ cargo run -q -p atlas --locked --offline --example dataset_specs
 The workspace has 127 tests. Dataset generation is deterministic, case IDs and
 content digests are unique, and the expected sizes and distribution invariants
 are checked without running a timing campaign.
+
+## 2026-07-12 - Deterministic partition dataset matrix
+
+### Result
+
+- Added 12 partition cases spanning lengths 64, 2,048, and 8,192.
+- Covered uniform even selection, alternating values, fully selected inputs,
+  and fully rejected inputs.
+- Verified each generated instance against the native in-place partition
+  contract, including output separation and preservation of the input multiset.
+- Exposed the matrix through the existing `dataset_specs` example.
+
+### Limits
+
+- The matrix qualifies generated data and correction behavior only; it is not
+  connected to benchmark execution or persistent execution records.
+- Selectivity is represented by four concrete profiles rather than a general
+  parameterized campaign language.
+
+### Verification
+
+```sh
+cargo test --workspace --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline --example dataset_specs
+```
+
+The workspace has 130 tests. Partition generation is deterministic, IDs and
+digests are unique, and all 12 instances satisfy the partition contract.

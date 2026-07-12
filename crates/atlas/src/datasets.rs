@@ -318,6 +318,159 @@ pub static PARTITION_DATASET_SPEC: DatasetSpec = DatasetSpec {
     cases: PARTITION_CASES,
 };
 
+macro_rules! partition_benchmark_case {
+    ($id:literal, $class:ident, $seed:expr, $generator:expr, $predicate:ident) => {
+        DatasetCaseSpec {
+            id: $id,
+            class: DatasetClass::$class,
+            seed: $seed,
+            generator: $generator,
+            predicate: Some(IntPredicate::$predicate),
+        }
+    };
+}
+
+const PARTITION_BENCHMARK_CASES: &[DatasetCaseSpec] = &[
+    partition_benchmark_case!(
+        "partition.benchmark.uniform_even.64",
+        Typical,
+        64,
+        IntGenerator::SeededUniform {
+            length: 64,
+            min: -10_000,
+            max: 10_000
+        },
+        Even
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.alternating.64",
+        Adversarial,
+        0,
+        IntGenerator::Alternating {
+            length: 64,
+            first: 0,
+            second: 1
+        },
+        Even
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.all.64",
+        Degenerate,
+        64,
+        IntGenerator::SeededUniform {
+            length: 64,
+            min: -10_000,
+            max: 10_000
+        },
+        Always
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.none.64",
+        Boundary,
+        64,
+        IntGenerator::SeededUniform {
+            length: 64,
+            min: -10_000,
+            max: 10_000
+        },
+        Never
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.uniform_even.2048",
+        Typical,
+        2_048,
+        IntGenerator::SeededUniform {
+            length: 2_048,
+            min: -10_000,
+            max: 10_000
+        },
+        Even
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.alternating.2048",
+        Adversarial,
+        0,
+        IntGenerator::Alternating {
+            length: 2_048,
+            first: 0,
+            second: 1
+        },
+        Even
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.all.2048",
+        Degenerate,
+        2_048,
+        IntGenerator::SeededUniform {
+            length: 2_048,
+            min: -10_000,
+            max: 10_000
+        },
+        Always
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.none.2048",
+        Boundary,
+        2_048,
+        IntGenerator::SeededUniform {
+            length: 2_048,
+            min: -10_000,
+            max: 10_000
+        },
+        Never
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.uniform_even.8192",
+        Typical,
+        8_192,
+        IntGenerator::SeededUniform {
+            length: 8_192,
+            min: -10_000,
+            max: 10_000
+        },
+        Even
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.alternating.8192",
+        Adversarial,
+        0,
+        IntGenerator::Alternating {
+            length: 8_192,
+            first: 0,
+            second: 1
+        },
+        Even
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.all.8192",
+        Degenerate,
+        8_192,
+        IntGenerator::SeededUniform {
+            length: 8_192,
+            min: -10_000,
+            max: 10_000
+        },
+        Always
+    ),
+    partition_benchmark_case!(
+        "partition.benchmark.none.8192",
+        Boundary,
+        8_192,
+        IntGenerator::SeededUniform {
+            length: 8_192,
+            min: -10_000,
+            max: 10_000
+        },
+        Never
+    ),
+];
+
+pub static PARTITION_BENCHMARK_SPEC: DatasetSpec = DatasetSpec {
+    id: "dataset.sequence.partition.benchmark.m2.v0",
+    problem_id: "sequence.partition",
+    cases: PARTITION_BENCHMARK_CASES,
+};
+
 const SORT_BENCHMARK_CASES: &[DatasetCaseSpec] = &[
     DatasetCaseSpec {
         id: "sort.benchmark.uniform.64",
@@ -442,8 +595,8 @@ mod tests {
     use atlas_algorithms::{insertion_sort::insertion_sort_by, partition::partition_in_place};
 
     use super::{
-        DatasetCaseSpec, DatasetClass, IntGenerator, PARTITION_DATASET_SPEC, SORT_BENCHMARK_SPEC,
-        SORT_DATASET_SPEC,
+        DatasetCaseSpec, DatasetClass, IntGenerator, PARTITION_BENCHMARK_SPEC,
+        PARTITION_DATASET_SPEC, SORT_BENCHMARK_SPEC, SORT_DATASET_SPEC,
     };
 
     #[test]
@@ -520,6 +673,80 @@ mod tests {
                         .all(|value| (-10_000..=10_000).contains(value))
                 );
             }
+        }
+    }
+
+    #[test]
+    fn partition_benchmark_matrix_has_unique_deterministic_instances() {
+        let first = PARTITION_BENCHMARK_SPEC.generate_all().unwrap();
+        let second = PARTITION_BENCHMARK_SPEC.generate_all().unwrap();
+        let case_ids = first
+            .iter()
+            .map(|dataset| dataset.case_id)
+            .collect::<HashSet<_>>();
+        let digests = first
+            .iter()
+            .map(|dataset| dataset.content_digest_sha256.as_str())
+            .collect::<HashSet<_>>();
+
+        assert_eq!(first, second);
+        assert_eq!(first.len(), 12);
+        assert_eq!(case_ids.len(), first.len());
+        assert_eq!(digests.len(), first.len());
+    }
+
+    #[test]
+    fn partition_benchmark_matrix_covers_sizes_and_selectivity_profiles() {
+        let datasets = PARTITION_BENCHMARK_SPEC.generate_all().unwrap();
+        let lengths = datasets
+            .iter()
+            .map(|dataset| dataset.values.len())
+            .collect::<HashSet<_>>();
+
+        assert_eq!(lengths, HashSet::from([64, 2_048, 8_192]));
+        for dataset in datasets {
+            let predicate = dataset.predicate.expect("partition cases need a predicate");
+            let matching = dataset
+                .values
+                .iter()
+                .filter(|value| predicate.matches(**value))
+                .count();
+
+            if dataset.case_id.contains(".alternating.") {
+                assert_eq!(matching * 2, dataset.values.len());
+                assert!(dataset.values.windows(2).all(|pair| pair[0] != pair[1]));
+            } else if dataset.case_id.contains(".all.") {
+                assert_eq!(matching, dataset.values.len());
+            } else if dataset.case_id.contains(".none.") {
+                assert_eq!(matching, 0);
+            } else {
+                assert!(matching > 0);
+                assert!(matching < dataset.values.len());
+            }
+        }
+    }
+
+    #[test]
+    fn every_partition_benchmark_case_satisfies_the_partition_contract() {
+        for mut dataset in PARTITION_BENCHMARK_SPEC.generate_all().unwrap() {
+            let predicate = dataset.predicate.expect("partition cases need a predicate");
+            let mut expected = dataset.values.clone();
+            expected.sort();
+            let boundary =
+                partition_in_place(&mut dataset.values, |value| predicate.matches(*value));
+
+            assert!(
+                dataset.values[..boundary]
+                    .iter()
+                    .all(|value| predicate.matches(*value))
+            );
+            assert!(
+                dataset.values[boundary..]
+                    .iter()
+                    .all(|value| !predicate.matches(*value))
+            );
+            dataset.values.sort();
+            assert_eq!(dataset.values, expected, "case {}", dataset.case_id);
         }
     }
 

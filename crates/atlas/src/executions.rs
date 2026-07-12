@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt;
 use std::fs;
 use std::path::Path;
@@ -5,7 +6,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-pub const EXPERIMENTAL_EXECUTION_FORMAT: &str = "atlas-execution.experimental.0.1";
+pub const EXPERIMENTAL_EXECUTION_FORMAT: &str = "atlas-execution.experimental.0.2";
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -66,7 +67,7 @@ pub struct ExecutionEnvironment {
 #[serde(deny_unknown_fields)]
 pub struct CorrectionResult {
     pub passed: bool,
-    pub output_digest_sha256: String,
+    pub outputs: BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -171,6 +172,8 @@ fn hex_digest(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::{
         CorrectionResult, EXPERIMENTAL_EXECUTION_FORMAT, ExecutionBody, ExecutionDataset,
         ExecutionEnvironment, ExecutionMode, ExecutionParameters, ExecutionProvenance,
@@ -203,7 +206,7 @@ mod tests {
             },
             result: CorrectionResult {
                 passed: true,
-                output_digest_sha256: "b".repeat(64),
+                outputs: BTreeMap::from([("sequence_digest_sha256".to_owned(), "b".repeat(64))]),
             },
             provenance: ExecutionProvenance {
                 command: "cargo run -p atlas --example record_sort_correction".to_owned(),

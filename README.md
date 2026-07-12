@@ -58,9 +58,10 @@ first deterministic correction recipe writes an ignored experimental record:
 
 ```sh
 cargo run -q -p atlas --locked --offline --example record_sort_correction
+cargo run -q -p atlas --locked --offline --example record_partition_correction
 ```
 
-The output is written under `build/executions/`; deleting it does not remove
+The outputs are written under `build/executions/`; deleting them does not remove
 Git-authoritative knowledge.
 The Linux-only wrapper requires an explicit CPU, performs a non-invasive
 preflight, and pins only the benchmark process without changing the governor.

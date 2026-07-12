@@ -1068,3 +1068,35 @@ cargo run -q -p atlas --locked --offline --example record_sort_correction
 The workspace has 132 tests. Repeated generation in the same repository state
 produces byte-identical YAML under `build/executions/`, and modifying an
 observation invalidates its content-derived identity.
+
+## 2026-07-12 - Second regenerable correction recipe
+
+### Result
+
+- Added `partition.in_place.alternating.64.correction.v1` as a materially
+  different recipe using a predicate, a mutated sequence, and a returned
+  partition boundary.
+- Replaced the sort-specific correction digest field with an ordered `outputs`
+  map and advanced the internal generated format to `experimental.0.2`.
+- Factored environment capture, registry reference validation, provenance, and
+  file emission only after both recipes justified the shared code.
+- Verified separation around the returned boundary and preservation of the
+  input multiset before emitting an observation.
+
+### Limits
+
+- Correction output values are textual in this experimental format; richer
+  typed values remain unjustified by the two current recipes.
+- No benchmark result is serialized yet.
+
+### Verification
+
+```sh
+cargo test --workspace --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline --example record_sort_correction
+cargo run -q -p atlas --locked --offline --example record_partition_correction
+```
+
+Both recipes regenerate byte-identical YAML in an unchanged repository state.
+The partition observation records boundary `32` for its 64 alternating values.

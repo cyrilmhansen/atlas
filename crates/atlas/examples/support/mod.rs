@@ -7,6 +7,7 @@ use atlas::datasets::GeneratedDataset;
 use atlas::executions::{
     CorrectionResult, EXPERIMENTAL_EXECUTION_FORMAT, ExecutionBody, ExecutionDataset,
     ExecutionEnvironment, ExecutionMode, ExecutionParameters, ExecutionProvenance, ExecutionRecord,
+    ExecutionResult,
 };
 use atlas::registry::load_registry;
 
@@ -81,7 +82,7 @@ pub fn write_correction(
             },
         },
         environment: capture_environment()?,
-        result: CorrectionResult { passed, outputs },
+        result: ExecutionResult::Correction(CorrectionResult { passed, outputs }),
         provenance: ExecutionProvenance {
             command: format!(
                 "cargo run -p atlas --example {} -- {}",
@@ -92,7 +93,7 @@ pub fn write_correction(
             implementation_source: recipe.implementation_source.to_owned(),
         },
     })?;
-    if !record.body.result.passed {
+    if !passed {
         return Err("correction recipe failed; no execution was written".into());
     }
     record.write_yaml(output_path)?;

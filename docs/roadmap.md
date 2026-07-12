@@ -73,7 +73,8 @@ Status: active under DEC-028.
   alternating, fully selected, and fully rejected inputs.
 - Generate execution observations outside Git authority with compiler, target,
   parameters, seed, commit, environment, and result provenance. A deterministic
-  correction recipe is complete for sorting and partitioning under DEC-033.
+  correction recipe is complete for sorting and partitioning under DEC-033. A
+  qualified sorting benchmark recipe records raw evidence without ranking.
 - Keep correction tests and benchmarks as separate execution modes.
 
 No benchmark conclusion is accepted before environment and dispersion are

@@ -6,7 +6,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-pub const EXPERIMENTAL_EXECUTION_FORMAT: &str = "atlas-execution.experimental.0.2";
+pub const EXPERIMENTAL_EXECUTION_FORMAT: &str = "atlas-execution.experimental.0.3";
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -18,7 +18,7 @@ pub struct ExecutionBody {
     pub dataset: ExecutionDataset,
     pub parameters: ExecutionParameters,
     pub environment: ExecutionEnvironment,
-    pub result: CorrectionResult,
+    pub result: ExecutionResult,
     pub provenance: ExecutionProvenance,
 }
 
@@ -34,6 +34,7 @@ pub struct ExecutionRecord {
 #[serde(rename_all = "snake_case")]
 pub enum ExecutionMode {
     Correction,
+    Benchmark,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -68,6 +69,46 @@ pub struct ExecutionEnvironment {
 pub struct CorrectionResult {
     pub passed: bool,
     pub outputs: BTreeMap<String, String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ExecutionResult {
+    Correction(CorrectionResult),
+    Benchmark(Box<BenchmarkResult>),
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct BenchmarkResult {
+    pub qualified: bool,
+    pub quality_warnings: Vec<String>,
+    pub context: BTreeMap<String, String>,
+    pub requested_protocol: BTreeMap<String, String>,
+    pub observed: BTreeMap<String, String>,
+    pub raw_samples: BenchmarkRawSamples,
+    pub summary: BenchmarkSummary,
+    pub diagnostics_before: BTreeMap<String, String>,
+    pub diagnostics_after: BTreeMap<String, String>,
+    pub diagnostic_delta: BTreeMap<String, String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct BenchmarkRawSamples {
+    pub warmup_ns: Vec<u128>,
+    pub batch_elapsed_ns: Vec<u128>,
+    pub normalized_ns: Vec<u128>,
+    pub execution_positions: Vec<usize>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct BenchmarkSummary {
+    pub minimum_ns: u128,
+    pub median_ns: u128,
+    pub maximum_ns: u128,
+    pub median_absolute_deviation_ns: u128,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -177,7 +218,7 @@ mod tests {
     use super::{
         CorrectionResult, EXPERIMENTAL_EXECUTION_FORMAT, ExecutionBody, ExecutionDataset,
         ExecutionEnvironment, ExecutionMode, ExecutionParameters, ExecutionProvenance,
-        ExecutionRecord,
+        ExecutionRecord, ExecutionResult,
     };
 
     fn body() -> ExecutionBody {
@@ -204,10 +245,10 @@ mod tests {
                 compiler: "rustc test".to_owned(),
                 target: "test-target".to_owned(),
             },
-            result: CorrectionResult {
+            result: ExecutionResult::Correction(CorrectionResult {
                 passed: true,
                 outputs: BTreeMap::from([("sequence_digest_sha256".to_owned(), "b".repeat(64))]),
-            },
+            }),
             provenance: ExecutionProvenance {
                 command: "cargo run -p atlas --example record_sort_correction".to_owned(),
                 recipe_source: "file:crates/atlas/examples/record_sort_correction.rs".to_owned(),
@@ -233,7 +274,10 @@ mod tests {
     #[test]
     fn identity_validation_detects_modified_observations() {
         let mut record = ExecutionRecord::from_body(body()).unwrap();
-        record.body.result.passed = false;
+        let ExecutionResult::Correction(result) = &mut record.body.result else {
+            panic!("test fixture must be a correction result");
+        };
+        result.passed = false;
 
         let error = record.validate_id().unwrap_err();
         assert!(error.to_string().contains("execution ID mismatch"));

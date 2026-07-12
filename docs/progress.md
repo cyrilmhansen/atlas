@@ -1100,3 +1100,34 @@ cargo run -q -p atlas --locked --offline --example record_partition_correction
 
 Both recipes regenerate byte-identical YAML in an unchanged repository state.
 The partition observation records boundary `32` for its 64 alternating values.
+
+## 2026-07-12 - Qualified benchmark execution record
+
+### Result
+
+- Extended the generated execution format to `experimental.0.3` with distinct
+  correction and benchmark result variants.
+- Added a narrow `atlas-bench` adapter that records every warmup, batch,
+  normalized, and execution-position sample alongside the requested protocol,
+  observed convergence, robust summary, context, and diagnostics.
+- Added `record_sort_benchmark`, a release-only recipe for one registered sort
+  implementation on the versioned 2,048-element uniform dataset.
+- Refused serialization whenever the existing benchmark quality gate reports a
+  warning; no rejected series becomes an execution record.
+
+### Limits
+
+- One generated benchmark record covers one implementation only. It makes no
+  ranking or cross-process aggregation claim.
+- Diagnostic key/value fields are textual in the experimental format.
+
+### Verification
+
+```sh
+cargo test --workspace --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+taskset --cpu-list 4 cargo run --release -q -p atlas-bench --locked --offline --example record_sort_benchmark -- sort.insertion.rust.slice.v1
+```
+
+The workspace has 134 tests. Synthetic tests verify that all raw evidence is
+retained and that quality warnings reject serialization.

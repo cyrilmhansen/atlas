@@ -1,11 +1,19 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::fs;
 use std::hint::black_box;
 use std::process::Command;
 use std::time::Instant;
 
-use atlas::datasets::GeneratedDataset;
+use atlas::{
+    datasets::GeneratedDataset,
+    executions::{
+        BenchmarkRawSamples as ExecutionBenchmarkRawSamples,
+        BenchmarkResult as ExecutionBenchmarkResult, BenchmarkSummary as ExecutionBenchmarkSummary,
+        EXPERIMENTAL_EXECUTION_FORMAT, ExecutionBody, ExecutionDataset, ExecutionEnvironment,
+        ExecutionMode, ExecutionParameters, ExecutionProvenance, ExecutionRecord, ExecutionResult,
+    },
+};
 use atlas_algorithms::{
     insertion_sort::insertion_sort_by,
     merge_sort::{merge_sort_by, merge_sort_by_with_scratch},
@@ -209,6 +217,241 @@ impl BenchmarkContext {
             profile: profile.into(),
         })
     }
+}
+
+pub fn execution_record_from_benchmark(
+    recipe_id: &str,
+    command: String,
+    recipe_source: &str,
+    implementation_source: &str,
+    dataset: &GeneratedDataset,
+    suite: &BenchmarkSuite,
+    result: &BenchmarkResult,
+) -> Result<ExecutionRecord, BenchmarkError> {
+    if !result.quality_warnings.is_empty() {
+        return Err(BenchmarkError(format!(
+            "refusing unqualified benchmark observation: {}",
+            result.quality_warnings.join("; ")
+        )));
+    }
+    if result.dataset_case_id != dataset.case_id
+        || result.dataset_digest_sha256 != dataset.content_digest_sha256
+        || result.element_count != dataset.values.len()
+        || result.seed != dataset.seed
+    {
+        return Err(BenchmarkError(
+            "benchmark result does not match its generated dataset".to_owned(),
+        ));
+    }
+    let requested_protocol = result.adaptive_settings.ok_or_else(|| {
+        BenchmarkError("benchmark observation requires adaptive settings".to_owned())
+    })?;
+    let context = benchmark_context_fields(&result.context);
+    let record = ExecutionRecord::from_body(ExecutionBody {
+        format: EXPERIMENTAL_EXECUTION_FORMAT.to_owned(),
+        recipe_id: recipe_id.to_owned(),
+        mode: ExecutionMode::Benchmark,
+        implementation_id: result.implementation_id.to_owned(),
+        dataset: ExecutionDataset {
+            spec_id: dataset.spec_id.to_owned(),
+            case_id: dataset.case_id.to_owned(),
+            content_digest_sha256: dataset.content_digest_sha256.clone(),
+            seed: dataset.seed,
+            element_count: dataset.values.len(),
+        },
+        parameters: ExecutionParameters {
+            value_type: "i32".to_owned(),
+            operation: "sort using i32::cmp".to_owned(),
+            build_profile: result.context.profile.clone(),
+        },
+        environment: ExecutionEnvironment {
+            git_commit: result.context.git_commit.clone(),
+            git_dirty: result.context.git_dirty,
+            compiler: result.context.rustc.clone(),
+            target: result.context.target_triple.clone(),
+        },
+        result: ExecutionResult::Benchmark(Box::new(ExecutionBenchmarkResult {
+            qualified: true,
+            quality_warnings: Vec::new(),
+            context,
+            requested_protocol: BTreeMap::from([
+                (
+                    "minimum_warmup_rounds".to_owned(),
+                    requested_protocol.minimum_warmup_rounds.to_string(),
+                ),
+                (
+                    "maximum_warmup_rounds".to_owned(),
+                    requested_protocol.maximum_warmup_rounds.to_string(),
+                ),
+                (
+                    "stability_window".to_owned(),
+                    requested_protocol.stability_window.to_string(),
+                ),
+                (
+                    "required_stable_windows".to_owned(),
+                    requested_protocol.required_stable_windows.to_string(),
+                ),
+                (
+                    "stability_tolerance_per_million".to_owned(),
+                    requested_protocol
+                        .stability_tolerance_per_million
+                        .to_string(),
+                ),
+                (
+                    "measured_rounds".to_owned(),
+                    requested_protocol.measured_rounds.to_string(),
+                ),
+                (
+                    "target_sample_time_ns".to_owned(),
+                    requested_protocol.target_sample_time_ns.to_string(),
+                ),
+                (
+                    "maximum_batch_memory_bytes".to_owned(),
+                    requested_protocol.maximum_batch_memory_bytes.to_string(),
+                ),
+                (
+                    "calibration_runs".to_owned(),
+                    requested_protocol.calibration_runs.to_string(),
+                ),
+                (
+                    "maximum_recalibrations".to_owned(),
+                    requested_protocol.maximum_recalibrations.to_string(),
+                ),
+            ]),
+            observed: BTreeMap::from([
+                ("warmup_rounds".to_owned(), suite.warmup_rounds.to_string()),
+                (
+                    "recalibrations".to_owned(),
+                    suite.recalibrations.to_string(),
+                ),
+                (
+                    "invocations_per_sample".to_owned(),
+                    result.invocations_per_sample.to_string(),
+                ),
+                (
+                    "correction_checked".to_owned(),
+                    result.correction_checked.to_string(),
+                ),
+            ]),
+            raw_samples: ExecutionBenchmarkRawSamples {
+                warmup_ns: result.warmup_samples_ns.clone(),
+                batch_elapsed_ns: result.batch_elapsed_ns.clone(),
+                normalized_ns: result.samples_ns.clone(),
+                execution_positions: result.sample_positions.clone(),
+            },
+            summary: ExecutionBenchmarkSummary {
+                minimum_ns: result.summary.minimum_ns,
+                median_ns: result.summary.median_ns,
+                maximum_ns: result.summary.maximum_ns,
+                median_absolute_deviation_ns: result.summary.median_absolute_deviation_ns,
+            },
+            diagnostics_before: diagnostic_fields(&suite.diagnostics_before),
+            diagnostics_after: diagnostic_fields(&suite.diagnostics_after),
+            diagnostic_delta: diagnostic_delta_fields(&suite.diagnostic_delta()),
+        })),
+        provenance: ExecutionProvenance {
+            command,
+            recipe_source: recipe_source.to_owned(),
+            implementation_source: implementation_source.to_owned(),
+        },
+    })
+    .map_err(|error| BenchmarkError(error.to_string()))?;
+    Ok(record)
+}
+
+fn benchmark_context_fields(context: &BenchmarkContext) -> BTreeMap<String, String> {
+    BTreeMap::from([
+        ("cpu_model".to_owned(), context.cpu_model.clone()),
+        ("logical_cpus".to_owned(), context.logical_cpus.to_string()),
+        ("rustflags".to_owned(), context.rustflags.clone()),
+        ("target_arch".to_owned(), context.target_arch.clone()),
+        ("target_os".to_owned(), context.target_os.clone()),
+    ])
+}
+
+fn diagnostic_fields(diagnostics: &SystemDiagnostics) -> BTreeMap<String, String> {
+    BTreeMap::from([
+        (
+            "allowed_cpus".to_owned(),
+            diagnostics
+                .allowed_cpus
+                .clone()
+                .unwrap_or_else(|| "unavailable".to_owned()),
+        ),
+        (
+            "load_average".to_owned(),
+            diagnostics
+                .load_average
+                .as_ref()
+                .map(|values| values.join(","))
+                .unwrap_or_else(|| "unavailable".to_owned()),
+        ),
+        (
+            "voluntary_context_switches".to_owned(),
+            optional_counter(diagnostics.voluntary_context_switches),
+        ),
+        (
+            "nonvoluntary_context_switches".to_owned(),
+            optional_counter(diagnostics.nonvoluntary_context_switches),
+        ),
+        (
+            "scheduler_migrations".to_owned(),
+            optional_counter(diagnostics.scheduler_migrations),
+        ),
+        (
+            "minor_page_faults".to_owned(),
+            optional_counter(diagnostics.minor_page_faults),
+        ),
+        (
+            "major_page_faults".to_owned(),
+            optional_counter(diagnostics.major_page_faults),
+        ),
+        (
+            "scaling_governors".to_owned(),
+            if diagnostics.scaling_governors.is_empty() {
+                "unavailable".to_owned()
+            } else {
+                diagnostics.scaling_governors.join(",")
+            },
+        ),
+        (
+            "minimum_observed_frequency_khz".to_owned(),
+            optional_counter(diagnostics.minimum_observed_frequency_khz),
+        ),
+        (
+            "maximum_observed_frequency_khz".to_owned(),
+            optional_counter(diagnostics.maximum_observed_frequency_khz),
+        ),
+    ])
+}
+
+fn diagnostic_delta_fields(delta: &DiagnosticDelta) -> BTreeMap<String, String> {
+    BTreeMap::from([
+        (
+            "voluntary_context_switches".to_owned(),
+            optional_counter(delta.voluntary_context_switches),
+        ),
+        (
+            "nonvoluntary_context_switches".to_owned(),
+            optional_counter(delta.nonvoluntary_context_switches),
+        ),
+        (
+            "scheduler_migrations".to_owned(),
+            optional_counter(delta.scheduler_migrations),
+        ),
+        (
+            "minor_page_faults".to_owned(),
+            optional_counter(delta.minor_page_faults),
+        ),
+        (
+            "major_page_faults".to_owned(),
+            optional_counter(delta.major_page_faults),
+        ),
+    ])
+}
+
+fn optional_counter(value: Option<u64>) -> String {
+    value.map_or_else(|| "unavailable".to_owned(), |value| value.to_string())
 }
 
 pub fn benchmark_sort(
@@ -885,11 +1128,13 @@ fn cpu_model() -> String {
 #[cfg(test)]
 mod tests {
     use atlas::datasets::SORT_BENCHMARK_SPEC;
+    use atlas::executions::ExecutionResult;
 
     use super::{
-        AdaptiveBenchmarkSettings, BenchmarkContext, BenchmarkSettings, SortImplementation,
-        benchmark_sort, calibrated_invocations, comparability_errors, parse_cpu_list,
-        position_bias_exceeds, proc_value, process_stat_counter, quality_warnings,
+        AdaptiveBenchmarkSettings, BenchmarkContext, BenchmarkResult, BenchmarkSettings,
+        BenchmarkSuite, SampleSummary, SortImplementation, SystemDiagnostics, benchmark_sort,
+        calibrated_invocations, comparability_errors, execution_record_from_benchmark,
+        parse_cpu_list, position_bias_exceeds, proc_value, process_stat_counter, quality_warnings,
         recent_windows_are_stable, rotated_indices, summarize,
     };
 
@@ -1102,5 +1347,151 @@ mod tests {
             &[0, 1, 2, 0, 1, 2],
             50_000
         ));
+    }
+
+    #[test]
+    fn qualified_benchmark_record_retains_raw_samples_and_protocol() {
+        let dataset = SORT_BENCHMARK_SPEC
+            .generate(&SORT_BENCHMARK_SPEC.cases[0])
+            .unwrap();
+        let adaptive = AdaptiveBenchmarkSettings {
+            minimum_warmup_rounds: 2,
+            maximum_warmup_rounds: 4,
+            stability_window: 2,
+            required_stable_windows: 1,
+            stability_tolerance_per_million: 50_000,
+            measured_rounds: 3,
+            target_sample_time_ns: 10_000,
+            maximum_batch_memory_bytes: 65_536,
+            calibration_runs: 2,
+            maximum_recalibrations: 1,
+        };
+        let result = BenchmarkResult {
+            implementation_id: SortImplementation::InsertionInPlace.id(),
+            dataset_case_id: dataset.case_id,
+            dataset_digest_sha256: dataset.content_digest_sha256.clone(),
+            element_count: dataset.values.len(),
+            seed: dataset.seed,
+            settings: BenchmarkSettings {
+                warmup_runs: 3,
+                measured_runs: 3,
+            },
+            adaptive_settings: Some(adaptive),
+            context: context(),
+            correction_checked: true,
+            invocations_per_sample: 8,
+            warmup_samples_ns: vec![101, 100, 99],
+            batch_elapsed_ns: vec![800, 808, 792],
+            sample_positions: vec![0, 0, 0],
+            samples_ns: vec![100, 101, 99],
+            summary: SampleSummary {
+                minimum_ns: 99,
+                median_ns: 100,
+                maximum_ns: 101,
+                median_absolute_deviation_ns: 1,
+            },
+            quality_warnings: Vec::new(),
+        };
+        let diagnostics = SystemDiagnostics {
+            load_average: None,
+            allowed_cpus: Some("4".to_owned()),
+            voluntary_context_switches: Some(2),
+            nonvoluntary_context_switches: Some(3),
+            scheduler_migrations: Some(0),
+            minor_page_faults: Some(4),
+            major_page_faults: Some(0),
+            scaling_governors: vec!["performance".to_owned()],
+            minimum_observed_frequency_khz: Some(3_000_000),
+            maximum_observed_frequency_khz: Some(3_100_000),
+        };
+        let suite = BenchmarkSuite {
+            warmup_rounds: 3,
+            recalibrations: 1,
+            diagnostics_before: diagnostics.clone(),
+            diagnostics_after: diagnostics,
+            results: vec![result.clone()],
+        };
+
+        let record = execution_record_from_benchmark(
+            "test.benchmark.v1",
+            "test command".to_owned(),
+            "file:test",
+            "file:implementation",
+            &dataset,
+            &suite,
+            &result,
+        )
+        .unwrap();
+
+        let ExecutionResult::Benchmark(observation) = record.body.result else {
+            panic!("expected benchmark observation");
+        };
+        assert!(observation.qualified);
+        assert_eq!(observation.raw_samples.normalized_ns, [100, 101, 99]);
+        assert_eq!(observation.raw_samples.batch_elapsed_ns, [800, 808, 792]);
+        assert_eq!(observation.observed["invocations_per_sample"], "8");
+        assert_eq!(observation.requested_protocol["measured_rounds"], "3");
+        assert_eq!(observation.diagnostics_before["allowed_cpus"], "4");
+    }
+
+    #[test]
+    fn benchmark_record_rejects_quality_warnings() {
+        let dataset = SORT_BENCHMARK_SPEC
+            .generate(&SORT_BENCHMARK_SPEC.cases[0])
+            .unwrap();
+        let result = benchmark_sort(
+            &dataset,
+            SortImplementation::InsertionInPlace,
+            BenchmarkSettings {
+                warmup_runs: 1,
+                measured_runs: 3,
+            },
+            context(),
+        )
+        .unwrap();
+        let mut warned = result.clone();
+        warned.quality_warnings = vec!["synthetic warning"];
+        let suite = BenchmarkSuite {
+            warmup_rounds: 1,
+            recalibrations: 0,
+            diagnostics_before: SystemDiagnostics {
+                load_average: None,
+                allowed_cpus: None,
+                voluntary_context_switches: None,
+                nonvoluntary_context_switches: None,
+                scheduler_migrations: None,
+                minor_page_faults: None,
+                major_page_faults: None,
+                scaling_governors: Vec::new(),
+                minimum_observed_frequency_khz: None,
+                maximum_observed_frequency_khz: None,
+            },
+            diagnostics_after: SystemDiagnostics {
+                load_average: None,
+                allowed_cpus: None,
+                voluntary_context_switches: None,
+                nonvoluntary_context_switches: None,
+                scheduler_migrations: None,
+                minor_page_faults: None,
+                major_page_faults: None,
+                scaling_governors: Vec::new(),
+                minimum_observed_frequency_khz: None,
+                maximum_observed_frequency_khz: None,
+            },
+            results: vec![warned.clone()],
+        };
+
+        let error = execution_record_from_benchmark(
+            "test.benchmark.v1",
+            "test command".to_owned(),
+            "file:test",
+            "file:implementation",
+            &dataset,
+            &suite,
+            &warned,
+        )
+        .unwrap_err();
+
+        assert!(error.to_string().contains("refusing unqualified"));
     }
 }

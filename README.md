@@ -59,10 +59,15 @@ first deterministic correction recipe writes an ignored experimental record:
 ```sh
 cargo run -q -p atlas --locked --offline --example record_sort_correction
 cargo run -q -p atlas --locked --offline --example record_partition_correction
+cargo run --release -q -p atlas-bench --locked --offline --example record_sort_benchmark -- sort.insertion.rust.slice.v1
 ```
 
 The outputs are written under `build/executions/`; deleting them does not remove
 Git-authoritative knowledge.
+
+The benchmark recipe writes an observation only after the harness accepts every
+quality check. Run it through the Linux pinning wrapper's CPU policy when a
+measurement is needed.
 The Linux-only wrapper requires an explicit CPU, performs a non-invasive
 preflight, and pins only the benchmark process without changing the governor.
 

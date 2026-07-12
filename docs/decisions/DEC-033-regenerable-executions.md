@@ -20,6 +20,11 @@ partitioning expose materially different results. The generated format advances
 to `atlas-execution.experimental.0.2`; old generated files are regenerated, not
 migrated.
 
+The first benchmark adapter advances the generated format to
+`atlas-execution.experimental.0.3`. It writes raw samples, requested protocol,
+observed convergence, summary, context, and before/after diagnostics only when
+the existing quality gate accepts the measured series.
+
 ## Consequences
 
 The experimental YAML representation is an internal generated format, not a

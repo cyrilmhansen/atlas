@@ -67,6 +67,17 @@ cargo run --release -q -p atlas-bench --locked --offline --example record_sort_b
 The outputs are written under `build/executions/`; deleting them does not remove
 Git-authoritative knowledge.
 
+Replay a locally retained observation by its content-derived ID:
+
+```sh
+cargo run -q -p atlas -- replay execution.sha256.EXAMPLE
+cargo run -q -p atlas -- replay execution.sha256.BENCHMARK --cpu 4
+```
+
+A replay regenerates the recipe under the current environment. A benchmark may
+therefore be rejected by its quality gate even when the original observation was
+qualified.
+
 The benchmark recipe writes an observation only after the harness accepts every
 quality check. Run it through the Linux pinning wrapper's CPU policy when a
 measurement is needed.

@@ -1207,3 +1207,40 @@ scripts/check-mvp2.sh
 ```
 
 The gate creates only ignored generated observations under `build/executions/`.
+
+## 2026-07-12 - Replayable observations and baseline resource metrics
+
+### Result
+
+- Added `atlas replay EXECUTION_ID`, which locates a local generated execution,
+  validates its identity, and invokes only an allow-listed versioned recipe.
+- Required an explicit CPU for benchmark replay, preserving the measurement
+  environment boundary.
+- Added process resident and peak-resident memory to benchmark diagnostics and
+  observations.
+- Recorded allocation count and traversed volume as `unavailable` rather than
+  presenting an estimate as a measurement.
+- Extended `check-mvp2.sh` to generate a correction observation and replay it
+  from its ID.
+
+### Limits
+
+- Replaying by ID requires the generated observation file to remain under
+  `build/executions/`; this is intentional because observations are not Git
+  authority.
+- Process memory includes the benchmark process and harness, not only the
+  algorithm. Allocation count and traversed volume remain unmeasured.
+
+### Verification
+
+```sh
+scripts/check-mvp2.sh
+taskset --cpu-list 4 cargo run --release -q -p atlas-bench --locked --offline --example record_sort_benchmark -- sort.insertion.rust.slice.v1
+atlas replay EXECUTION_ID
+```
+
+The benchmark representation was corrected to `experimental.0.5` after a real
+replay exposed that YAML could serialize but not parse `u128` scalars. Raw
+durations are now exact decimal strings. A replayed CPU-4 benchmark reached the
+quality gate and was correctly rejected for an extreme sample; the original
+qualified observation remains unchanged.

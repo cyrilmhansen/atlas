@@ -6,7 +6,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-pub const EXPERIMENTAL_EXECUTION_FORMAT: &str = "atlas-execution.experimental.0.3";
+pub const EXPERIMENTAL_EXECUTION_FORMAT: &str = "atlas-execution.experimental.0.5";
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -88,6 +88,7 @@ pub struct BenchmarkResult {
     pub observed: BTreeMap<String, String>,
     pub raw_samples: BenchmarkRawSamples,
     pub summary: BenchmarkSummary,
+    pub metrics: BTreeMap<String, String>,
     pub diagnostics_before: BTreeMap<String, String>,
     pub diagnostics_after: BTreeMap<String, String>,
     pub diagnostic_delta: BTreeMap<String, String>,
@@ -96,19 +97,19 @@ pub struct BenchmarkResult {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct BenchmarkRawSamples {
-    pub warmup_ns: Vec<u128>,
-    pub batch_elapsed_ns: Vec<u128>,
-    pub normalized_ns: Vec<u128>,
+    pub warmup_ns: Vec<String>,
+    pub batch_elapsed_ns: Vec<String>,
+    pub normalized_ns: Vec<String>,
     pub execution_positions: Vec<usize>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct BenchmarkSummary {
-    pub minimum_ns: u128,
-    pub median_ns: u128,
-    pub maximum_ns: u128,
-    pub median_absolute_deviation_ns: u128,
+    pub minimum_ns: String,
+    pub median_ns: String,
+    pub maximum_ns: String,
+    pub median_absolute_deviation_ns: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

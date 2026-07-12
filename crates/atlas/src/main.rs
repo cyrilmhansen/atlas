@@ -1,8 +1,10 @@
 use std::env;
 use std::fmt::Display;
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::ExitCode;
+use std::process::{Command, ExitCode};
 
+use atlas::executions::{ExecutionMode, ExecutionRecord};
 use atlas::index::rebuild_database;
 use atlas::registry::{
     Algorithm, Claim, Effects, Implementation, Problem, Registry, load_registry,
@@ -10,6 +12,7 @@ use atlas::registry::{
 
 const DEFAULT_REGISTRY: &str = "registry/atlas.yaml";
 const DEFAULT_DATABASE: &str = "build/atlas.sqlite3";
+const EXECUTION_DIRECTORY: &str = "build/executions";
 
 fn main() -> ExitCode {
     let mut arguments = env::args_os().skip(1);
@@ -25,6 +28,7 @@ fn main() -> ExitCode {
         Some("search") => search_command(arguments),
         Some("explain") => explain_command(arguments),
         Some("qualify") => qualify_command(arguments),
+        Some("replay") => replay_command(arguments),
         Some("index") => index_command(arguments),
         _ => {
             eprintln!("unknown command {:?}", command);
@@ -69,6 +73,180 @@ fn index_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> Exi
             ExitCode::FAILURE
         }
     }
+}
+
+fn replay_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
+    let Some(id) = arguments.next() else {
+        eprintln!("replay requires an execution ID");
+        print_usage();
+        return ExitCode::from(2);
+    };
+    let Some(id) = id.to_str() else {
+        eprintln!("execution ID must be valid UTF-8");
+        return ExitCode::from(2);
+    };
+    let cpu = match arguments.next() {
+        None => None,
+        Some(flag) if flag == "--cpu" => {
+            match arguments.next().as_deref().and_then(|value| value.to_str()) {
+                Some(value) if value.chars().all(|character| character.is_ascii_digit()) => {
+                    Some(value.to_owned())
+                }
+                Some(value) => {
+                    eprintln!("CPU must be a non-negative integer, found {value:?}");
+                    return ExitCode::from(2);
+                }
+                None => {
+                    eprintln!("--cpu requires a non-negative integer");
+                    return ExitCode::from(2);
+                }
+            }
+        }
+        Some(flag) => {
+            eprintln!("unknown replay option {:?}; expected --cpu N", flag);
+            return ExitCode::from(2);
+        }
+    };
+    if arguments.next().is_some() {
+        eprintln!("replay accepts an execution ID and optional --cpu N");
+        return ExitCode::from(2);
+    }
+
+    let (path, record) = match find_execution(id) {
+        Ok(record) => record,
+        Err(message) => {
+            eprintln!("{message}");
+            return ExitCode::FAILURE;
+        }
+    };
+    println!("Replaying {} from {}", record.id, path.display());
+    let status = match record.body.recipe_id.as_str() {
+        "sort.insertion.uniform.64.correction.v1" => replay_correction(
+            &record,
+            "sort.insertion.rust.slice.v1",
+            "record_sort_correction",
+        ),
+        "partition.in_place.alternating.64.correction.v1" => replay_correction(
+            &record,
+            "partition.in_place.rust.slice.v1",
+            "record_partition_correction",
+        ),
+        "sort.uniform.2048.benchmark.v1" => replay_benchmark(&record, cpu.as_deref()),
+        recipe => Err(format!(
+            "execution recipe {recipe:?} is not replayable by this build"
+        )),
+    };
+    match status {
+        Ok(status) if status.success() => ExitCode::SUCCESS,
+        Ok(status) => {
+            eprintln!("replay command exited with {status}");
+            ExitCode::FAILURE
+        }
+        Err(message) => {
+            eprintln!("cannot replay {}: {message}", record.id);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn find_execution(id: &str) -> Result<(PathBuf, ExecutionRecord), String> {
+    let directory = Path::new(EXECUTION_DIRECTORY);
+    let entries = fs::read_dir(directory).map_err(|error| {
+        format!(
+            "cannot read {EXECUTION_DIRECTORY}; generate an execution before replaying it: {error}"
+        )
+    })?;
+    for entry in entries {
+        let entry =
+            entry.map_err(|error| format!("cannot inspect {EXECUTION_DIRECTORY}: {error}"))?;
+        let path = entry.path();
+        if path.extension().and_then(|extension| extension.to_str()) != Some("yaml") {
+            continue;
+        }
+        let contents = fs::read_to_string(&path).map_err(|error| {
+            format!(
+                "cannot read generated execution {}: {error}",
+                path.display()
+            )
+        })?;
+        let record = match ExecutionRecord::from_yaml(&contents) {
+            Ok(record) => record,
+            Err(error) if contents.lines().any(|line| line == format!("id: {id}")) => {
+                return Err(format!(
+                    "generated execution {} has an invalid record: {error}",
+                    path.display()
+                ));
+            }
+            Err(_) => continue,
+        };
+        if record.id == id {
+            return Ok((path, record));
+        }
+    }
+    Err(format!(
+        "execution {id:?} was not found in {EXECUTION_DIRECTORY}; generated observations may have been deleted"
+    ))
+}
+
+fn replay_correction(
+    record: &ExecutionRecord,
+    expected_implementation: &str,
+    example: &str,
+) -> Result<std::process::ExitStatus, String> {
+    if record.body.mode != ExecutionMode::Correction
+        || record.body.implementation_id != expected_implementation
+    {
+        return Err("record does not match the versioned correction recipe".to_owned());
+    }
+    Command::new("cargo")
+        .args([
+            "run",
+            "-q",
+            "-p",
+            "atlas",
+            "--locked",
+            "--offline",
+            "--example",
+            example,
+        ])
+        .status()
+        .map_err(|error| format!("cannot run cargo: {error}"))
+}
+
+fn replay_benchmark(
+    record: &ExecutionRecord,
+    cpu: Option<&str>,
+) -> Result<std::process::ExitStatus, String> {
+    let cpu = cpu.ok_or_else(|| "benchmark replay requires an explicit --cpu N".to_owned())?;
+    if record.body.mode != ExecutionMode::Benchmark
+        || !matches!(
+            record.body.implementation_id.as_str(),
+            "sort.merge.rust.slice.v1"
+                | "sort.merge_with_scratch.rust.slice.v1"
+                | "sort.insertion.rust.slice.v1"
+        )
+    {
+        return Err("record does not match the versioned sorting benchmark recipe".to_owned());
+    }
+    Command::new("taskset")
+        .args([
+            "--cpu-list",
+            cpu,
+            "cargo",
+            "run",
+            "--release",
+            "-q",
+            "-p",
+            "atlas-bench",
+            "--locked",
+            "--offline",
+            "--example",
+            "record_sort_benchmark",
+            "--",
+            &record.body.implementation_id,
+        ])
+        .status()
+        .map_err(|error| format!("cannot run taskset: {error}"))
 }
 
 fn explain_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
@@ -560,6 +738,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas index [DB_PATH]"
     );
 }

@@ -74,6 +74,8 @@ pub struct SystemDiagnostics {
     pub scaling_governors: Vec<String>,
     pub minimum_observed_frequency_khz: Option<u64>,
     pub maximum_observed_frequency_khz: Option<u64>,
+    pub resident_memory_kib: Option<u64>,
+    pub peak_resident_memory_kib: Option<u64>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -334,17 +336,40 @@ pub fn execution_record_from_benchmark(
                 ),
             ]),
             raw_samples: ExecutionBenchmarkRawSamples {
-                warmup_ns: result.warmup_samples_ns.clone(),
-                batch_elapsed_ns: result.batch_elapsed_ns.clone(),
-                normalized_ns: result.samples_ns.clone(),
+                warmup_ns: result
+                    .warmup_samples_ns
+                    .iter()
+                    .map(u128::to_string)
+                    .collect(),
+                batch_elapsed_ns: result
+                    .batch_elapsed_ns
+                    .iter()
+                    .map(u128::to_string)
+                    .collect(),
+                normalized_ns: result.samples_ns.iter().map(u128::to_string).collect(),
                 execution_positions: result.sample_positions.clone(),
             },
             summary: ExecutionBenchmarkSummary {
-                minimum_ns: result.summary.minimum_ns,
-                median_ns: result.summary.median_ns,
-                maximum_ns: result.summary.maximum_ns,
-                median_absolute_deviation_ns: result.summary.median_absolute_deviation_ns,
+                minimum_ns: result.summary.minimum_ns.to_string(),
+                median_ns: result.summary.median_ns.to_string(),
+                maximum_ns: result.summary.maximum_ns.to_string(),
+                median_absolute_deviation_ns: result
+                    .summary
+                    .median_absolute_deviation_ns
+                    .to_string(),
             },
+            metrics: BTreeMap::from([
+                (
+                    "process_resident_memory_kib".to_owned(),
+                    optional_counter(suite.diagnostics_after.resident_memory_kib),
+                ),
+                (
+                    "process_peak_resident_memory_kib".to_owned(),
+                    optional_counter(suite.diagnostics_after.peak_resident_memory_kib),
+                ),
+                ("algorithm_allocations".to_owned(), "unavailable".to_owned()),
+                ("elements_traversed".to_owned(), "unavailable".to_owned()),
+            ]),
             diagnostics_before: diagnostic_fields(&suite.diagnostics_before),
             diagnostics_after: diagnostic_fields(&suite.diagnostics_after),
             diagnostic_delta: diagnostic_delta_fields(&suite.diagnostic_delta()),
@@ -421,6 +446,14 @@ fn diagnostic_fields(diagnostics: &SystemDiagnostics) -> BTreeMap<String, String
         (
             "maximum_observed_frequency_khz".to_owned(),
             optional_counter(diagnostics.maximum_observed_frequency_khz),
+        ),
+        (
+            "resident_memory_kib".to_owned(),
+            optional_counter(diagnostics.resident_memory_kib),
+        ),
+        (
+            "peak_resident_memory_kib".to_owned(),
+            optional_counter(diagnostics.peak_resident_memory_kib),
         ),
     ])
 }
@@ -747,6 +780,12 @@ pub fn capture_system_diagnostics() -> SystemDiagnostics {
         scaling_governors: governors.into_iter().collect(),
         minimum_observed_frequency_khz: frequencies.iter().min().copied(),
         maximum_observed_frequency_khz: frequencies.iter().max().copied(),
+        resident_memory_kib: status
+            .as_deref()
+            .and_then(|contents| proc_memory_kib(contents, "VmRSS")),
+        peak_resident_memory_kib: status
+            .as_deref()
+            .and_then(|contents| proc_memory_kib(contents, "VmHWM")),
     }
 }
 
@@ -764,6 +803,14 @@ fn proc_value<'a>(contents: &'a str, key: &str) -> Option<&'a str> {
         let (candidate, value) = line.split_once(':')?;
         (candidate.trim() == key).then(|| value.trim())
     })
+}
+
+fn proc_memory_kib(contents: &str, key: &str) -> Option<u64> {
+    proc_value(contents, key)?
+        .split_whitespace()
+        .next()?
+        .parse()
+        .ok()
 }
 
 fn parse_cpu_list(value: &str) -> Vec<usize> {
@@ -1134,8 +1181,8 @@ mod tests {
         AdaptiveBenchmarkSettings, BenchmarkContext, BenchmarkResult, BenchmarkSettings,
         BenchmarkSuite, SampleSummary, SortImplementation, SystemDiagnostics, benchmark_sort,
         calibrated_invocations, comparability_errors, execution_record_from_benchmark,
-        parse_cpu_list, position_bias_exceeds, proc_value, process_stat_counter, quality_warnings,
-        recent_windows_are_stable, rotated_indices, summarize,
+        parse_cpu_list, position_bias_exceeds, proc_memory_kib, proc_value, process_stat_counter,
+        quality_warnings, recent_windows_are_stable, rotated_indices, summarize,
     };
 
     fn context() -> BenchmarkContext {
@@ -1304,6 +1351,15 @@ mod tests {
     }
 
     #[test]
+    fn parses_process_memory_kib_from_status() {
+        let fixture = "Name:\tatlas\nVmRSS:\t 1234 kB\nVmHWM:\t 5678 kB\n";
+
+        assert_eq!(proc_memory_kib(fixture, "VmRSS"), Some(1_234));
+        assert_eq!(proc_memory_kib(fixture, "VmHWM"), Some(5_678));
+        assert_eq!(proc_memory_kib(fixture, "VmSize"), None);
+    }
+
+    #[test]
     fn parses_page_fault_counters_from_proc_stat() {
         let fixture = "123 (atlas worker) R 1 2 3 4 5 6 7 8 9 10 11";
 
@@ -1403,6 +1459,8 @@ mod tests {
             scaling_governors: vec!["performance".to_owned()],
             minimum_observed_frequency_khz: Some(3_000_000),
             maximum_observed_frequency_khz: Some(3_100_000),
+            resident_memory_kib: Some(1_000),
+            peak_resident_memory_kib: Some(1_200),
         };
         let suite = BenchmarkSuite {
             warmup_rounds: 3,
@@ -1422,16 +1480,29 @@ mod tests {
             &result,
         )
         .unwrap();
+        let yaml = record.to_yaml().unwrap();
+        assert_eq!(
+            atlas::executions::ExecutionRecord::from_yaml(&yaml).unwrap(),
+            record
+        );
 
         let ExecutionResult::Benchmark(observation) = record.body.result else {
             panic!("expected benchmark observation");
         };
         assert!(observation.qualified);
-        assert_eq!(observation.raw_samples.normalized_ns, [100, 101, 99]);
-        assert_eq!(observation.raw_samples.batch_elapsed_ns, [800, 808, 792]);
+        assert_eq!(observation.raw_samples.normalized_ns, ["100", "101", "99"]);
+        assert_eq!(
+            observation.raw_samples.batch_elapsed_ns,
+            ["800", "808", "792"]
+        );
         assert_eq!(observation.observed["invocations_per_sample"], "8");
         assert_eq!(observation.requested_protocol["measured_rounds"], "3");
         assert_eq!(observation.diagnostics_before["allowed_cpus"], "4");
+        assert_eq!(
+            observation.metrics["process_peak_resident_memory_kib"],
+            "1200"
+        );
+        assert_eq!(observation.metrics["algorithm_allocations"], "unavailable");
     }
 
     #[test]
@@ -1465,6 +1536,8 @@ mod tests {
                 scaling_governors: Vec::new(),
                 minimum_observed_frequency_khz: None,
                 maximum_observed_frequency_khz: None,
+                resident_memory_kib: None,
+                peak_resident_memory_kib: None,
             },
             diagnostics_after: SystemDiagnostics {
                 load_average: None,
@@ -1477,6 +1550,8 @@ mod tests {
                 scaling_governors: Vec::new(),
                 minimum_observed_frequency_khz: None,
                 maximum_observed_frequency_khz: None,
+                resident_memory_kib: None,
+                peak_resident_memory_kib: None,
             },
             results: vec![warned.clone()],
         };

@@ -20,12 +20,12 @@ generated executions part of the Git-authoritative registry.
 
 | Criterion | Status | Evidence or gap |
 |---|---|---|
-| Re-run an execution from its identifier | Partial | Versioned recipes regenerate an observation, but an execution ID alone is not yet a recipe lookup key. |
+| Re-run an execution from its identifier | Complete while the local generated observation exists | `atlas replay EXECUTION_ID` validates and dispatches an allow-listed recipe; a repeated benchmark may legitimately fail its new quality gate. Deleted observations remain intentionally unreplayable by ID. |
 | Distinguish theory, declarations, tests, and observations | Partial | Registry claims preserve levels; generated observations are clearly separate, but no common query spans both. |
 | Query a stable sort under a memory limit | Partial | `qualify` supports stability, in-place, and `allocation: none`; it has no numeric memory-limit predicate. |
 | Signal aberrant or non-comparable measurements | Complete for the sorting harness | The quality gate rejects dispersion, drift, outliers, and position bias before serialization. |
 | Capture machine, system, compiler, options, commit, and seed | Complete for the sorting harness | Generated benchmark observations contain these values and diagnostics. |
-| Measure time, peak memory, allocations, and traversed volume | Partial | Time is captured; the other metrics are not implemented. |
+| Measure time, peak memory, allocations, and traversed volume | Partial | Time and process resident/peak memory are captured; allocation count and traversed volume are explicitly unavailable. |
 | Compare implementations and report observed domains | Deferred | The harness can compare in memory, but persistent cross-process comparison and a non-generalizing report are intentionally absent. |
 
 ## Local gate

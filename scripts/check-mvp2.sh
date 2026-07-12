@@ -12,6 +12,9 @@ run ./scripts/check-mvp1.sh
 run cargo run -q -p atlas --locked --offline --example dataset_specs
 run cargo run -q -p atlas --locked --offline --example record_sort_correction
 run cargo run -q -p atlas --locked --offline --example record_partition_correction
+sort_execution_id=$(awk '/^id: / { print $2; exit }' \
+    build/executions/sort-insertion-uniform-64-correction.yaml)
+run cargo run -q -p atlas --locked --offline -- replay "$sort_execution_id"
 run cargo run -q -p atlas --locked --offline -- qualify sequence.sort --stable --in-place --allocation none
 
 for execution in \

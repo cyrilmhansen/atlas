@@ -21,9 +21,17 @@ to `atlas-execution.experimental.0.2`; old generated files are regenerated, not
 migrated.
 
 The first benchmark adapter advances the generated format to
-`atlas-execution.experimental.0.3`. It writes raw samples, requested protocol,
-observed convergence, summary, context, and before/after diagnostics only when
-the existing quality gate accepts the measured series.
+`atlas-execution.experimental.0.5`. It writes raw samples as exact decimal
+strings because the YAML parser cannot round-trip `u128` numeric scalars,
+alongside requested protocol,
+observed convergence, summary, context, process resident and peak memory, and
+before/after diagnostics only when the existing quality gate accepts the
+measured series. Allocation count and traversed-volume metrics are explicitly
+`unavailable` until measured rather than inferred.
+
+`atlas replay EXECUTION_ID` searches only the local generated directory,
+validates the content-derived identity, and dispatches an allow-listed versioned
+recipe. Benchmark replay additionally requires an explicit `--cpu N`.
 
 ## Consequences
 

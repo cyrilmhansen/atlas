@@ -58,8 +58,9 @@ See `docs/mvp1-review.md` for evidence and recommended closure order.
 | Regenerable correction observations | Complete |
 | Qualified generated sorting benchmark observation | Complete, non-normative |
 | Stable in-place sort with no allocation qualification | Complete |
-| Replay from an execution identifier alone | Partial |
-| Numeric memory, allocation, and traversal measurements | Deferred |
+| Replay from a locally retained execution identifier | Complete |
+| Process memory measurement | Complete for the sorting harness |
+| Allocation and traversal measurements | Explicitly unavailable |
 | Persistent comparison report across implementations | Deferred |
 
 See `docs/mvp2-review.md` for evidence, limits, and closure order.

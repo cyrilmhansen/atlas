@@ -67,6 +67,8 @@ Status: active under DEC-028.
   instance model. Experimental Rust model implemented for the first slice.
 - Begin with deterministic typical, boundary, degenerate, adversarial, and
   regression cases for sorting and partitioning. Complete for the first slice.
+- Exercise sorting independently of benchmark execution with a deterministic
+  matrix of 12 instances: 3 sizes and 4 input distributions.
 - Introduce execution records only with compiler, target, parameters, seed,
   commit, environment, and result provenance.
 - Keep correction tests and benchmarks as separate execution modes.

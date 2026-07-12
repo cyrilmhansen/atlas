@@ -972,8 +972,38 @@ PKG_CONFIG_PATH=/usr/lib/pkgconfig cargo clippy --workspace --all-features --all
 scripts/run-benchmark-linux.sh 4
 ```
 
-The workspace has 126 tests. On CPU 4, all three isolated processes passed
+The workspace has 125 tests. On CPU 4, all three isolated processes passed
 warmup and measured-series quality checks with zero scheduler migrations and
 3-7 involuntary context switches each. Batches remained near 10 ms and the
 former execution-position bias disappeared. The run is diagnostic rather than
 a candidate observation because the captured worktree is dirty.
+
+## 2026-07-12 - Deterministic sorting dataset matrix
+
+### Result
+
+- Replaced the benchmark's single generated input with 12 explicit dataset
+  cases spanning lengths 64, 2,048, and 8,192.
+- Covered uniform, ascending, descending, and high-duplication distributions.
+- Kept the previous benchmark campaign on its explicit
+  `sort.benchmark.uniform.2048` case instead of relying on array position.
+- Exposed the matrix through the existing `dataset_specs` example.
+
+### Limits
+
+- The benchmark still executes one reference dataset per process; selecting or
+  recording a full campaign belongs to the future execution-record slice.
+- These distributions are an initial sorting matrix, not a claim of exhaustive
+  input coverage.
+
+### Verification
+
+```sh
+cargo test --workspace --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline --example dataset_specs
+```
+
+The workspace has 127 tests. Dataset generation is deterministic, case IDs and
+content digests are unique, and the expected sizes and distribution invariants
+are checked without running a timing campaign.

@@ -318,17 +318,116 @@ pub static PARTITION_DATASET_SPEC: DatasetSpec = DatasetSpec {
     cases: PARTITION_CASES,
 };
 
-const SORT_BENCHMARK_CASES: &[DatasetCaseSpec] = &[DatasetCaseSpec {
-    id: "sort.benchmark.seeded_uniform.2048",
-    class: DatasetClass::Typical,
-    seed: 20_260_712,
-    generator: IntGenerator::SeededUniform {
-        length: 2_048,
-        min: -10_000,
-        max: 10_000,
+const SORT_BENCHMARK_CASES: &[DatasetCaseSpec] = &[
+    DatasetCaseSpec {
+        id: "sort.benchmark.uniform.64",
+        class: DatasetClass::Typical,
+        seed: 64,
+        generator: IntGenerator::SeededUniform {
+            length: 64,
+            min: -10_000,
+            max: 10_000,
+        },
+        predicate: None,
     },
-    predicate: None,
-}];
+    DatasetCaseSpec {
+        id: "sort.benchmark.ascending.64",
+        class: DatasetClass::Boundary,
+        seed: 0,
+        generator: IntGenerator::Ascending { length: 64 },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.descending.64",
+        class: DatasetClass::Adversarial,
+        seed: 0,
+        generator: IntGenerator::Descending { length: 64 },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.few_unique.64",
+        class: DatasetClass::Degenerate,
+        seed: 64,
+        generator: IntGenerator::SeededUniform {
+            length: 64,
+            min: 0,
+            max: 7,
+        },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.uniform.2048",
+        class: DatasetClass::Typical,
+        seed: 2_048,
+        generator: IntGenerator::SeededUniform {
+            length: 2_048,
+            min: -10_000,
+            max: 10_000,
+        },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.ascending.2048",
+        class: DatasetClass::Boundary,
+        seed: 0,
+        generator: IntGenerator::Ascending { length: 2_048 },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.descending.2048",
+        class: DatasetClass::Adversarial,
+        seed: 0,
+        generator: IntGenerator::Descending { length: 2_048 },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.few_unique.2048",
+        class: DatasetClass::Degenerate,
+        seed: 2_048,
+        generator: IntGenerator::SeededUniform {
+            length: 2_048,
+            min: 0,
+            max: 7,
+        },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.uniform.8192",
+        class: DatasetClass::Typical,
+        seed: 8_192,
+        generator: IntGenerator::SeededUniform {
+            length: 8_192,
+            min: -10_000,
+            max: 10_000,
+        },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.ascending.8192",
+        class: DatasetClass::Boundary,
+        seed: 0,
+        generator: IntGenerator::Ascending { length: 8_192 },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.descending.8192",
+        class: DatasetClass::Adversarial,
+        seed: 0,
+        generator: IntGenerator::Descending { length: 8_192 },
+        predicate: None,
+    },
+    DatasetCaseSpec {
+        id: "sort.benchmark.few_unique.8192",
+        class: DatasetClass::Degenerate,
+        seed: 8_192,
+        generator: IntGenerator::SeededUniform {
+            length: 8_192,
+            min: 0,
+            max: 7,
+        },
+        predicate: None,
+    },
+];
 
 pub static SORT_BENCHMARK_SPEC: DatasetSpec = DatasetSpec {
     id: "dataset.sequence.sort.benchmark.m2.v0",
@@ -338,10 +437,13 @@ pub static SORT_BENCHMARK_SPEC: DatasetSpec = DatasetSpec {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use atlas_algorithms::{insertion_sort::insertion_sort_by, partition::partition_in_place};
 
     use super::{
-        DatasetCaseSpec, DatasetClass, IntGenerator, PARTITION_DATASET_SPEC, SORT_DATASET_SPEC,
+        DatasetCaseSpec, DatasetClass, IntGenerator, PARTITION_DATASET_SPEC, SORT_BENCHMARK_SPEC,
+        SORT_DATASET_SPEC,
     };
 
     #[test]
@@ -372,6 +474,53 @@ mod tests {
                 .iter()
                 .all(|dataset| dataset.content_digest_sha256.len() == 64)
         );
+    }
+
+    #[test]
+    fn sorting_benchmark_matrix_has_unique_deterministic_instances() {
+        let first = SORT_BENCHMARK_SPEC.generate_all().unwrap();
+        let second = SORT_BENCHMARK_SPEC.generate_all().unwrap();
+        let case_ids = first
+            .iter()
+            .map(|dataset| dataset.case_id)
+            .collect::<HashSet<_>>();
+        let digests = first
+            .iter()
+            .map(|dataset| dataset.content_digest_sha256.as_str())
+            .collect::<HashSet<_>>();
+
+        assert_eq!(first, second);
+        assert_eq!(first.len(), 12);
+        assert_eq!(case_ids.len(), first.len());
+        assert_eq!(digests.len(), first.len());
+    }
+
+    #[test]
+    fn sorting_benchmark_matrix_covers_sizes_and_distributions() {
+        let datasets = SORT_BENCHMARK_SPEC.generate_all().unwrap();
+        let lengths = datasets
+            .iter()
+            .map(|dataset| dataset.values.len())
+            .collect::<HashSet<_>>();
+
+        assert_eq!(lengths, HashSet::from([64, 2_048, 8_192]));
+        for dataset in datasets {
+            if dataset.case_id.contains(".ascending.") {
+                assert!(dataset.values.windows(2).all(|pair| pair[0] <= pair[1]));
+            } else if dataset.case_id.contains(".descending.") {
+                assert!(dataset.values.windows(2).all(|pair| pair[0] >= pair[1]));
+            } else if dataset.case_id.contains(".few_unique.") {
+                assert!(dataset.values.iter().all(|value| (0..=7).contains(value)));
+                assert!(dataset.values.iter().collect::<HashSet<_>>().len() <= 8);
+            } else {
+                assert!(
+                    dataset
+                        .values
+                        .iter()
+                        .all(|value| (-10_000..=10_000).contains(value))
+                );
+            }
+        }
     }
 
     #[test]

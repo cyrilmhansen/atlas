@@ -22,7 +22,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("run this benchmark example with --release".into());
     }
     let context = BenchmarkContext::capture(profile)?;
-    let dataset = SORT_BENCHMARK_SPEC.generate(&SORT_BENCHMARK_SPEC.cases[0])?;
+    let case = SORT_BENCHMARK_SPEC
+        .cases
+        .iter()
+        .find(|case| case.id == "sort.benchmark.uniform.2048")
+        .expect("the benchmark campaign requires its reference dataset");
+    let dataset = SORT_BENCHMARK_SPEC.generate(case)?;
     let settings = AdaptiveBenchmarkSettings {
         minimum_warmup_rounds: 20,
         maximum_warmup_rounds: 100,

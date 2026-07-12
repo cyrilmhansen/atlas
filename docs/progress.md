@@ -1159,3 +1159,30 @@ cargo run -q -p atlas --locked --offline -- qualify sequence.sort --stable --all
 The workspace has 137 tests. The sort query returns only implementations with
 both an explicit stable algorithm claim and an explicit `allocation: none`
 implementation effect, with their actual evidence levels preserved.
+
+## 2026-07-12 - Second constrained qualification case
+
+### Result
+
+- Added `--in-place` to the deliberately small qualification surface.
+- Joined the algorithm's explicit `in_place` claim alongside stability and the
+  implementation's allocation effect.
+- Demonstrated composition with `sequence.sort --stable --in-place --allocation none`,
+  which selects only insertion sort in the current corpus.
+- Promoted DEC-034 from provisional to accepted after the second real case.
+
+### Limits
+
+- The command remains a conjunction of three fixed predicates, not a general
+  expression grammar.
+
+### Verification
+
+```sh
+cargo test --workspace --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+cargo run -q -p atlas --locked --offline -- qualify sequence.sort --stable --in-place --allocation none
+```
+
+The workspace has 138 tests. Missing or false `in_place` claims do not satisfy
+the new constraint.

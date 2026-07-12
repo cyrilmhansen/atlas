@@ -80,8 +80,8 @@ Status: active under DEC-028.
 No benchmark conclusion is accepted before environment and dispersion are
 recorded.
 
-The first constrained selection command is implemented under provisional
-DEC-034. It remains a property filter, not the MVP 3 composition planner.
+The first constrained selection command is accepted under DEC-034. It remains
+a property filter, not the MVP 3 composition planner.
 
 Status: the first release-only comparison harness records raw samples, robust
 dispersion, complete local context, and dataset identity under DEC-031. Results

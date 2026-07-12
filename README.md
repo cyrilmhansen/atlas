@@ -30,7 +30,7 @@ cargo run -p atlas -- list algorithm
 cargo run -p atlas -- show search.linear
 cargo run -p atlas -- search "merge sort"
 cargo run -p atlas -- explain search.binary.rust.slice.v1
-cargo run -p atlas -- qualify sequence.sort --stable --allocation none
+cargo run -p atlas -- qualify sequence.sort --stable --in-place --allocation none
 cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh

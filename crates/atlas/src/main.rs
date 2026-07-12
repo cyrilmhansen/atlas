@@ -145,6 +145,7 @@ fn explain_implementation(registry: &Registry, id: &str) -> Result<(), String> {
 #[derive(Default)]
 struct QualificationConstraints {
     stable: bool,
+    in_place: bool,
     allocation_none: bool,
 }
 
@@ -162,6 +163,7 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
     while let Some(argument) = arguments.next() {
         match argument.to_str() {
             Some("--stable") => constraints.stable = true,
+            Some("--in-place") => constraints.in_place = true,
             Some("--allocation") => {
                 match arguments.next().as_deref().and_then(|value| value.to_str()) {
                     Some("none") => constraints.allocation_none = true,
@@ -177,7 +179,7 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             }
             Some(value) => {
                 eprintln!(
-                    "unknown qualify constraint {value:?}; expected --stable or --allocation none"
+                    "unknown qualify constraint {value:?}; expected --stable, --in-place, or --allocation none"
                 );
                 return ExitCode::from(2);
             }
@@ -187,7 +189,7 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             }
         }
     }
-    if !constraints.stable && !constraints.allocation_none {
+    if !constraints.stable && !constraints.in_place && !constraints.allocation_none {
         eprintln!("qualify requires at least one constraint");
         return ExitCode::from(2);
     }
@@ -232,6 +234,10 @@ fn print_qualified_implementations(
         if constraints.stable && !matches!(stable, Some(claim) if claim.value) {
             continue;
         }
+        let in_place = algorithm.in_place.as_ref();
+        if constraints.in_place && !matches!(in_place, Some(claim) if claim.value) {
+            continue;
+        }
         if constraints.allocation_none && implementation.effects.value.allocation != "none" {
             continue;
         }
@@ -242,6 +248,12 @@ fn print_qualified_implementations(
             println!(
                 "stable\t{}\t{}\t{}",
                 stable.value, stable.level, stable.source
+            );
+        }
+        if let Some(in_place) = in_place {
+            println!(
+                "in_place\t{}\t{}\t{}",
+                in_place.value, in_place.level, in_place.source
             );
         }
         println!(
@@ -548,6 +560,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--allocation none]\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas index [DB_PATH]"
     );
 }

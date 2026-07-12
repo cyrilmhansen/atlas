@@ -634,7 +634,7 @@ fn cli_qualifies_stable_non_allocating_sort_implementations() {
     assert!(stdout.contains("implementation\tsort.insertion.rust.slice.v1\n"));
     assert!(stdout.contains("stable\ttrue\ttested\t"));
     assert!(stdout.contains("allocation\tnone\tdeclared\t"));
-    assert!(!stdout.contains("sort.merge.rust.slice.v1\n"));
+    assert!(!stdout.contains("implementation\tsort.merge.rust.slice.v1\n"));
 }
 
 #[test]
@@ -649,6 +649,29 @@ fn cli_qualify_returns_no_output_when_no_implementation_matches() {
     assert!(output.status.success());
     assert!(output.stdout.is_empty());
     assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn cli_qualify_composes_in_place_with_stability_and_allocation() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "sequence.sort",
+            "--stable",
+            "--in-place",
+            "--allocation",
+            "none",
+        ])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("implementation\tsort.insertion.rust.slice.v1\n"));
+    assert!(!stdout.contains("sort.merge_with_scratch.rust.slice.v1"));
+    assert!(stdout.contains("in_place\ttrue\tdeclared\t"));
 }
 
 #[test]

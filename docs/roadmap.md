@@ -5,7 +5,9 @@ remain authoritative when this document and a decision record differ.
 
 ## Current position
 
-MVP 1, MVP 2 and MVP 3 are closed locally. The project has a Git-authoritative
+MVP 1, MVP 2 and MVP 3 are closed locally. GitHub CI runs the reproducible MVP
+2 acceptance gate, all workspace targets and the RV64 LP64 probe on pushes and
+pull requests. The project has a Git-authoritative
 YAML registry (10 problems, 15 algorithms and 20 Rust implementations), a
 rebuildable SQLite projection, deterministic datasets and reproducible local
 observations, plus five bounded composition scenarios with compiled Rust

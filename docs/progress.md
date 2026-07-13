@@ -1,5 +1,19 @@
 # Progress log
 
+## 2026-07-13 - GitHub CI
+
+### Result
+
+- Added a GitHub Actions workflow for pushes to `main` and pull requests.
+- The workflow checks out the pinned MIR submodule, installs the RV64 LP64
+  cross-compiler and QEMU user emulator, fetches the locked Rust dependency
+  graph, then runs the MVP 2 gate, all workspace targets and the ABI probe.
+
+### Limits
+
+- Benchmarks and timing comparisons remain intentionally excluded.
+- The workflow does not exercise a MIR JIT or RISC-V code generator.
+
 ## 2026-07-13 - MVP 4 MIR trace import
 
 ### Result

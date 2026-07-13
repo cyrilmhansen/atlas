@@ -263,7 +263,7 @@ additive, bounded and never required for registry or composition operation.
 | Complete | one guest offset region, reads, writes and swaps | even partition | native output/boundary equality and typed AST trace links |
 | Complete | adjacent reads and comparisons | `sequence.is_sorted` | boolean result, first inversion behavior and typed AST trace links |
 | Complete | scalar selection scan | `sequence.minimum`, `sequence.maximum` | value/index and first-occurrence tie policy |
-| Later | swap-only sequence mutation | `sequence.reverse` | exact reversal and double-reversal property |
+| Complete | swap-only sequence mutation | `sequence.reverse` | exact reversal and double-reversal property |
 | Later | shifted writes | insertion sort | sortedness, stability and permutation |
 | Deferred | additional regions and outputs | merge sort, filter, merge-sorted, deduplicate | explicit allocation/copy/region semantics |
 

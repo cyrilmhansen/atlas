@@ -1,5 +1,11 @@
 # Progress log
 
+## 2026-07-13 - Private MIR reverse
+
+- Added a private signed-`i64` reverse program using only guest loads, stores
+  and symmetric swaps in the existing offset region.
+- Verified exact equality with native Rust and the double-reversal property.
+
 ## 2026-07-13 - Private MIR minimum and maximum selection
 
 - Added a private guest-region selection program for signed `i64` minimum and

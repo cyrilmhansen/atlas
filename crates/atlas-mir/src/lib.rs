@@ -544,6 +544,39 @@ fn interpret_selection_i64(
     }
 }
 
+pub fn interpret_reverse_i64(values: &mut [i64]) -> Result<(), GuestMemoryError> {
+    let byte_length = values
+        .len()
+        .checked_mul(8)
+        .ok_or(GuestMemoryError::AddressOverflow)?;
+    let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let count = u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut memory = OffsetMemory::new(byte_length as usize);
+    for (index, value) in values.iter().copied().enumerate() {
+        let offset = u32::try_from(index)
+            .ok()
+            .and_then(|index| index.checked_mul(8))
+            .ok_or(GuestMemoryError::AddressOverflow)?;
+        memory.write_i64_le(GuestOffset::new(offset), value)?;
+    }
+    if unsafe { atlas_mir_interpret_reverse_i64(memory.bytes.as_mut_ptr(), byte_length, count) }
+        != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    for (index, value) in values.iter_mut().enumerate() {
+        let offset = u32::try_from(index)
+            .ok()
+            .and_then(|index| index.checked_mul(8))
+            .ok_or(GuestMemoryError::AddressOverflow)?;
+        *value = memory.read_i64_le(GuestOffset::new(offset))?;
+    }
+    Ok(())
+}
+
 unsafe extern "C" {
     fn atlas_mir_interpret_add_u64(left: u64, right: u64) -> u64;
     fn atlas_mir_interpret_minimum3_i64(
@@ -570,6 +603,11 @@ unsafe extern "C" {
         element_count: u32,
         select_max: u32,
         selection: *mut RawSelectionResult,
+    ) -> i32;
+    fn atlas_mir_interpret_reverse_i64(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
     ) -> i32;
 }
 
@@ -740,6 +778,19 @@ mod tests {
             interpret_maximum_i64(&[3, 9, 9, 2]).unwrap().unwrap().index,
             1
         );
+    }
+
+    #[test]
+    fn mir_reverse_matches_native_and_is_an_involution() {
+        for original in [vec![], vec![42], vec![1, 2, 3, 4, 5]] {
+            let mut mir = original.clone();
+            super::interpret_reverse_i64(&mut mir).expect("MIR reverse");
+            let mut native = original.clone();
+            atlas_algorithms::reverse::reverse_in_place(&mut native);
+            assert_eq!(mir, native);
+            super::interpret_reverse_i64(&mut mir).expect("second MIR reverse");
+            assert_eq!(mir, original);
+        }
     }
 
     #[test]

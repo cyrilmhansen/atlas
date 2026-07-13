@@ -1275,3 +1275,26 @@ cargo test --workspace --locked --offline
 cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
 atlas compare EXECUTION_ID EXECUTION_ID
 ```
+
+## 2026-07-13 - Bounded clean comparison campaign procedure
+
+### Result
+
+- Added `scripts/record-sort-comparison-linux.sh CPU` to capture the three
+  registered sorting implementations as one explicit local campaign.
+- Required a clean Git worktree, explicit available Linux CPU, and the existing
+  low-load and frequency/governor observation preflight.
+- Kept the procedure single-pass: any failed quality gate stops the campaign;
+  it never retries an implementation before calling `atlas compare`.
+- Updated DEC-035, the MVP 2 review, status, and README to distinguish the
+  implemented procedure from the still-pending qualified clean observation.
+
+### Verification
+
+```sh
+sh -n scripts/record-sort-comparison-linux.sh
+scripts/check-mvp2.sh
+```
+
+The dirty-worktree guard was also exercised without launching a benchmark.
+No timing campaign was run for this change.

@@ -1,7 +1,7 @@
 # Atlas executable
 
 Atlas executable is an executable registry of problems, algorithms,
-implementations, and execution observations. MVP 1 is active.
+implementations, and execution observations. MVP 2 is active.
 
 The current MVP 1 corpus contains 10 problems, 15 algorithms, and 20 tested Rust
 implementations. Schema hardening, local evidence integrity, deterministic
@@ -40,6 +40,7 @@ cargo run -p atlas --example semantic_traces
 cargo run -p atlas --example pseudocode_ast
 cargo run --release -p atlas-bench --example compare_sorts -- sort.merge.rust.slice.v1
 scripts/run-benchmark-linux.sh 0
+scripts/record-sort-comparison-linux.sh 0
 ```
 
 `scripts/check-mvp1.sh` is the complete offline MVP 1 acceptance gate. It checks
@@ -88,6 +89,12 @@ quality check. Run it through the Linux pinning wrapper's CPU policy when a
 measurement is needed.
 The Linux-only wrapper requires an explicit CPU, performs a non-invasive
 preflight, and pins only the benchmark process without changing the governor.
+
+To capture the single bounded sorting campaign accepted by DEC-035, start from
+a clean worktree and run `scripts/record-sort-comparison-linux.sh CPU`. It
+records each registered sorting implementation once, stops on the first rejected
+quality gate, and invokes `atlas compare` only after all three records exist.
+It deliberately never retries a measurement.
 
 The YAML files committed to Git are authoritative. The validator loads the
 aggregate registry in memory and checks its schema, cross-references, local

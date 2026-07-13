@@ -61,7 +61,7 @@ See `docs/mvp1-review.md` for evidence and recommended closure order.
 | Replay from a locally retained execution identifier | Complete |
 | Process memory measurement | Complete for the sorting harness |
 | Allocation and traversal measurements | Explicitly unavailable |
-| Generated comparison report for one exact campaign | Implemented; clean campaign pending |
+| Generated comparison report for one exact campaign | Capture procedure implemented; clean qualified campaign pending |
 | Broader observed dominance domains | Deferred |
 
 See `docs/mvp2-review.md` for evidence, limits, and closure order.

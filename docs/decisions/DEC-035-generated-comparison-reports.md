@@ -17,6 +17,13 @@ The command rejects dirty worktrees, different datasets, parameters, environment
 duplicate executions, duplicate implementations, correction observations, and
 unqualified benchmark observations.
 
+`scripts/record-sort-comparison-linux.sh CPU` is the bounded capture procedure
+for the first sorting campaign. It requires a clean worktree, pins one explicit
+Linux CPU, preserves the existing low-load preflight, measures each
+implementation exactly once, stops on a quality-gate rejection, then invokes
+`atlas compare` with the three generated IDs. It does not retry a measurement
+or alter the CPU governor.
+
 ## Consequences
 
 Reports are generated products, not registry entities or public formats. A

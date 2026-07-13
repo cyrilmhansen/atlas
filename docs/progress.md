@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-07-13 - Private MIR host-JIT correction slice
+
+### Result
+
+- Accepted DEC-046 (`jit-A`) and compiled upstream `mir-gen.c` alongside the
+  existing interpreter core.
+- Added generated scalar addition and guest-memory `is_sorted` probes.
+- Verified JIT results against both the MIR interpreter and native Rust,
+  including first-inversion behavior and calls from generated code into the
+  checked guest-load import.
+- Kept generator construction and destruction inside each private call; no
+  persistent executable mapping or backend selection was introduced.
+
+### Limits
+
+- Construction latency, generated-code size and execution timing are not yet
+  measured.
+- MIR-generated RISC-V, C-to-MIR and structured allocation errors remain out of
+  scope.
+
 ## 2026-07-13 - MVP 4 single-region documentation checkpoint
 
 ### Result

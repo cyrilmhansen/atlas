@@ -3,8 +3,9 @@
 Atlas executable is an executable registry of problems, algorithms,
 implementations, and execution observations. MVP 4 is active as a narrow LP64
 MIR adapter under DEC-039. Its interpreter-only, single-region capability
-checkpoint is complete through DEC-045; JIT, MIR-generated RISC-V and
-multi-region memory remain separate decisions.
+checkpoint is complete through DEC-045. DEC-046 adds a narrow host-JIT
+correction probe; performance and code size remain unmeasured, while
+MIR-generated RISC-V and multi-region memory remain separate decisions.
 
 The current MVP 1 corpus contains 10 problems, 15 algorithms, and 20 tested Rust
 implementations. Schema hardening, local evidence integrity, deterministic

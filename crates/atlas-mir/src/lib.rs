@@ -1,7 +1,7 @@
 //! Experimental MIR adapter boundary for MVP 4.
 //!
-//! Atlas semantics remain outside this crate. The adapter currently proves one
-//! scalar MIR interpreter call and compares guest-reference representations.
+//! Atlas semantics remain outside this crate. The adapter exercises private
+//! interpreter and host-JIT probes while preserving native Rust as oracle.
 
 use std::sync::Mutex;
 
@@ -99,6 +99,13 @@ pub struct IsSortedTrace {
     pub first_inversion: Option<usize>,
     pub events: Vec<IsSortedTraceEvent>,
     pub truncated: bool,
+}
+
+/// Result of the private host-JIT `is_sorted` correction probe.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct JitIsSortedResult {
+    pub sorted: bool,
+    pub first_inversion: Option<usize>,
 }
 
 const PARTITION_TRACE_CAPACITY: usize = 128;
@@ -298,6 +305,11 @@ pub fn interpret_add_u64(left: u64, right: u64) -> u64 {
     unsafe { atlas_mir_interpret_add_u64(left, right) }
 }
 
+/// Executes the scalar addition probe through MIR's host generator.
+pub fn jit_add_u64(left: u64, right: u64) -> u64 {
+    unsafe { atlas_mir_jit_add_u64(left, right) }
+}
+
 /// Executes a three-value minimum program and returns its explicit MIR trace.
 pub fn interpret_minimum3_i64(left: i64, middle: i64, right: i64) -> MinimumTrace {
     let _guard = MIR_ADAPTER_LOCK
@@ -479,6 +491,50 @@ pub fn interpret_is_sorted_i64(values: &[i64]) -> Result<IsSortedTrace, GuestMem
     })
 }
 
+/// Executes the adjacent signed `i64` scan through MIR's host generator.
+pub fn jit_is_sorted_i64(values: &[i64]) -> Result<JitIsSortedResult, GuestMemoryError> {
+    let byte_length = values
+        .len()
+        .checked_mul(8)
+        .ok_or(GuestMemoryError::AddressOverflow)?;
+    let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let count = u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut memory = OffsetMemory::new(byte_length as usize);
+    for (index, value) in values.iter().copied().enumerate() {
+        let offset = u32::try_from(index)
+            .ok()
+            .and_then(|index| index.checked_mul(8))
+            .ok_or(GuestMemoryError::AddressOverflow)?;
+        memory.write_i64_le(GuestOffset::new(offset), value)?;
+    }
+    let mut first_inversion = u32::MAX;
+    if unsafe {
+        atlas_mir_jit_is_sorted_i64(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            count,
+            &mut first_inversion,
+        )
+    } != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    let first_inversion = if first_inversion == u32::MAX {
+        None
+    } else if (first_inversion as usize) < values.len() {
+        Some(first_inversion as usize)
+    } else {
+        return Err(GuestMemoryError::InvalidTraceEvent);
+    };
+    Ok(JitIsSortedResult {
+        sorted: first_inversion.is_none(),
+        first_inversion,
+    })
+}
+
 fn is_sorted_trace_event(code: u32) -> Result<IsSortedTraceEvent, GuestMemoryError> {
     let (ast_node_id, operation) = match code {
         1 => ("is-sorted.left.read", IsSortedTraceOperation::Read),
@@ -621,6 +677,7 @@ pub fn interpret_insertion_pairs(values: &mut [InsertionPair]) -> Result<(), Gue
 
 unsafe extern "C" {
     fn atlas_mir_interpret_add_u64(left: u64, right: u64) -> u64;
+    fn atlas_mir_jit_add_u64(left: u64, right: u64) -> u64;
     fn atlas_mir_interpret_minimum3_i64(
         left: i64,
         middle: i64,
@@ -656,6 +713,12 @@ unsafe extern "C" {
         byte_length: u32,
         element_count: u32,
     ) -> i32;
+    fn atlas_mir_jit_is_sorted_i64(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        first_inversion: *mut u32,
+    ) -> i32;
 }
 
 #[cfg(test)]
@@ -663,13 +726,23 @@ mod tests {
     use super::{
         CompareEvent, GuestMemoryError, GuestOffset, GuestRegionOffset, HandleMemory, OffsetMemory,
         RegionMemory, interpret_add_u64, interpret_is_sorted_i64, interpret_maximum_i64,
-        interpret_minimum_i64, interpret_minimum3_i64, interpret_partition_even_i64,
+        interpret_minimum_i64, interpret_minimum3_i64, interpret_partition_even_i64, jit_add_u64,
+        jit_is_sorted_i64,
     };
 
     #[test]
     fn mir_interpreter_executes_a_scalar_function() {
         assert_eq!(interpret_add_u64(40, 2), 42);
         assert_eq!(interpret_add_u64(12, 30), 42);
+    }
+
+    #[test]
+    fn mir_host_jit_matches_scalar_interpreter_and_rust() {
+        for (left, right) in [(0, 0), (40, 2), (u64::MAX, 1)] {
+            let expected = left.wrapping_add(right);
+            assert_eq!(interpret_add_u64(left, right), expected);
+            assert_eq!(jit_add_u64(left, right), expected);
+        }
     }
 
     #[test]
@@ -796,6 +869,19 @@ mod tests {
                 "is-sorted.adjacent.compare",
             ]
         );
+    }
+
+    #[test]
+    fn mir_host_jit_matches_is_sorted_interpreter_and_native() {
+        for values in [vec![], vec![42], vec![-2, 0, 0, 4], vec![1, 5, 4, 6]] {
+            let interpreted = interpret_is_sorted_i64(&values).expect("MIR interpreter");
+            let generated = jit_is_sorted_i64(&values).expect("MIR host JIT");
+            let native = atlas_algorithms::is_sorted::is_sorted_by(&values, i64::cmp);
+
+            assert_eq!(generated.sorted, native);
+            assert_eq!(generated.sorted, interpreted.sorted);
+            assert_eq!(generated.first_inversion, interpreted.first_inversion);
+        }
     }
 
     #[test]

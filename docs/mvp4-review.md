@@ -1,8 +1,8 @@
 # MVP 4 single-region checkpoint review
 
-Review date: 2026-07-13. Active scope: the interpreter-only, single-region MVP
-4 checkpoint authorized by DEC-039 through DEC-045. This is a checkpoint, not
-MVP 4 closure.
+Review date: 2026-07-13. Active scope: the single-region interpreter checkpoint
+and narrow host-JIT correction slice authorized by DEC-039 through DEC-046.
+This is a checkpoint, not MVP 4 closure.
 
 ## Demonstrated boundary
 
@@ -22,6 +22,11 @@ for every algorithm-level experiment.
 
 These entry points are private adapter experiments. They are not registry
 implementations, a generic AST compiler, a backend API or Atlas evidence.
+
+DEC-046 additionally compiles MIR's host generator. Generated scalar addition
+and guest `is_sorted` reproduce interpreter and native results. The guest probe
+calls the existing checked load import from generated code. No performance or
+code-size claim is made.
 
 The compact-reference comparison remains independent of MIR:
 `GuestOffset(u32)`, `GuestHandle(u32)`, and `GuestRegionOffset` have separate
@@ -44,7 +49,8 @@ MIR RISC-V generator.
 - No public plan, backend schema or persistent MIR artifact exists.
 - Only private specialized programs exist. Partition and `is_sorted` link
   traces to exact AST nodes; the other experiments are not AST lowerings.
-- No MIR JIT, MIR RISC-V backend, or QEMU system machine is exercised.
+- Host JIT is exercised only for correction. No JIT measurement, MIR RISC-V
+  backend, or QEMU system machine is exercised.
 - RV64ILP32 is deferred; the standard LP64 ABI does not define guest-reference
   representation.
 - Guest memory has one fixed-capacity little-endian region with private 8-byte

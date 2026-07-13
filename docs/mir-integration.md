@@ -8,10 +8,11 @@ adapter, never the source of Atlas semantics.
 MIR is the original `vnmakarov/mir` repository, held as the `vendor/mir`
 submodule at commit `a8ab7c31cd5f9b23b77d84c60b3d83e62d9d304c`.
 
-`crates/atlas-mir/build.rs` invokes `CC` and `AR` directly. It compiles only
-upstream `mir.c`, which includes the interpreter, into a private static archive.
-The MIR generator and C-to-MIR compiler are deliberately absent. It separately
-compiles `mir_shim.c` and links both archives with `dl` and `m` on Linux.
+`crates/atlas-mir/build.rs` invokes `CC` and `AR` directly. It compiles upstream
+`mir.c`, which includes the interpreter and default code allocator, plus
+`mir-gen.c`, which selects MIR's generator for the build host. The C-to-MIR
+compiler remains absent. The build separately compiles `mir_shim.c` and links
+the private archives with `dl` and `m` on Linux.
 
 ```sh
 git submodule update --init --recursive
@@ -95,10 +96,9 @@ The trace is bounded to 128 entries and exposes truncation instead of silently
 claiming a complete trace. This lowering is not a generic AST compiler, a
 public backend API, or an RV64 code-generation test.
 
-MIR generator interfaces are not compiled by this crate. Enabling them requires
-a separate decision, host-JIT smoke test, and size/latency measurement protocol.
-MIR RISC-V generation is a later experiment and cannot be inferred from the
-LP64 QEMU probe.
+The host generator is compiled under DEC-046 and exercised only by the narrow
+correction probes below. MIR RISC-V generation remains a later experiment and
+cannot be inferred from either host JIT or the LP64 QEMU probe.
 
 ## Read-only is-sorted AST lowering
 
@@ -156,3 +156,17 @@ existing little-endian guest load/store imports. Tests compare the entire pair
 sequence with native stable insertion sort, so ordering, permutation and stable
 duplicate order are checked together. This pair is instrumentation, not a
 general guest value representation.
+
+## Host-JIT correction slice
+
+DEC-046 adds two private host-JIT probes. `add_u64` verifies a generated scalar
+function without imports. JIT `is_sorted` verifies control flow and calls the
+same checked guest-load import used by the interpreter. Empty, singleton,
+sorted, duplicate and inverted inputs compare the generated boolean and first
+inversion with both interpreter and native Rust results.
+
+Every call initializes and finishes the generator inside a fresh MIR context,
+so its executable mappings are released with that context. This establishes
+correction and lifecycle only. It does not yet record construction latency,
+machine-code size or execution performance, and it does not select JIT over the
+interpreter.

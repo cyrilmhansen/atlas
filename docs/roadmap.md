@@ -180,11 +180,11 @@ The first explicit override surface is also implemented: `--force` and
 reason or rejecting an empty candidate set. This satisfies the forcing/forbid
 experiment without turning MVP 3 into general search or mutable registry state.
 
-MVP 4 is active under DEC-039 as a narrow LP64 MIR interpreter and QEMU-user
-probe. The `atlas-algorithms` core APIs remain the native reference backend;
-MIR remains an adapter and never defines registry semantics, compact references,
-or evidence formats. JIT, MIR RISC-V code generation, RV64ILP32 and a fantasy
-computer are deferred until separate reproducible experiments justify them.
+MVP 4 is active under DEC-039 as a narrow LP64 MIR interpreter, host-JIT and
+QEMU-user probe. The `atlas-algorithms` core APIs remain the native reference
+backend; MIR remains an adapter and never defines registry semantics, compact
+references, or evidence formats. JIT measurement, MIR RISC-V code generation,
+RV64ILP32 and a fantasy computer remain separate experiments.
 
 ## MVP 4 execution path
 
@@ -237,7 +237,7 @@ the selected model and matches the native reference result.
 
 ### 4. Compare interpreter and optional JIT behavior
 
-Status: ready for a decision; gates 2 and 3 now provide meaningful workloads.
+Status: correction slice complete under DEC-046; measurement protocol pending.
 
 - Measure startup latency, code size and correction equivalence separately.
 - Keep JIT results local observations with environment and protocol provenance.
@@ -287,23 +287,22 @@ observation protocols. No backend is chosen automatically from those results.
 
 ## MVP 4 single-region checkpoint
 
-Status: complete locally through DEC-045.
+Status: interpreter capability complete locally through DEC-045; host-JIT
+correction complete under DEC-046.
 
 The checkpoint demonstrates the interpreter and guest-offset boundary across
 read-only scans, selection, swaps and shifted writes. It also demonstrates
 exact AST trace links for two materially different control-flow shapes. It does
-not demonstrate a general AST compiler, JIT execution, MIR-generated RISC-V,
-multi-region memory or a persistent backend artifact.
+not demonstrate a general AST compiler, measured JIT behavior, MIR-generated
+RISC-V, multi-region memory or a persistent backend artifact.
 
 Recommended order for the remaining MVP 4 work:
 
-1. Enable the smallest host JIT build and reproduce correction for one scalar
-   function and one guest-memory workload.
-2. Measure JIT construction latency and generated-code size under a separate,
+1. Measure JIT construction latency and generated-code size under a separate,
    local protocol; retain interpreter traces as the observability reference.
-3. Probe MIR RISC-V generation with a standalone artifact before connecting it
+2. Probe MIR RISC-V generation with a standalone artifact before connecting it
    to Atlas guest memory.
-4. Introduce multiple regions only when an output/scratch algorithm is selected
+3. Introduce multiple regions only when an output/scratch algorithm is selected
    and region identity, lifetime and copy visibility have been accepted.
 
 This ordering tests the remaining claims in the vision before widening the
@@ -373,8 +372,8 @@ single-region matrix now provides workloads suitable for a controlled probe.
 Recommendation: retain the interpreter as the correction and trace backend and
 define a local protocol comparing JIT construction latency, generated-code size
 and execution separately on the same deterministic inputs. Protocol details are
-class **B**; compiling and enabling MIR generator sources is class **C** and is
-captured by C6 below.
+class **B**. Compiling and enabling MIR generator sources was class **C** and
+is now accepted by DEC-046/C6 below.
 
 ### C4. Rust toolchain support baseline
 
@@ -420,14 +419,14 @@ surface even if the API remains private.
 
 | Option | Consequence |
 |---|---|
-| A. Host JIT for one scalar and one guest workload | Tests latency, size and correction with the smallest new build surface. |
+| A. Host JIT for one scalar and one guest workload | Tests correction with the smallest new build surface and permits separate latency/size measurement. |
 | B. Continue interpreter-only through MVP 4 | Preserves simplicity but leaves a central vision claim unevaluated. |
 | C. Start directly with MIR RISC-V generation | Reaches the target sooner but mixes generator, target and emulator failures. |
 
-Recommendation: **A**. First reproduce interpreter results without timing, then
-run a separate local measurement protocol. The change is reversible but class
-**C** because it adds MIR generator sources and executable-code allocation to
-the adapter.
+Accepted: **A** under DEC-046. Scalar addition and guest `is_sorted` now
+reproduce interpreter and native results without timing. The next work is the
+separate class B measurement protocol; MIR RISC-V generation remains outside
+this decision.
 
 ### C7. Multi-region guest memory
 

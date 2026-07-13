@@ -24,6 +24,20 @@ fn main() {
             .arg(&mir_object),
         "compile MIR interpreter core",
     );
+    let mir_gen_object = out.join("mir-gen.o");
+    run(
+        Command::new(&cc)
+            .arg("-std=gnu11")
+            .arg("-O2")
+            .arg("-fPIC")
+            .arg("-I")
+            .arg(&mir)
+            .arg("-c")
+            .arg(mir.join("mir-gen.c"))
+            .arg("-o")
+            .arg(&mir_gen_object),
+        "compile MIR host generator",
+    );
     let shim_object = out.join("atlas_mir_shim.o");
     run(
         Command::new(&cc)
@@ -40,8 +54,9 @@ fn main() {
         Command::new(&ar)
             .arg("crus")
             .arg(out.join("libmir.a"))
-            .arg(mir_object),
-        "archive MIR interpreter core",
+            .arg(mir_object)
+            .arg(mir_gen_object),
+        "archive MIR interpreter and host generator",
     );
     run(
         Command::new(&ar)
@@ -59,6 +74,9 @@ fn main() {
     for path in [
         manifest.join("src/mir_shim.c"),
         mir.join("mir.c"),
+        mir.join("mir-gen.c"),
+        mir.join("mir-gen.h"),
+        mir.join("mir-code-alloc-default.c"),
         mir.join("mir.h"),
         mir.join("mir-interp.c"),
     ] {

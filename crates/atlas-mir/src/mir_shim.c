@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "mir.h"
+#include "mir-gen.h"
 
 uint64_t atlas_mir_interpret_add_u64(uint64_t left, uint64_t right) {
   MIR_context_t context = MIR_init();
@@ -840,5 +841,128 @@ int atlas_mir_interpret_insertion_pairs(uint8_t *guest_bytes, uint32_t byte_leng
   MIR_link(context, MIR_set_interp_interface, NULL);
   MIR_interp_arr(context, function, NULL, 1, arguments);
   MIR_finish(context);
+  return atlas_mir_guest_memory_error;
+}
+
+uint64_t atlas_mir_jit_add_u64(uint64_t left, uint64_t right) {
+  typedef uint64_t (*atlas_mir_add_fn_t)(uint64_t, uint64_t);
+  MIR_context_t context = MIR_init();
+  MIR_module_t module = MIR_new_module(context, "atlas_mir_jit_add");
+  MIR_type_t result_types[1] = {MIR_T_I64};
+  MIR_item_t function = MIR_new_func(context, "jit_add_u64", 1, result_types, 2,
+                                     MIR_T_I64, "left", MIR_T_I64, "right");
+  MIR_reg_t left_register = MIR_reg(context, "left", function->u.func);
+  MIR_reg_t right_register = MIR_reg(context, "right", function->u.func);
+  MIR_reg_t result_register =
+      MIR_new_func_reg(context, function->u.func, MIR_T_I64, "result");
+  atlas_mir_add_fn_t generated;
+  uint64_t result;
+
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_ADD,
+                               MIR_new_reg_op(context, result_register),
+                               MIR_new_reg_op(context, left_register),
+                               MIR_new_reg_op(context, right_register)));
+  MIR_append_insn(context, function,
+                  MIR_new_ret_insn(context, 1,
+                                   MIR_new_reg_op(context, result_register)));
+  MIR_finish_func(context);
+  MIR_finish_module(context);
+  MIR_load_module(context, module);
+  MIR_gen_init(context);
+  MIR_link(context, MIR_set_gen_interface, NULL);
+  generated = (atlas_mir_add_fn_t)function->addr;
+  result = generated(left, right);
+  MIR_gen_finish(context);
+  MIR_finish(context);
+  return result;
+}
+
+int atlas_mir_jit_is_sorted_i64(uint8_t *guest_bytes, uint32_t byte_length,
+                                uint32_t element_count, uint32_t *first_inversion) {
+  typedef int64_t (*atlas_mir_is_sorted_fn_t)(int64_t);
+  MIR_context_t context;
+  MIR_module_t module;
+  MIR_type_t result_types[1] = {MIR_T_I64};
+  MIR_item_t function, load_import, load_proto;
+  MIR_reg_t count, index, left_offset, right_offset, left_value, right_value;
+  MIR_label_t loop, sorted, inversion;
+  atlas_mir_is_sorted_fn_t generated;
+  int64_t result;
+
+  if ((uint64_t)element_count * 8 != byte_length) return 1;
+  context = MIR_init();
+  module = MIR_new_module(context, "atlas_mir_jit_is_sorted");
+  function = MIR_new_func(context, "jit_is_sorted_i64", 1, result_types, 1,
+                          MIR_T_I64, "element_count");
+  load_import = MIR_new_import(context, "atlas_mir_guest_load_i64");
+  load_proto = MIR_new_proto(context, "atlas_mir_guest_load_i64_proto", 1,
+                             result_types, 1, MIR_T_I64, "offset");
+  count = MIR_reg(context, "element_count", function->u.func);
+  index = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "index");
+  left_offset = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "left_offset");
+  right_offset = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "right_offset");
+  left_value = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "left_value");
+  right_value = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "right_value");
+  loop = MIR_new_label(context);
+  sorted = MIR_new_label(context);
+  inversion = MIR_new_label(context);
+  atlas_mir_guest_bytes = guest_bytes;
+  atlas_mir_guest_byte_length = byte_length;
+  atlas_mir_guest_memory_error = 0;
+
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MOV, MIR_new_reg_op(context, index),
+                               MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function, loop);
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_BGE, MIR_new_label_op(context, sorted),
+                               MIR_new_reg_op(context, index), MIR_new_reg_op(context, count)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_SUB, MIR_new_reg_op(context, left_offset),
+                               MIR_new_reg_op(context, index), MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MUL, MIR_new_reg_op(context, left_offset),
+                               MIR_new_reg_op(context, left_offset), MIR_new_int_op(context, 8)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, load_proto),
+                                    MIR_new_ref_op(context, load_import),
+                                    MIR_new_reg_op(context, left_value),
+                                    MIR_new_reg_op(context, left_offset)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MUL, MIR_new_reg_op(context, right_offset),
+                               MIR_new_reg_op(context, index), MIR_new_int_op(context, 8)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, load_proto),
+                                    MIR_new_ref_op(context, load_import),
+                                    MIR_new_reg_op(context, right_value),
+                                    MIR_new_reg_op(context, right_offset)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_BGT, MIR_new_label_op(context, inversion),
+                               MIR_new_reg_op(context, left_value),
+                               MIR_new_reg_op(context, right_value)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_ADD, MIR_new_reg_op(context, index),
+                               MIR_new_reg_op(context, index), MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_JMP, MIR_new_label_op(context, loop)));
+  MIR_append_insn(context, function, inversion);
+  MIR_append_insn(context, function,
+                  MIR_new_ret_insn(context, 1, MIR_new_reg_op(context, index)));
+  MIR_append_insn(context, function, sorted);
+  MIR_append_insn(context, function,
+                  MIR_new_ret_insn(context, 1, MIR_new_int_op(context, 0)));
+  MIR_finish_func(context);
+  MIR_finish_module(context);
+  MIR_load_external(context, "atlas_mir_guest_load_i64", atlas_mir_guest_load_i64);
+  MIR_load_module(context, module);
+  MIR_gen_init(context);
+  MIR_link(context, MIR_set_gen_interface, NULL);
+  generated = (atlas_mir_is_sorted_fn_t)function->addr;
+  result = generated(element_count);
+  *first_inversion = result == 0 ? UINT32_MAX : (uint32_t)result;
+  MIR_gen_finish(context);
+  MIR_finish(context);
+  if (result < 0 || (result != 0 && (uint64_t)result >= element_count)) return 1;
   return atlas_mir_guest_memory_error;
 }

@@ -108,6 +108,16 @@ pub struct JitIsSortedResult {
     pub first_inversion: Option<usize>,
 }
 
+/// Optimization levels exposed by the pinned MIR host generator.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(u32)]
+pub enum JitOptimizationLevel {
+    FastGeneration = 0,
+    RegisterAllocation = 1,
+    Default = 2,
+    Full = 3,
+}
+
 const PARTITION_TRACE_CAPACITY: usize = 128;
 const IS_SORTED_TRACE_CAPACITY: usize = 128;
 
@@ -307,7 +317,16 @@ pub fn interpret_add_u64(left: u64, right: u64) -> u64 {
 
 /// Executes the scalar addition probe through MIR's host generator.
 pub fn jit_add_u64(left: u64, right: u64) -> u64 {
-    unsafe { atlas_mir_jit_add_u64(left, right) }
+    jit_add_u64_with_optimization(left, right, JitOptimizationLevel::Default)
+}
+
+/// Executes scalar addition with an explicit MIR optimization level.
+pub fn jit_add_u64_with_optimization(
+    left: u64,
+    right: u64,
+    optimization: JitOptimizationLevel,
+) -> u64 {
+    unsafe { atlas_mir_jit_add_u64_at_level(left, right, optimization as u32) }
 }
 
 /// Executes a three-value minimum program and returns its explicit MIR trace.
@@ -493,6 +512,14 @@ pub fn interpret_is_sorted_i64(values: &[i64]) -> Result<IsSortedTrace, GuestMem
 
 /// Executes the adjacent signed `i64` scan through MIR's host generator.
 pub fn jit_is_sorted_i64(values: &[i64]) -> Result<JitIsSortedResult, GuestMemoryError> {
+    jit_is_sorted_i64_with_optimization(values, JitOptimizationLevel::Default)
+}
+
+/// Executes the adjacent scan with an explicit MIR optimization level.
+pub fn jit_is_sorted_i64_with_optimization(
+    values: &[i64],
+    optimization: JitOptimizationLevel,
+) -> Result<JitIsSortedResult, GuestMemoryError> {
     let byte_length = values
         .len()
         .checked_mul(8)
@@ -512,11 +539,12 @@ pub fn jit_is_sorted_i64(values: &[i64]) -> Result<JitIsSortedResult, GuestMemor
     }
     let mut first_inversion = u32::MAX;
     if unsafe {
-        atlas_mir_jit_is_sorted_i64(
+        atlas_mir_jit_is_sorted_i64_at_level(
             memory.bytes.as_mut_ptr(),
             byte_length,
             count,
             &mut first_inversion,
+            optimization as u32,
         )
     } != 0
     {
@@ -677,7 +705,7 @@ pub fn interpret_insertion_pairs(values: &mut [InsertionPair]) -> Result<(), Gue
 
 unsafe extern "C" {
     fn atlas_mir_interpret_add_u64(left: u64, right: u64) -> u64;
-    fn atlas_mir_jit_add_u64(left: u64, right: u64) -> u64;
+    fn atlas_mir_jit_add_u64_at_level(left: u64, right: u64, optimize_level: u32) -> u64;
     fn atlas_mir_interpret_minimum3_i64(
         left: i64,
         middle: i64,
@@ -713,21 +741,23 @@ unsafe extern "C" {
         byte_length: u32,
         element_count: u32,
     ) -> i32;
-    fn atlas_mir_jit_is_sorted_i64(
+    fn atlas_mir_jit_is_sorted_i64_at_level(
         guest_bytes: *mut u8,
         byte_length: u32,
         element_count: u32,
         first_inversion: *mut u32,
+        optimize_level: u32,
     ) -> i32;
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        CompareEvent, GuestMemoryError, GuestOffset, GuestRegionOffset, HandleMemory, OffsetMemory,
-        RegionMemory, interpret_add_u64, interpret_is_sorted_i64, interpret_maximum_i64,
-        interpret_minimum_i64, interpret_minimum3_i64, interpret_partition_even_i64, jit_add_u64,
-        jit_is_sorted_i64,
+        CompareEvent, GuestMemoryError, GuestOffset, GuestRegionOffset, HandleMemory,
+        JitIsSortedResult, JitOptimizationLevel, OffsetMemory, RegionMemory, interpret_add_u64,
+        interpret_is_sorted_i64, interpret_maximum_i64, interpret_minimum_i64,
+        interpret_minimum3_i64, interpret_partition_even_i64, jit_add_u64,
+        jit_add_u64_with_optimization, jit_is_sorted_i64, jit_is_sorted_i64_with_optimization,
     };
 
     #[test]
@@ -742,6 +772,18 @@ mod tests {
             let expected = left.wrapping_add(right);
             assert_eq!(interpret_add_u64(left, right), expected);
             assert_eq!(jit_add_u64(left, right), expected);
+        }
+    }
+
+    #[test]
+    fn mir_host_jit_scalar_is_correct_at_every_documented_optimization_level() {
+        for optimization in [
+            JitOptimizationLevel::FastGeneration,
+            JitOptimizationLevel::RegisterAllocation,
+            JitOptimizationLevel::Default,
+            JitOptimizationLevel::Full,
+        ] {
+            assert_eq!(jit_add_u64_with_optimization(u64::MAX, 2, optimization), 1);
         }
     }
 
@@ -881,6 +923,25 @@ mod tests {
             assert_eq!(generated.sorted, native);
             assert_eq!(generated.sorted, interpreted.sorted);
             assert_eq!(generated.first_inversion, interpreted.first_inversion);
+        }
+    }
+
+    #[test]
+    fn mir_host_jit_guest_scan_is_correct_at_every_documented_optimization_level() {
+        let values = [1, 5, 4, 6];
+        for optimization in [
+            JitOptimizationLevel::FastGeneration,
+            JitOptimizationLevel::RegisterAllocation,
+            JitOptimizationLevel::Default,
+            JitOptimizationLevel::Full,
+        ] {
+            assert_eq!(
+                jit_is_sorted_i64_with_optimization(&values, optimization).expect("MIR host JIT"),
+                JitIsSortedResult {
+                    sorted: false,
+                    first_inversion: Some(2),
+                }
+            );
         }
     }
 

@@ -19,6 +19,10 @@ with `MIR_set_gen_interface`, invokes the generated function, calls
 the interpreter and the native reference implementation before any timing is
 considered.
 
+The ordinary entry points explicitly select optimization level 2, matching the
+pinned generator's default. Correction-only variants cover levels 0 through 3
+so a later measurement protocol can vary the level without changing semantics.
+
 ## Consequences
 
 - The native build now includes MIR's host generator and executable-code
@@ -30,5 +34,8 @@ considered.
 - Construction latency, generated-code size and execution timing remain
   unmeasured. They require a separate local protocol and must not be mixed with
   native algorithm benchmarks.
+- Exact generated-code length is not exposed by MIR's public generator API;
+  debug-text parsing, allocator-footprint measurement, or a narrow upstream API
+  contribution must be evaluated separately.
 - Allocation or protection failures are currently governed by upstream MIR;
   Atlas does not yet translate them into structured Rust errors.

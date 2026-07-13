@@ -170,3 +170,15 @@ so its executable mappings are released with that context. This establishes
 correction and lifecycle only. It does not yet record construction latency,
 machine-code size or execution performance, and it does not select JIT over the
 interpreter.
+
+Atlas explicitly selects MIR optimization level 2 for the ordinary JIT probes;
+it does not rely on the upstream default remaining unchanged. Private
+correction variants also exercise levels 0, 1, 2 and 3 for both probes. In the
+pinned MIR generator these mean fast generation, register allocation plus
+combining, the default SSA/GVN/CCP pipeline, and the full pipeline respectively.
+Correction at every level is not a performance comparison.
+
+The public generator API returns a machine-code address but not its exact byte
+length. Upstream retains the length only while publishing code and can print it
+through generator debugging. Atlas does not currently parse that diagnostic or
+modify the MIR submodule, so exact generated-code size remains unavailable.

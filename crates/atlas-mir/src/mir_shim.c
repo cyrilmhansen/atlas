@@ -844,7 +844,8 @@ int atlas_mir_interpret_insertion_pairs(uint8_t *guest_bytes, uint32_t byte_leng
   return atlas_mir_guest_memory_error;
 }
 
-uint64_t atlas_mir_jit_add_u64(uint64_t left, uint64_t right) {
+uint64_t atlas_mir_jit_add_u64_at_level(uint64_t left, uint64_t right,
+                                        uint32_t optimize_level) {
   typedef uint64_t (*atlas_mir_add_fn_t)(uint64_t, uint64_t);
   MIR_context_t context = MIR_init();
   MIR_module_t module = MIR_new_module(context, "atlas_mir_jit_add");
@@ -870,6 +871,7 @@ uint64_t atlas_mir_jit_add_u64(uint64_t left, uint64_t right) {
   MIR_finish_module(context);
   MIR_load_module(context, module);
   MIR_gen_init(context);
+  MIR_gen_set_optimize_level(context, optimize_level);
   MIR_link(context, MIR_set_gen_interface, NULL);
   generated = (atlas_mir_add_fn_t)function->addr;
   result = generated(left, right);
@@ -878,8 +880,9 @@ uint64_t atlas_mir_jit_add_u64(uint64_t left, uint64_t right) {
   return result;
 }
 
-int atlas_mir_jit_is_sorted_i64(uint8_t *guest_bytes, uint32_t byte_length,
-                                uint32_t element_count, uint32_t *first_inversion) {
+int atlas_mir_jit_is_sorted_i64_at_level(uint8_t *guest_bytes, uint32_t byte_length,
+                                         uint32_t element_count, uint32_t *first_inversion,
+                                         uint32_t optimize_level) {
   typedef int64_t (*atlas_mir_is_sorted_fn_t)(int64_t);
   MIR_context_t context;
   MIR_module_t module;
@@ -890,7 +893,7 @@ int atlas_mir_jit_is_sorted_i64(uint8_t *guest_bytes, uint32_t byte_length,
   atlas_mir_is_sorted_fn_t generated;
   int64_t result;
 
-  if ((uint64_t)element_count * 8 != byte_length) return 1;
+  if ((uint64_t)element_count * 8 != byte_length || optimize_level > 3) return 1;
   context = MIR_init();
   module = MIR_new_module(context, "atlas_mir_jit_is_sorted");
   function = MIR_new_func(context, "jit_is_sorted_i64", 1, result_types, 1,
@@ -957,6 +960,7 @@ int atlas_mir_jit_is_sorted_i64(uint8_t *guest_bytes, uint32_t byte_length,
   MIR_load_external(context, "atlas_mir_guest_load_i64", atlas_mir_guest_load_i64);
   MIR_load_module(context, module);
   MIR_gen_init(context);
+  MIR_gen_set_optimize_level(context, optimize_level);
   MIR_link(context, MIR_set_gen_interface, NULL);
   generated = (atlas_mir_is_sorted_fn_t)function->addr;
   result = generated(element_count);

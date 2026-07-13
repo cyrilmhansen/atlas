@@ -375,6 +375,12 @@ and execution separately on the same deterministic inputs. Protocol details are
 class **B**. Compiling and enabling MIR generator sources was class **C** and
 is now accepted by DEC-046/C6 below.
 
+Preparation complete: Atlas now selects level 2 explicitly and verifies
+correction at MIR optimization levels 0 through 3. The public MIR API does not
+expose exact generated-code length. The size protocol must therefore choose
+between parsing pinned debug output, measuring executable allocation footprint,
+or proposing a narrow upstream API; these observations are not interchangeable.
+
 ### C4. Rust toolchain support baseline
 
 Context: the workspace declares Rust 1.85, but the currently locked

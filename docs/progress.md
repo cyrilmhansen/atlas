@@ -1,5 +1,21 @@
 # Progress log
 
+## 2026-07-13 - Explicit MIR optimization-level matrix
+
+### Result
+
+- Made optimization level 2 explicit for both ordinary host-JIT probes instead
+  of relying on MIR's upstream default.
+- Added typed correction-only entry points for levels 0, 1, 2 and 3.
+- Verified scalar addition and guest-memory `is_sorted` at every documented
+  level without introducing timing into deterministic tests.
+
+### Limits
+
+- No optimization level has been ranked or selected from performance data.
+- MIR's public generator API does not expose exact generated-code length; Atlas
+  does not parse upstream debug text or patch the original submodule.
+
 ## 2026-07-13 - Private MIR host-JIT correction slice
 
 ### Result

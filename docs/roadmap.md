@@ -183,12 +183,12 @@ reason or rejecting an empty candidate set. This satisfies the forcing/forbid
 experiment without turning MVP 3 into general search or mutable registry state.
 
 MVP 4 is active under DEC-039 as a narrow LP64 MIR interpreter, host-JIT and
-QEMU-user probe. DEC-049 validates a scalar MIR RV64 generator artifact and
-DEC-050 adds one read-only checked guest import.
+QEMU-user probe. DEC-049 validates a scalar MIR RV64 generator artifact,
+DEC-050 adds a read-only checked guest import and DEC-051 adds mutation.
 The `atlas-algorithms` core APIs remain the native reference backend; MIR
 remains an adapter and never defines registry semantics, compact references, or
-evidence formats. Timed JIT measurement, RV64 guest writes, RV64ILP32 and a
-fantasy computer remain separate experiments.
+evidence formats. Timed JIT measurement, multiple guest regions, RV64ILP32 and
+a fantasy computer remain separate experiments.
 
 ## MVP 4 execution path
 
@@ -253,14 +253,14 @@ rejecting the MIR generator for this project.
 
 ### 5. Reassess RISC-V code generation and the fantasy-computer profile
 
-Status: scalar generator and read-only guest import complete under DEC-049 and
-DEC-050; mutating runtime and machine profile deferred.
+Status: scalar generation and single-region read/write imports complete under
+DEC-049 through DEC-051; multi-region runtime and machine profile deferred.
 
 - Keep the generated probes independent of registry semantics and persistent
   artifacts.
 - Keep QEMU user mode as the LP64 Linux ABI probe; do not imply a machine model.
-- Extend guest stores or additional runtime imports only through a separate
-  target-boundary decision.
+- Extend additional runtime imports only through a separate target-boundary
+  decision.
 - Define devices, console and clock only if a separate MVP decision activates a
   system-emulation experiment.
 
@@ -303,15 +303,15 @@ correction complete under DEC-046.
 The checkpoint demonstrates the interpreter and guest-offset boundary across
 read-only scans, selection, swaps and shifted writes. It also demonstrates
 exact AST trace links for two materially different control-flow shapes. It does
-not demonstrate a general AST compiler, timed JIT behavior, RV64 guest writes,
-multi-region memory or a persistent backend artifact. Exact host-code spans and
-instruction shapes plus scalar and read-only guest RV64 generation are observed
-locally, but no timed JIT or executable-allocation protocol has been introduced.
+not demonstrate a general AST compiler, timed JIT behavior, multi-region memory
+or a persistent backend artifact. Exact host-code spans and instruction shapes
+plus scalar and read/write guest RV64 generation are observed locally, but no
+timed JIT or executable-allocation protocol has been introduced.
 
 Recommended order for the remaining MVP 4 work:
 
-1. Decide whether the next RV64 probe should add checked guest writes; this
-   extends the private target ABI/runtime boundary and remains class C.
+1. Reassess whether the complete single-region ladder is sufficient to close
+   the MVP 4 target checkpoint before changing the memory model.
 2. Add a bounded construction/execution latency or executable-allocation probe
    only if a concrete backend-retention question requires it; retain
    interpreter traces as the observability reference.
@@ -529,4 +529,21 @@ oracles over one bounded offset region.
 Accepted: **A** under DEC-050. Four shared correction fixtures pass through the
 generated 128-byte RV64 function, which performs ten checked little-endian
 loads. An inconsistent span is rejected before execution without an import
-call. RV64 stores and mutation remain class **C**.
+call. DEC-051 later accepts the first checked store and mutation probe.
+
+### C10. First RV64 guest-memory write
+
+Context: DEC-050 validates target calls, offsets, bounds and read-only control
+flow. Mutation adds a second runtime import and makes byte preservation on error
+part of the target correction boundary.
+
+| Option | Consequence |
+|---|---|
+| A. Checked `reverse` loads and stores | Smallest mutation, with exact output and involution as strong oracles. |
+| B. Start with mutating `partition` | Adds a returned boundary and nested scans, but mixes more failure sources. |
+| C. Stop RV64 at read-only guest memory | Preserves the smaller target ABI but leaves writes unvalidated. |
+
+Accepted: **A** under DEC-051. Empty, singleton, even and odd fixtures pass
+through the generated 176-byte RV64 function. Valid runs perform 12 checked
+loads and 12 checked stores, double reversal restores the input, and an invalid
+span causes no import or mutation. Multi-region memory remains class **C**.

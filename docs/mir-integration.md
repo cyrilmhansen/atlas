@@ -96,15 +96,24 @@ seven-byte singleton span performs no load. The generated span is 128 bytes on
 the pinned stack; `objdump` finds its two indirect calls, conditional branches
 and return.
 
+DEC-051 adds a third MIR context for `reverse` and a checked
+`guest_store_i64(offset, value)` import. It uses the same bounds and alignment
+rules as reads and writes each signed value as explicit little-endian bytes.
+Each swap performs two loads and two stores. Empty, singleton, even and odd
+fixtures match exact expected bytes, and a second even reversal restores the
+input. Valid executions total 12 loads and 12 stores; a seven-byte singleton
+span leaves memory and both counters unchanged. The generated span is 176 bytes
+and exposes four indirect calls, loop control and a return.
+
 ```sh
 scripts/apply-mir-patches.sh
 scripts/check-mir-rv64-generator.sh
 ```
 
 This proves the scalar RV64 generator, executable allocator, QEMU execution and
-one checked read-only guest import. It does not define an archived machine-code
-format, test guest writes or multiple regions, test RV64ILP32, or establish a
-system/fantasy-computer profile.
+checked read/write guest imports over one region. It does not define an archived
+machine-code format, test multiple regions or allocation, test RV64ILP32, or
+establish a system/fantasy-computer profile.
 
 ## Instrumentation and JIT
 

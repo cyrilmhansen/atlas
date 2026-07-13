@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-07-13 - Mutating RV64 guest-memory imports
+
+### Result
+
+- Accepted DEC-051 (`rv64-write-A`) and generated `reverse` as RV64 code with
+  two checked loads and two checked little-endian stores per swap.
+- Verified empty, singleton, even and odd fixtures by exact bytes, including a
+  second even reversal that restores the original input.
+- Observed 12 reads and 12 writes across valid mutating executions; an invalid
+  span preserves bytes and both counters because it is rejected before entry.
+- Copied and inspected the 176-byte generated function, finding four indirect
+  calls, loop control and a return.
+
+### Limits
+
+- Mutation remains confined to one private fixed-capacity region with
+  process-local, single-threaded imports.
+- No target timing, semantic trace, second region, allocation, persistent code
+  artifact or system-emulation device is added.
+
 ## 2026-07-13 - Read-only RV64 guest-memory import
 
 ### Result

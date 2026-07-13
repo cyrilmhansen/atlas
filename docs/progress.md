@@ -1,5 +1,24 @@
 # Progress log
 
+## 2026-07-14 - MVP 5 activation
+
+### Result
+
+- Accepted DEC-056 (`mvp5-A`) and activated a bounded local static artifact
+  through catalog, curated execution and separated characteristics.
+- Selected adjacent `is_sorted`, stable insertion and in-place `reverse` as the
+  three materially different browser workloads.
+- Made native/WASM `is_sorted` equivalence the first implementation gate.
+- Defined clean static build, derived-data identity, resource limits and CI
+  checks as exit evidence.
+
+### Limits
+
+- No Web projection schema, WASM calling convention or binding tool is selected
+  by activation alone.
+- Advanced traces, MIR browser execution, retained browser observations and
+  external publication remain outside MVP 5.
+
 ## 2026-07-13 - Public interactive artifact direction
 
 ### Result

@@ -321,10 +321,10 @@ Deferred work after MVP 4 closure:
 Neither item is active. A new MVP must define its exit criteria before widening
 the memory model or measurement surface.
 
-## Candidate public interactive artifact
+## MVP 5 public interactive artifact
 
-Status: architecture accepted under DEC-053 through DEC-055, but no Web MVP,
-public projection format, deployment target or browser runtime is active.
+Status: active under DEC-056, constrained by DEC-053 through DEC-055. No public
+projection format, deployment target or general browser runtime is active.
 
 The recommended distribution is a static, reproducible website that can be
 hosted on GitHub Pages or opened from a release bundle. It would combine a
@@ -393,7 +393,7 @@ instruction shapes and target limits. Running MIR or an RV64 emulator inside
 the browser is not required for the first artifact and would need a separate
 cost/benefit decision. Native Rust/WASM remains the correction path.
 
-Candidate exit evidence for a future public-artifact MVP:
+MVP 5 exit evidence:
 
 - a static bundle builds from a clean checkout without a server;
 - every displayed registry fact resolves to source provenance;
@@ -711,3 +711,5 @@ not a published service. Its projection and WASM facade stay private and
 replaceable. The minimal risk experiment is native/WASM result equivalence for
 `is_sorted` before adding mutation, counters and browser timing. Activation is
 class **C**; external publication remains class **D**.
+
+Accepted: **A** under DEC-056.

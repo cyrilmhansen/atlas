@@ -1,20 +1,20 @@
 # MVP status
 
-- Active MVP: **none**
-- Status: MVP 1 through MVP 4 closed locally; next scope not activated
+- Active MVP: **MVP 5**
+- Status: MVP 1 through MVP 4 closed; MVP 5 active under DEC-056
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
 - MVP 4: closed locally under DEC-052
+- MVP 5: active under DEC-056
 
 ## Current slice
 
-MVP 1 through MVP 4 are closed locally. MVP 4 tested the MIR adapter boundary
-with a standard RV64 LP64 ABI probe and independent compact-reference
-comparison; it did not activate RV64ILP32 or a fantasy computer. No subsequent
-MVP is active. DEC-053 through DEC-055 select a static Rust/WASM public-artifact
-architecture, a disposable derived projection and separated characteristic
-semantics. They do not yet activate its implementation or publication.
+MVP 1 through MVP 4 are closed locally. MVP 5 is active under DEC-056 as a
+locally openable static catalog with three curated Rust/WASM algorithms and
+separated theoretical, counted and locally timed characteristics. Its first
+gate is native/WASM `is_sorted` equivalence. Publication, a stable Web format,
+advanced trace playback and MIR-in-browser execution remain outside scope.
 
 Current corpus progress:
 

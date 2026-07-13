@@ -1,5 +1,35 @@
 # Progress log
 
+## 2026-07-14 - First MVP 5 native/WASM execution
+
+### Result
+
+- Accepted DEC-057 (`wasm-bridge-A`) and pinned the private `wasm-bindgen`
+  crate/CLI boundary at 0.2.100.
+- Generated a disposable full-corpus JSON projection carrying the source commit
+  and the existing logical registry digest.
+- Added an `is_sorted` WebAssembly observation matching native correction for
+  empty, singleton, duplicate, sorted and inverted fixtures.
+- Reported exact comparisons and first inversion with a 4096-element input cap.
+- Built and inspected a responsive static workbench and searchable 45-entity
+  catalog with no application server or external runtime resources.
+- Separated sourced complexity, deterministic counters and calibrated local
+  JS/WASM timing in the visible interface.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm -p atlas --locked --offline`
+- `scripts/check-web.sh`
+- Headless Chrome desktop/mobile rendering and DOM inspection
+
+### Limits
+
+- Stable insertion, `reverse` and DatasetSpec-derived browser choices remain
+  pending.
+- Timing includes the JS/WASM bridge and observation object; it is explicitly
+  not algorithm-only or portable benchmark evidence.
+- The bundle remains local and unpublished.
+
 ## 2026-07-14 - MVP 5 activation
 
 ### Result

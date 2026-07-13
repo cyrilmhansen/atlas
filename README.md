@@ -16,14 +16,22 @@ The current MVP 1 corpus contains 10 problems, 15 algorithms, and 20 tested Rust
 implementations. Schema hardening, local evidence integrity, deterministic
 indexing, the acceptance gate, and the local Git baseline are complete.
 
+MVP 5 is active under DEC-056. Its first static Web slice projects the complete
+registry and executes adjacent `is_sorted` locally through a private
+`wasm-bindgen` facade. See `docs/mvp5-web.md` for its exact authority and timing
+boundaries.
+
 ## Project map
 
 - `registry/atlas.yaml`: authoritative aggregate source registry;
 - `crates/atlas-algorithms`: minimal-runtime implementations;
 - `crates/atlas`: registry model, validation, and reference CLI;
 - `crates/atlas-mir`: experimental MIR adapter boundary;
+- `crates/atlas-web-wasm`: private curated browser execution facade;
+- `web`: static MVP 5 workbench and catalog sources;
 - `docs/schema-0.1.md`: current public schema contract;
 - `docs/mir-integration.md`: exact MVP 4 MIR build and execution boundary;
+- `docs/mvp5-web.md`: static artifact build, authority and timing boundaries;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;
 - `docs/mvp1-review.md`: MVP 1 exit-criteria audit;
@@ -68,6 +76,7 @@ scripts/apply-mir-patches.sh
 cargo test --workspace
 scripts/check-mvp1.sh
 scripts/check-mvp2.sh
+scripts/check-web.sh
 cargo test -p atlas-mir --locked --offline
 sh scripts/check-rv64-lp64-abi.sh
 cargo run -p atlas --example dataset_specs
@@ -77,6 +86,16 @@ cargo run --release -p atlas-bench --example compare_sorts -- sort.merge.rust.sl
 scripts/run-benchmark-linux.sh 0
 scripts/record-sort-comparison-linux.sh 0
 ```
+
+Build and serve the local static artifact:
+
+```sh
+scripts/build-web.sh
+python3 -m http.server 4173 --directory build/web
+```
+
+Then open `http://127.0.0.1:4173/`. Generated Web data, JavaScript bindings and
+WebAssembly stay under ignored `build/` paths.
 
 `scripts/check-mvp1.sh` is the complete offline MVP 1 acceptance gate. It checks
 formatting, feature profiles, tests, Clippy, registry evidence, and deterministic

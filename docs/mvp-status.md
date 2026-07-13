@@ -16,6 +16,12 @@ separated theoretical, counted and locally timed characteristics. Its first
 gate is native/WASM `is_sorted` equivalence. Publication, a stable Web format,
 advanced trace playback and MIR-in-browser execution remain outside scope.
 
+First gate status: complete under DEC-057. The private projection reproduces 10
+problems, 15 algorithms and 20 implementations with the logical registry
+digest. The browser and Node.js bindings execute adjacent `is_sorted`, report
+exact comparisons and the first inversion, and reject inputs longer than 4096
+elements. Stable insertion and `reverse` remain pending.
+
 Current corpus progress:
 
 - Problems: 10 / 10

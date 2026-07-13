@@ -382,6 +382,18 @@ stability and operation counters without exposing a general plugin system.
 | 4. Semantic dynamics | bounded trace player for algorithms with validated events | replay is deterministic and every event maps to a declared operation |
 | 5. Distribution | reproducible static bundle and optional GitHub Pages workflow | clean checkout rebuilds the same logical content; deployment is explicit |
 
+Current status:
+
+- Stage 0 is complete under DEC-053 through DEC-057.
+- Stage 1 has a private deterministic full-corpus projection and searchable
+  catalog carrying the source commit and logical registry digest.
+- Stages 2 and 3 have passed their first read-only gate: native/WASM
+  `is_sorted` equivalence, an exact comparison count, first-inversion index,
+  sourced complexity and qualified local browser timing.
+- Mutating insertion/reverse execution, DatasetSpec-derived choices and the
+  complete bundle gate are pending. Stage 4 and external publication are
+  excluded; the local reproducible portion of stage 5 remains an exit gate.
+
 Resource limits must be part of the local execution boundary: maximum input
 length, trace-event cap, step budget, cancellation and no network access from
 algorithm execution. Custom input is ephemeral and must not be presented as
@@ -713,3 +725,19 @@ replaceable. The minimal risk experiment is native/WASM result equivalence for
 class **C**; external publication remains class **D**.
 
 Accepted: **A** under DEC-056.
+
+### C16. Private browser/WASM boundary
+
+Context: the first execution gate needs to transfer bounded sequences between
+JavaScript and Rust without turning a temporary bridge into a general algorithm
+ABI. The crate and generated JavaScript must also be testable in CI.
+
+| Option | Consequence |
+|---|---|
+| A. Pinned `wasm-bindgen` facade | Generated typed glue and managed memory transfer; adds exact crate/CLI version coupling. |
+| B. Raw pointer/length exports | No binding dependency, but requires a custom allocator, lifetime rules and manual error convention. |
+| C. WIT/Component Model | Strong interface description, but disproportionate browser tooling for this bounded MVP. |
+
+Accepted: **A** under DEC-057. Version 0.2.100 is pinned for both crate and CLI;
+generated bindings remain ignored products. The private facade currently
+contains only a bounded `is_sorted` observation and is not a stable ABI.

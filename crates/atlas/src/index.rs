@@ -55,6 +55,11 @@ pub fn rebuild_database(
     rebuild_connection(registry, &mut connection)
 }
 
+pub fn summarize_registry(registry: &Registry) -> Result<ProjectionSummary, IndexError> {
+    let mut connection = Connection::open_in_memory()?;
+    rebuild_connection(registry, &mut connection)
+}
+
 fn rebuild_connection(
     registry: &Registry,
     connection: &mut Connection,

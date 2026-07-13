@@ -35,6 +35,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+
+      - name: Install pinned WebAssembly binding tool
+        run: cargo install wasm-bindgen-cli --version 0.2.100 --locked
 
       - name: Fetch locked dependencies
         run: cargo fetch --locked
@@ -44,6 +48,9 @@ jobs:
 
       - name: Test all workspace targets
         run: cargo test --workspace --all-targets --locked --offline
+
+      - name: Run MVP 5 Web acceptance slice
+        run: ./scripts/check-web.sh
 
       - name: Run RV64 LP64 ABI probe
         run: ./scripts/check-rv64-lp64-abi.sh

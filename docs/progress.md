@@ -1233,6 +1233,25 @@ cargo run -q -p atlas --locked --offline -- compose find
 cargo run -q -p atlas --locked --offline --example find_generated
 ```
 
+## 2026-07-13 - Explicit composition overrides
+
+### Result
+
+- Added `--force IMPLEMENTATION_ID` and `--forbid IMPLEMENTATION_ID` to the two
+  MVP 3 composition scenarios.
+- Constraints operate only on reviewed candidates, explain whether they retain
+  or replace normal selection, and reject a request that leaves no candidate.
+- The registry remains unchanged; generated Rust is deliberately rejected with
+  an override until the exact selected source is separately verified.
+
+### Verification
+
+```sh
+cargo test -p atlas --all-targets --locked --offline
+cargo run -q -p atlas --locked --offline -- compose cleanup --force sort.merge.rust.slice.v1
+cargo run -q -p atlas --locked --offline -- compose find --forbid search.binary.rust.slice.v1
+```
+
 ## 2026-07-13 - MVP 3 activation
 
 ### Result

@@ -6,6 +6,7 @@ use std::process::{Command, ExitCode};
 
 use atlas::comparisons::ComparisonReport;
 use atlas::composition::{
+    ImplementationConstraint, apply_implementation_constraint,
     cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time,
     find_minimize_declared_allocations, render as render_composition,
     render_expected_time_rust_orchestration, render_find_rust_orchestration,
@@ -64,6 +65,8 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
     }
     let mut render_rust = false;
     let mut expected_time = false;
+    let mut force = None;
+    let mut forbid = None;
     while let Some(option) = arguments.next() {
         match option.to_str() {
             Some("--rust") if !render_rust => render_rust = true,
@@ -84,9 +87,23 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
                     return ExitCode::from(2);
                 }
             },
+            Some("--force") if force.is_none() && forbid.is_none() => {
+                let Some(id) = arguments.next().and_then(|id| id.into_string().ok()) else {
+                    eprintln!("--force requires an implementation ID in valid UTF-8");
+                    return ExitCode::from(2);
+                };
+                force = Some(id);
+            }
+            Some("--forbid") if forbid.is_none() && force.is_none() => {
+                let Some(id) = arguments.next().and_then(|id| id.into_string().ok()) else {
+                    eprintln!("--forbid requires an implementation ID in valid UTF-8");
+                    return ExitCode::from(2);
+                };
+                forbid = Some(id);
+            }
             Some(option) => {
                 eprintln!(
-                    "unknown compose option {option:?}; expected --goal expected-time or --rust"
+                    "unknown compose option {option:?}; expected --goal expected-time, --force ID, --forbid ID, or --rust"
                 );
                 return ExitCode::from(2);
             }
@@ -95,6 +112,18 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
                 return ExitCode::from(2);
             }
         }
+    }
+    let constraint = match (force.as_deref(), forbid.as_deref()) {
+        (Some(id), None) => Some(ImplementationConstraint::Force(id)),
+        (None, Some(id)) => Some(ImplementationConstraint::Forbid(id)),
+        (None, None) => None,
+        (Some(_), Some(_)) => unreachable!("parser keeps force and forbid exclusive"),
+    };
+    if render_rust && constraint.is_some() {
+        eprintln!(
+            "--rust is unavailable with --force or --forbid until that exact source is verified"
+        );
+        return ExitCode::from(2);
     }
     if render_rust {
         match (scenario, expected_time) {
@@ -111,6 +140,16 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             ("find", false) => find_minimize_declared_allocations(),
             ("find", true) => unreachable!("expected-time is rejected for find"),
             _ => unreachable!("scenario is validated before rendering"),
+        };
+        let composition = match constraint {
+            Some(constraint) => match apply_implementation_constraint(composition, constraint) {
+                Ok(composition) => composition,
+                Err(error) => {
+                    eprintln!("cannot compose {scenario:?}: {error}");
+                    return ExitCode::from(2);
+                }
+            },
+            None => composition,
         };
         print!("{}", render_composition(&composition));
     }
@@ -862,6 +901,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--rust]\n  atlas compose find [--rust]\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--force ID|--forbid ID] [--rust]\n  atlas compose find [--force ID|--forbid ID] [--rust]\n  atlas index [DB_PATH]"
     );
 }

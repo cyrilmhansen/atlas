@@ -41,6 +41,7 @@ cargo run -p atlas --example cleanup_expected_time_generated
 cargo run -p atlas -- compose find
 cargo run -p atlas -- compose find --rust
 cargo run -p atlas --example find_generated
+cargo run -p atlas -- compose cleanup --forbid filter.in_place.rust.vec.v1
 cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh
@@ -125,6 +126,11 @@ Its `--rust` variant is separately compiled as `cleanup_expected_time_generated`
 `compose find` demonstrates a produced precondition: it sorts before binary
 search, makes that dependency visible, and renders a verified Rust example under
 `--rust`.
+
+Both scenarios accept `--force IMPLEMENTATION_ID` or `--forbid
+IMPLEMENTATION_ID`. These constraints select only between the reviewed
+candidates and never modify the registry. Generated Rust is intentionally
+unavailable with an override until that exact constrained source is verified.
 
 ## Runtime boundary
 

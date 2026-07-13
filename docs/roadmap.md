@@ -144,6 +144,11 @@ precondition: insertion sort establishes the ordering required by binary search.
 The plan and compiled Rust example make that mutation and the rejected
 allocation-heavy merge alternative visible.
 
+The first explicit override surface is also implemented: `--force` and
+`--forbid` select only between each scenario's reviewed candidates, retaining a
+reason or rejecting an empty candidate set. This satisfies the forcing/forbid
+experiment without turning MVP 3 into general search or mutable registry state.
+
 MVP 4 remains the first phase allowed to introduce MIR. The `atlas-algorithms`
 core APIs provide the native reference backend; MIR remains an adapter and never
 defines registry semantics, compact references, or evidence formats.

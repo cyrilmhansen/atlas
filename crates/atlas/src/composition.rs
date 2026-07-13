@@ -29,6 +29,75 @@ pub struct PlanStep {
     pub effects: &'static [&'static str],
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ImplementationConstraint<'a> {
+    Force(&'a str),
+    Forbid(&'a str),
+}
+
+/// Applies an explicit choice only within this scenario's reviewed candidates.
+pub fn apply_implementation_constraint(
+    mut composition: Composition,
+    constraint: ImplementationConstraint<'_>,
+) -> Result<Composition, String> {
+    let selected_has = candidate_uses(&composition.selected, constraint.id());
+    let rejected_has = candidate_uses(&composition.rejected, constraint.id());
+
+    match constraint {
+        ImplementationConstraint::Force(_) if selected_has => {
+            composition.selected.decision = "selected: explicit force matches the normal candidate";
+        }
+        ImplementationConstraint::Force(_) if rejected_has => {
+            std::mem::swap(&mut composition.selected, &mut composition.rejected);
+            composition.selected.decision =
+                "selected: explicit force overrides the normal candidate";
+            composition.rejected.decision = "rejected: not selected by the explicit force";
+        }
+        ImplementationConstraint::Force(id) => {
+            return Err(format!(
+                "forced implementation {id:?} is not used by either reviewed candidate"
+            ));
+        }
+        ImplementationConstraint::Forbid(id) if selected_has && rejected_has => {
+            return Err(format!(
+                "forbidden implementation {id:?} removes every reviewed candidate"
+            ));
+        }
+        ImplementationConstraint::Forbid(_) if selected_has => {
+            std::mem::swap(&mut composition.selected, &mut composition.rejected);
+            composition.selected.decision =
+                "selected: the normal candidate was excluded by an explicit forbid constraint";
+            composition.rejected.decision = "rejected: excluded by the explicit forbid constraint";
+        }
+        ImplementationConstraint::Forbid(_) if rejected_has => {
+            composition.selected.decision =
+                "selected: the alternative was excluded by an explicit forbid constraint";
+        }
+        ImplementationConstraint::Forbid(id) => {
+            return Err(format!(
+                "forbidden implementation {id:?} is not used by either reviewed candidate"
+            ));
+        }
+    }
+
+    Ok(composition)
+}
+
+impl<'a> ImplementationConstraint<'a> {
+    fn id(self) -> &'a str {
+        match self {
+            Self::Force(id) | Self::Forbid(id) => id,
+        }
+    }
+}
+
+fn candidate_uses(candidate: &CandidatePlan, implementation_id: &str) -> bool {
+    candidate
+        .steps
+        .iter()
+        .any(|step| step.implementation_id == implementation_id)
+}
+
 /// Selects the first real MVP 3 pipeline for the declared-allocation objective.
 pub fn cleanup_minimize_declared_allocations() -> Composition {
     Composition {
@@ -223,6 +292,7 @@ fn render_candidate(output: &mut String, candidate: &CandidatePlan) {
 #[cfg(test)]
 mod tests {
     use super::{
+        ImplementationConstraint, apply_implementation_constraint,
         cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time,
         find_minimize_declared_allocations, render, render_expected_time_rust_orchestration,
         render_find_rust_orchestration, render_rust_orchestration,
@@ -311,5 +381,41 @@ mod tests {
 
         assert!(source.contains("insertion_sort_by(values, i32::cmp)"));
         assert!(source.contains("binary_search_by(values, needle, i32::cmp)"));
+    }
+
+    #[test]
+    fn force_and_forbid_select_only_the_reviewed_cleanup_candidates() {
+        let forced = apply_implementation_constraint(
+            cleanup_minimize_declared_allocations(),
+            ImplementationConstraint::Force("sort.merge.rust.slice.v1"),
+        )
+        .expect("merge sort belongs to the alternative");
+        assert_eq!(forced.selected.id, "cleanup.copy_merge_hash");
+        assert!(forced.selected.decision.contains("explicit force"));
+
+        let forbidden = apply_implementation_constraint(
+            cleanup_minimize_declared_allocations(),
+            ImplementationConstraint::Forbid("filter.in_place.rust.vec.v1"),
+        )
+        .expect("the alternative remains available");
+        assert_eq!(forbidden.selected.id, "cleanup.copy_merge_hash");
+        assert!(forbidden.selected.decision.contains("explicit forbid"));
+    }
+
+    #[test]
+    fn constraint_rejects_unknown_or_shared_required_implementations() {
+        let unknown = apply_implementation_constraint(
+            cleanup_minimize_declared_allocations(),
+            ImplementationConstraint::Force("reverse.symmetric.rust.slice.v1"),
+        )
+        .expect_err("unknown candidate implementation must fail");
+        assert!(unknown.contains("not used"));
+
+        let shared = apply_implementation_constraint(
+            find_minimize_declared_allocations(),
+            ImplementationConstraint::Forbid("search.binary.rust.slice.v1"),
+        )
+        .expect_err("both find candidates require binary search");
+        assert!(shared.contains("removes every"));
     }
 }

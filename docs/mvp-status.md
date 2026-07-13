@@ -89,4 +89,8 @@ and runnable Rust orchestration examples; Atlas itself does not execute them.
 input required by binary search, the step that establishes it, and a rejected
 merge-sort alternative before rendering a compiled Rust orchestration.
 
+Both scenarios accept explicit force/forbid implementation constraints without
+modifying the registry. They remain bounded to reviewed candidates; generation
+with an override is deferred until its exact source is verified.
+
 See `docs/mvp3-review.md` for the acceptance checks and deliberate limits.

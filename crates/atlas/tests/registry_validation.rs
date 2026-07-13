@@ -840,6 +840,44 @@ fn cli_renders_a_compilable_find_orchestration() {
 }
 
 #[test]
+fn cli_forces_or_forbids_implementations_without_changing_the_registry() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for arguments in [
+        ["compose", "cleanup", "--force", "sort.merge.rust.slice.v1"],
+        [
+            "compose",
+            "cleanup",
+            "--forbid",
+            "filter.in_place.rust.vec.v1",
+        ],
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+            .args(arguments)
+            .current_dir(&workspace)
+            .output()
+            .expect("atlas binary must run");
+
+        assert!(output.status.success());
+        let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+        assert!(stdout.contains("selected:\n  id: cleanup.copy_merge_hash"));
+        assert!(stdout.contains("explicit"));
+    }
+}
+
+#[test]
+fn cli_rejects_constraints_that_remove_every_find_candidate() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "find", "--forbid", "search.binary.rust.slice.v1"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("removes every"));
+}
+
+#[test]
 fn cli_explains_binary_search_chain_with_requirements_and_effects() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))

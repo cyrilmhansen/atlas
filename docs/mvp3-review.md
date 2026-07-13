@@ -51,6 +51,12 @@ objective because merge scratch is declared. `atlas compose find --rust` is
 identical to the compiled `find_generated` example; it accepts a mutable slice,
 sorts it, then returns the first matching index from binary search.
 
+Both scenarios accept an explicit `--force IMPLEMENTATION_ID` or `--forbid
+IMPLEMENTATION_ID`. The constraint is evaluated only against their reviewed
+candidates: it either retains, swaps, or rejects the candidate set with a
+rendered reason. Forbidding binary search from `find`, for example, rejects the
+request because no candidate remains. Constraints do not modify the registry.
+
 ## Deliberate limits
 
 - The types are internal Rust values for this scenario, not schema 0.1 fields
@@ -61,6 +67,9 @@ sorts it, then returns the first matching index from binary search.
   The separately runnable Cargo example is the verification boundary.
 - The objective interprets declared effects only. It does not turn them into
   empirical allocation measurements.
+- Rust generation is unavailable with an override. The existing sources verify
+  only their unconstrained candidate, so emitting another source would be
+  misleading until it is separately compiled and exercised.
 
 ## Acceptance checks
 
@@ -75,6 +84,7 @@ cargo run -q -p atlas --locked --offline --example cleanup_expected_time_generat
 cargo run -q -p atlas --locked --offline -- compose find
 cargo run -q -p atlas --locked --offline -- compose find --rust
 cargo run -q -p atlas --locked --offline --example find_generated
+cargo run -q -p atlas --locked --offline -- compose cleanup --forbid filter.in_place.rust.vec.v1
 ```
 
 The unit tests require every selected mutation, copy, and allocation to remain

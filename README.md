@@ -41,6 +41,8 @@ cargo run -p atlas --example cleanup_expected_time_generated
 cargo run -p atlas -- compose find
 cargo run -p atlas -- compose find --rust
 cargo run -p atlas --example find_generated
+cargo run -p atlas -- compose partition-sort
+cargo run -p atlas --example partition_sort_generated
 cargo run -p atlas -- compose cleanup --forbid filter.in_place.rust.vec.v1
 cargo run -p atlas -- index
 cargo test --workspace
@@ -126,6 +128,8 @@ Its `--rust` variant is separately compiled as `cleanup_expected_time_generated`
 `compose find` demonstrates a produced precondition: it sorts before binary
 search, makes that dependency visible, and renders a verified Rust example under
 `--rust`.
+`compose partition-sort` keeps both partition branches, projects and sorts only
+`matching`, then reassembles the structured result without a hidden copy.
 
 Both scenarios accept `--force IMPLEMENTATION_ID` or `--forbid
 IMPLEMENTATION_ID`. These constraints select only between the reviewed

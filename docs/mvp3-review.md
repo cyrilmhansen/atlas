@@ -51,6 +51,11 @@ objective because merge scratch is declared. `atlas compose find --rust` is
 identical to the compiled `find_generated` example; it accepts a mutable slice,
 sorts it, then returns the first matching index from binary search.
 
+`atlas compose partition-sort` demonstrates a structured intermediate value:
+stable partition produces `matching` and `rejected` vectors, the plan projects
+only `matching` for in-place sorting, then reassembles both branches. Both
+partition-output allocations, the projection, and reassembly are explicit.
+
 Both scenarios accept an explicit `--force IMPLEMENTATION_ID` or `--forbid
 IMPLEMENTATION_ID`. The constraint is evaluated only against their reviewed
 candidates: it either retains, swaps, or rejects the candidate set with a
@@ -84,6 +89,8 @@ cargo run -q -p atlas --locked --offline --example cleanup_expected_time_generat
 cargo run -q -p atlas --locked --offline -- compose find
 cargo run -q -p atlas --locked --offline -- compose find --rust
 cargo run -q -p atlas --locked --offline --example find_generated
+cargo run -q -p atlas --locked --offline -- compose partition-sort
+cargo run -q -p atlas --locked --offline --example partition_sort_generated
 cargo run -q -p atlas --locked --offline -- compose cleanup --forbid filter.in_place.rust.vec.v1
 ```
 

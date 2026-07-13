@@ -8,8 +8,9 @@ use atlas::comparisons::ComparisonReport;
 use atlas::composition::{
     ImplementationConstraint, apply_implementation_constraint,
     cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time,
-    find_minimize_declared_allocations, render as render_composition,
-    render_expected_time_rust_orchestration, render_find_rust_orchestration,
+    find_minimize_declared_allocations, partition_sort_minimize_declared_allocations,
+    render as render_composition, render_expected_time_rust_orchestration,
+    render_find_rust_orchestration, render_partition_sort_rust_orchestration,
     render_rust_orchestration,
 };
 use atlas::executions::{ExecutionMode, ExecutionRecord};
@@ -51,7 +52,7 @@ fn main() -> ExitCode {
 
 fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
     let Some(scenario) = arguments.next() else {
-        eprintln!("compose requires the experimental scenario cleanup or find");
+        eprintln!("compose requires cleanup, find, or partition-sort");
         print_usage();
         return ExitCode::from(2);
     };
@@ -59,8 +60,10 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
         eprintln!("composition scenario must be valid UTF-8");
         return ExitCode::from(2);
     };
-    if !matches!(scenario, "cleanup" | "find") {
-        eprintln!("unknown composition scenario {scenario:?}; expected cleanup or find");
+    if !matches!(scenario, "cleanup" | "find" | "partition-sort") {
+        eprintln!(
+            "unknown composition scenario {scenario:?}; expected cleanup, find, or partition-sort"
+        );
         return ExitCode::from(2);
     }
     let mut render_rust = false;
@@ -130,6 +133,7 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             ("cleanup", true) => print!("{}", render_expected_time_rust_orchestration()),
             ("cleanup", false) => print!("{}", render_rust_orchestration()),
             ("find", false) => print!("{}", render_find_rust_orchestration()),
+            ("partition-sort", false) => print!("{}", render_partition_sort_rust_orchestration()),
             ("find", true) => unreachable!("expected-time is rejected for find"),
             _ => unreachable!("scenario is validated before rendering"),
         }
@@ -138,6 +142,7 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             ("cleanup", true) => cleanup_minimize_declared_expected_time(),
             ("cleanup", false) => cleanup_minimize_declared_allocations(),
             ("find", false) => find_minimize_declared_allocations(),
+            ("partition-sort", false) => partition_sort_minimize_declared_allocations(),
             ("find", true) => unreachable!("expected-time is rejected for find"),
             _ => unreachable!("scenario is validated before rendering"),
         };

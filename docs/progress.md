@@ -1233,6 +1233,13 @@ cargo run -q -p atlas --locked --offline -- compose find
 cargo run -q -p atlas --locked --offline --example find_generated
 ```
 
+## 2026-07-13 - Structured partition composition
+
+- Added `atlas compose partition-sort`: partition, explicit matching-branch
+  projection, in-place sort, and branch reassembly.
+- Added a matching compiled Rust example. The schema remains unchanged; the
+  structural values are internal to this experiment.
+
 ## 2026-07-13 - Explicit composition overrides
 
 ### Result

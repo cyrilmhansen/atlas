@@ -236,6 +236,85 @@ pub fn find_minimize_declared_allocations() -> Composition {
     }
 }
 
+/// Composes a stable partition with sorting of its matching branch.
+pub fn partition_sort_minimize_declared_allocations() -> Composition {
+    Composition {
+        id: "sequence.partition_sort.experimental.v1",
+        goal: "sort the matching partition with no declared allocation beyond partition outputs",
+        input: "Sequence<i32>; predicate: i32 -> bool; order: ascending",
+        output: "Partition { matching: SortedSequence<i32>, rejected: StableSubsequence<i32> }",
+        preconditions: &[
+            "project partition.matching, sort it, then retain partition.rejected in the result",
+        ],
+        selected: CandidatePlan {
+            id: "partition_sort.copy_insertion",
+            steps: vec![
+                PlanStep {
+                    implementation_id: "partition.copy.rust.vec.v1",
+                    input: "input sequence and predicate",
+                    output: "Partition { matching: Vec<i32>, rejected: Vec<i32> }",
+                    effects: &["allocates matching and rejected output Vec<T> values"],
+                },
+                PlanStep {
+                    implementation_id: "projection.partition.matching",
+                    input: "partition.matching",
+                    output: "borrowed matching Vec<i32>",
+                    effects: &[
+                        "projects one branch; no copy or allocation",
+                        "retains partition.rejected",
+                    ],
+                },
+                PlanStep {
+                    implementation_id: "sort.insertion.rust.slice.v1",
+                    input: "borrowed matching Vec<i32>",
+                    output: "the same sorted matching Vec<i32>",
+                    effects: &["mutates partition.matching", "allocation: none"],
+                },
+                PlanStep {
+                    implementation_id: "reassemble.partition",
+                    input: "sorted matching and retained rejected branch",
+                    output: "Partition { matching: SortedSequence<i32>, rejected: StableSubsequence<i32> }",
+                    effects: &["moves both branches into result; no copy or allocation"],
+                },
+            ],
+            decision: "selected: insertion sort adds no declared allocation after the required partition outputs",
+        },
+        rejected: CandidatePlan {
+            id: "partition_sort.copy_merge",
+            steps: vec![
+                PlanStep {
+                    implementation_id: "partition.copy.rust.vec.v1",
+                    input: "input sequence and predicate",
+                    output: "Partition { matching: Vec<i32>, rejected: Vec<i32> }",
+                    effects: &["allocates matching and rejected output Vec<T> values"],
+                },
+                PlanStep {
+                    implementation_id: "projection.partition.matching",
+                    input: "partition.matching",
+                    output: "borrowed matching Vec<i32>",
+                    effects: &[
+                        "projects one branch; no copy or allocation",
+                        "retains partition.rejected",
+                    ],
+                },
+                PlanStep {
+                    implementation_id: "sort.merge.rust.slice.v1",
+                    input: "borrowed matching Vec<i32>",
+                    output: "the same sorted matching Vec<i32>",
+                    effects: &["mutates partition.matching", "allocation: auxiliary Vec<T>"],
+                },
+                PlanStep {
+                    implementation_id: "reassemble.partition",
+                    input: "sorted matching and retained rejected branch",
+                    output: "Partition { matching: SortedSequence<i32>, rejected: StableSubsequence<i32> }",
+                    effects: &["moves both branches into result; no copy or allocation"],
+                },
+            ],
+            decision: "rejected: merge sort adds declared scratch storage after the same projection",
+        },
+    }
+}
+
 pub fn render(composition: &Composition) -> String {
     let mut output = format!(
         "plan: {}\ngoal: {}\ninput: {}\noutput: {}\n",
@@ -270,6 +349,10 @@ pub fn render_expected_time_rust_orchestration() -> &'static str {
 /// Returns the verified Rust source for the precondition-focused candidate.
 pub fn render_find_rust_orchestration() -> &'static str {
     include_str!("../examples/find_generated.rs")
+}
+
+pub fn render_partition_sort_rust_orchestration() -> &'static str {
+    include_str!("../examples/partition_sort_generated.rs")
 }
 
 fn render_candidate(output: &mut String, candidate: &CandidatePlan) {

@@ -63,6 +63,13 @@ unique output. `sort.merge -> deduplicate.hash` remains a compatible rejected
 candidate because it adds declared merge scratch and hash-set storage. Its
 `--rust` output is the compiled `unique_sort_generated` example.
 
+`atlas compose merge-sorted` is the first two-input fan-in: it sorts `left` and
+`right` independently, then invokes the stable merge implementation. The plan
+declares both preconditions, the mutations that establish them, and the merged
+output allocation. It rejects two merge-sort prerequisites because their two
+scratch vectors are additional intermediate allocations. Its `--rust` output is
+the compiled `merge_sorted_generated` example.
+
 All composition scenarios accept an explicit `--force IMPLEMENTATION_ID` or `--forbid
 IMPLEMENTATION_ID`. The constraint is evaluated only against their reviewed
 candidates: it either retains, swaps, or rejects the candidate set with a
@@ -96,6 +103,9 @@ cargo run -q -p atlas --locked --offline --example cleanup_expected_time_generat
 cargo run -q -p atlas --locked --offline -- compose find
 cargo run -q -p atlas --locked --offline -- compose find --rust
 cargo run -q -p atlas --locked --offline --example find_generated
+cargo run -q -p atlas --locked --offline -- compose merge-sorted
+cargo run -q -p atlas --locked --offline -- compose merge-sorted --rust
+cargo run -q -p atlas --locked --offline --example merge_sorted_generated
 cargo run -q -p atlas --locked --offline -- compose partition-sort
 cargo run -q -p atlas --locked --offline -- compose partition-sort --rust
 cargo run -q -p atlas --locked --offline --example partition_sort_generated

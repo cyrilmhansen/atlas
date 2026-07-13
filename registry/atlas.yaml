@@ -532,7 +532,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -581,7 +581,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -630,7 +630,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -679,7 +679,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -728,7 +728,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -777,7 +777,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -826,7 +826,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -875,7 +875,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -923,7 +923,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -971,7 +971,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1019,7 +1019,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1067,7 +1067,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1114,7 +1114,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1163,7 +1163,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1212,7 +1212,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1261,7 +1261,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1310,7 +1310,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1360,7 +1360,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1408,7 +1408,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:
@@ -1456,7 +1456,7 @@ implementations:
       level: declared
       source: "file:crates/atlas-algorithms/Cargo.toml"
     license:
-      value: "MIT OR Apache-2.0"
+      value: "MIT"
       level: declared
       source: "file:Cargo.toml"
     target:

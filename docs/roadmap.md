@@ -144,11 +144,12 @@ precondition: insertion sort establishes the ordering required by binary search.
 The plan and compiled Rust example make that mutation and the rejected
 allocation-heavy merge alternative visible.
 
-Two further bounded scenarios exercise complementary plan shapes without
+Three further bounded scenarios exercise complementary plan shapes without
 introducing a planner: `partition-sort` makes a structured intermediate and its
-projection/reassembly explicit, while `unique-sort` separates the required
-unique output allocation from rejected intermediate merge/hash storage. Both
-have compiled Rust orchestration examples.
+projection/reassembly explicit, `unique-sort` separates the required unique
+output allocation from rejected intermediate merge/hash storage, and
+`merge-sorted` forms a two-input fan-in after establishing both sorted-input
+preconditions. All have compiled Rust orchestration examples.
 
 The first explicit override surface is also implemented: `--force` and
 `--forbid` select only between each scenario's reviewed candidates, retaining a

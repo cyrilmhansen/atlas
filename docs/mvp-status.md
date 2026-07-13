@@ -93,7 +93,9 @@ merge-sort alternative before rendering a compiled Rust orchestration.
 explicit, including projection, retention of the other branch, and reassembly.
 `atlas compose unique-sort` isolates sorting and deduplication, distinguishing
 the required output allocation from rejected intermediate merge/hash storage.
-Both render independently compiled Rust examples.
+`atlas compose merge-sorted` adds a two-input fan-in, with two explicit sorted
+preconditions and their establishing mutations. All render independently
+compiled Rust examples.
 
 All composition scenarios accept explicit force/forbid implementation constraints without
 modifying the registry. They remain bounded to reviewed candidates; generation

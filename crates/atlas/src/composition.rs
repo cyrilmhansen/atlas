@@ -290,6 +290,74 @@ pub fn unique_sort_minimize_declared_allocations() -> Composition {
     }
 }
 
+/// Composes two independent sorts with a stable two-way merge.
+pub fn merge_sorted_minimize_declared_allocations() -> Composition {
+    Composition {
+        id: "sequence.merge_sorted.experimental.v1",
+        goal: "establish two sorted-input preconditions with no declared intermediate allocation",
+        input: "left and right mutable Sequence<i32>; shared order: ascending",
+        output: "StableMergedSequence<i32>",
+        preconditions: &[
+            "two-way merge requires left and right sorted according to the same comparison order",
+            "steps 1 and 2 establish the merge preconditions before step 3",
+        ],
+        selected: CandidatePlan {
+            id: "merge_sorted.insertion_insertion_merge",
+            steps: vec![
+                PlanStep {
+                    implementation_id: "sort.insertion.rust.slice.v1",
+                    input: "left mutable Sequence<i32>",
+                    output: "the same sorted left Sequence<i32>",
+                    effects: &["mutates left.sequence", "allocation: none"],
+                },
+                PlanStep {
+                    implementation_id: "sort.insertion.rust.slice.v1",
+                    input: "right mutable Sequence<i32>",
+                    output: "the same sorted right Sequence<i32>",
+                    effects: &["mutates right.sequence", "allocation: none"],
+                },
+                PlanStep {
+                    implementation_id: "merge.sorted.rust.vec.v1",
+                    input: "the sorted left and right sequences",
+                    output: "new StableMergedSequence<i32>",
+                    effects: &[
+                        "reads both sorted input sequences",
+                        "allocation: merged output Vec<T>",
+                    ],
+                },
+            ],
+            decision: "selected: both prerequisite sorts add no declared allocation; the merged output is the only declared allocation",
+        },
+        rejected: CandidatePlan {
+            id: "merge_sorted.merge_merge_merge",
+            steps: vec![
+                PlanStep {
+                    implementation_id: "sort.merge.rust.slice.v1",
+                    input: "left mutable Sequence<i32>",
+                    output: "the same sorted left Sequence<i32>",
+                    effects: &["mutates left.sequence", "allocation: auxiliary Vec<T>"],
+                },
+                PlanStep {
+                    implementation_id: "sort.merge.rust.slice.v1",
+                    input: "right mutable Sequence<i32>",
+                    output: "the same sorted right Sequence<i32>",
+                    effects: &["mutates right.sequence", "allocation: auxiliary Vec<T>"],
+                },
+                PlanStep {
+                    implementation_id: "merge.sorted.rust.vec.v1",
+                    input: "the sorted left and right sequences",
+                    output: "new StableMergedSequence<i32>",
+                    effects: &[
+                        "reads both sorted input sequences",
+                        "allocation: merged output Vec<T>",
+                    ],
+                },
+            ],
+            decision: "rejected: it establishes the same two preconditions but declares auxiliary merge-sort storage for both inputs",
+        },
+    }
+}
+
 /// Composes a stable partition with sorting of its matching branch.
 pub fn partition_sort_minimize_declared_allocations() -> Composition {
     Composition {
@@ -410,6 +478,11 @@ pub fn render_unique_sort_rust_orchestration() -> &'static str {
     include_str!("../examples/unique_sort_generated.rs")
 }
 
+/// Returns the verified Rust source for the two-input merge candidate.
+pub fn render_merge_sorted_rust_orchestration() -> &'static str {
+    include_str!("../examples/merge_sorted_generated.rs")
+}
+
 pub fn render_partition_sort_rust_orchestration() -> &'static str {
     include_str!("../examples/partition_sort_generated.rs")
 }
@@ -436,10 +509,11 @@ mod tests {
     use super::{
         ImplementationConstraint, apply_implementation_constraint,
         cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time,
-        find_minimize_declared_allocations, partition_sort_minimize_declared_allocations, render,
+        find_minimize_declared_allocations, merge_sorted_minimize_declared_allocations,
+        partition_sort_minimize_declared_allocations, render,
         render_expected_time_rust_orchestration, render_find_rust_orchestration,
-        render_rust_orchestration, render_unique_sort_rust_orchestration,
-        unique_sort_minimize_declared_allocations,
+        render_merge_sorted_rust_orchestration, render_rust_orchestration,
+        render_unique_sort_rust_orchestration, unique_sort_minimize_declared_allocations,
     };
 
     #[test]
@@ -554,6 +628,32 @@ mod tests {
 
         assert!(source.contains("insertion_sort_by(values, i32::cmp)"));
         assert!(source.contains("deduplicate_quadratic(values)"));
+    }
+
+    #[test]
+    fn merge_sorted_plan_establishes_both_sorted_input_preconditions() {
+        let composition = merge_sorted_minimize_declared_allocations();
+        let output = render(&composition);
+
+        assert_eq!(
+            composition.selected.id,
+            "merge_sorted.insertion_insertion_merge"
+        );
+        assert_eq!(composition.selected.steps.len(), 3);
+        assert!(output.contains("steps 1 and 2 establish the merge preconditions"));
+        assert!(output.contains("mutates left.sequence"));
+        assert!(output.contains("mutates right.sequence"));
+        assert!(output.contains("rejected:\n  id: merge_sorted.merge_merge_merge"));
+        assert!(output.contains("auxiliary merge-sort storage for both inputs"));
+    }
+
+    #[test]
+    fn generated_merge_sorted_rust_orchestration_matches_the_selected_operations() {
+        let source = render_merge_sorted_rust_orchestration();
+
+        assert!(source.contains("insertion_sort_by(left, i32::cmp)"));
+        assert!(source.contains("insertion_sort_by(right, i32::cmp)"));
+        assert!(source.contains("merge_sorted_values(left, right, i32::cmp)"));
     }
 
     #[test]

@@ -1252,6 +1252,17 @@ cargo run -q -p atlas --locked --offline --example find_generated
 - Added CLI and unit coverage for `unique-sort`, and completed equivalent CLI
   coverage for the preceding structured `partition-sort` scenario.
 
+## 2026-07-13 - Two-input merge composition
+
+- Added `atlas compose merge-sorted`, the fifth internal MVP 3 scenario. It
+  sorts both independent inputs, then performs a stable two-way merge.
+- The plan makes both sorted-input preconditions and their establishing
+  mutations explicit. The selected candidate declares only the required merged
+  output allocation; the rejected candidate declares merge-sort scratch for
+  each input.
+- Added the matching compiled `merge_sorted_generated` orchestration and CLI
+  coverage.
+
 ## 2026-07-13 - Explicit composition overrides
 
 ### Result

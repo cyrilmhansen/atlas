@@ -64,7 +64,7 @@ fn accepts_the_committed_registry() {
     );
     for implementation in &registry.implementations {
         assert_eq!(implementation.version.value, "0.1.0");
-        assert_eq!(implementation.license.value, "MIT OR Apache-2.0");
+        assert_eq!(implementation.license.value, "MIT");
         assert_eq!(
             implementation.abi.value,
             "Rust calling convention; no stable ABI"
@@ -837,6 +837,33 @@ fn cli_renders_a_compilable_find_orchestration() {
     assert!(stdout.contains("pub fn find(values: &mut [i32], needle: &i32)"));
     assert!(stdout.contains("insertion_sort_by(values, i32::cmp)"));
     assert!(stdout.contains("binary_search_by(values, needle, i32::cmp)"));
+}
+
+#[test]
+fn cli_renders_the_two_input_merge_sorted_composition_and_orchestration() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let plan = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "merge-sorted"])
+        .current_dir(&workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(plan.status.success());
+    let stdout = String::from_utf8(plan.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("plan: sequence.merge_sorted.experimental.v1"));
+    assert!(stdout.contains("steps 1 and 2 establish the merge preconditions"));
+    assert!(stdout.contains("selected:\n  id: merge_sorted.insertion_insertion_merge"));
+    assert!(stdout.contains("rejected:\n  id: merge_sorted.merge_merge_merge"));
+
+    let source = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "merge-sorted", "--rust"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+    assert!(source.status.success());
+    let stdout = String::from_utf8(source.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("pub fn merge_after_sort(left: &mut [i32], right: &mut [i32])"));
+    assert!(stdout.contains("merge_sorted_values(left, right, i32::cmp)"));
 }
 
 #[test]

@@ -41,6 +41,9 @@ cargo run -p atlas --example cleanup_expected_time_generated
 cargo run -p atlas -- compose find
 cargo run -p atlas -- compose find --rust
 cargo run -p atlas --example find_generated
+cargo run -p atlas -- compose merge-sorted
+cargo run -p atlas -- compose merge-sorted --rust
+cargo run -p atlas --example merge_sorted_generated
 cargo run -p atlas -- compose partition-sort
 cargo run -p atlas -- compose partition-sort --rust
 cargo run -p atlas --example partition_sort_generated
@@ -138,6 +141,8 @@ search, makes that dependency visible, and renders a verified Rust example under
 intermediate storage: insertion sort mutates the supplied sequence, then
 quadratic deduplication produces the output. The merge/hash alternative is
 rendered as rejected for its declared scratch and hash-set storage.
+`compose merge-sorted` makes two sorted-input preconditions explicit: it sorts
+each input in place, then produces the required stable merged output.
 
 All composition scenarios accept `--force IMPLEMENTATION_ID` or `--forbid
 IMPLEMENTATION_ID`. These constraints select only between the reviewed

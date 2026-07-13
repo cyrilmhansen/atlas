@@ -1206,6 +1206,22 @@ sh -n scripts/check-mvp2.sh
 scripts/check-mvp2.sh
 ```
 
+## 2026-07-13 - MVP 3 activation
+
+### Result
+
+- Activated the narrow MVP 3 experimental scope under DEC-037.
+- Restricted the first slice to one real linear pipeline, internal types, and a
+  human-readable non-public plan.
+- Kept schema 0.1, persistent plan formats, general planning, code generation,
+  and MIR coupling outside this activation.
+
+### Next decision
+
+Select the first concrete pipeline and the comparison alternatives it must
+explain. The existing corpus supports `filter -> sort -> deduplicate`; `parse`
+and `encode` are not yet registered components.
+
 The gate creates only ignored generated observations under `build/executions/`.
 
 ## 2026-07-12 - Replayable observations and baseline resource metrics

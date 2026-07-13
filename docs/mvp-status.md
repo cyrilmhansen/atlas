@@ -1,7 +1,7 @@
 # MVP status
 
-- Active MVP: **none; MVP 3 is not yet activated**
-- Status: MVP 2 closed locally under DEC-036
+- Active MVP: **MVP 3 - explainable selection and linear composition**
+- Status: narrow experimental first slice under DEC-037
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2 activated: 2026-07-12
 
@@ -68,3 +68,10 @@ See `docs/mvp1-review.md` for evidence and recommended closure order.
 
 See `docs/mvp2-review.md` and DEC-036 for evidence, limits, and impact on the
 next MVP.
+
+## MVP 3 first slice
+
+Build one internally represented linear pipeline from existing sequence
+components. The plan must expose compatibility, preconditions, mutations,
+allocations, copies, and rejected alternatives. It is experimental and does not
+change schema 0.1 or define a persistent plan format.

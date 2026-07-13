@@ -121,9 +121,11 @@ shows one representation fits both cases without backend coupling.
 
 ## MVP 3 and MVP 4
 
-MVP 3 remains focused on explainable constrained selection and linear
-composition. The structured AST may support readable orchestration but must not
-expand MVP 3 into a general compiler.
+MVP 3 is active under DEC-037 as a narrow experiment in explainable constrained
+selection and linear composition. Its first slice uses one real sequence
+pipeline, internal structural types, and a non-public readable plan. The
+structured AST may support readable orchestration but must not expand MVP 3 into
+a general compiler.
 
 MVP 4 remains the first phase allowed to introduce MIR. The `atlas-algorithms`
 core APIs provide the native reference backend; MIR remains an adapter and never

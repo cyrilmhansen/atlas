@@ -1,5 +1,29 @@
 # Progress log
 
+## 2026-07-14 - DatasetSpec-derived Web choices
+
+### Result
+
+- Replaced JavaScript dataset fixtures with a deterministic private projection
+  of all five `dataset.sequence.sort.m2.v0` cases.
+- Preserved each case's spec, problem, class, seed, materialized values and
+  canonical SHA-256 content digest through the browser boundary.
+- Kept compatible reuse for `is_sorted` and `reverse` visibly attributed to
+  `sequence.sort`; no new problem-specific DatasetSpec was implied.
+- Marked edited inputs as custom, ephemeral and without registry evidence.
+
+### Verification
+
+- `cargo test -p atlas --lib web_projection --locked --offline`
+- `scripts/check-web.sh`
+- Headless Chrome desktop/mobile dataset provenance rendering and DOM inspection
+
+### Limits
+
+- Only the accepted sorting demonstration spec is projected; benchmark matrices
+  and the partition spec are outside the three-workload Web slice.
+- The complete clean-checkout static bundle gate remains to be recorded.
+
 ## 2026-07-14 - Symmetric reverse in the Web artifact
 
 ### Result

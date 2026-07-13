@@ -18,8 +18,10 @@ indexing, the acceptance gate, and the local Git baseline are complete.
 
 MVP 5 is active under DEC-056. Its static Web slice projects the complete
 registry and executes adjacent `is_sorted`, stable insertion sort and symmetric
-in-place reverse locally through a private `wasm-bindgen` facade. See
-`docs/mvp5-web.md` for its exact authority, counter and timing boundaries.
+in-place reverse locally through a private `wasm-bindgen` facade. Its dataset
+selector is generated from deterministic DatasetSpec cases rather than UI
+fixtures. See `docs/mvp5-web.md` for its exact authority, counter and timing
+boundaries.
 
 ## Project map
 

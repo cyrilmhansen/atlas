@@ -391,9 +391,12 @@ Current status:
   and symmetric-reverse gates with native/WASM equivalence, exact semantic
   operation counts, visible original indices, sourced complexity and qualified
   local timing. Reverse also checks that a second application restores input.
-- DatasetSpec-derived choices and the complete bundle gate are pending. Stage 4
-  and external publication are excluded; the local reproducible portion of
-  stage 5 remains an exit gate.
+- The selector is derived from all five cases of
+  `dataset.sequence.sort.m2.v0`, retaining spec/problem attribution, class,
+  seed and content digest. Compatible reuse for `is_sorted` and `reverse` is
+  visible and does not imply new problem-specific specs.
+- The complete bundle gate is pending. Stage 4 and external publication are
+  excluded; the local reproducible portion of stage 5 remains an exit gate.
 
 Resource limits must be part of the local execution boundary: maximum input
 length, trace-event cap, step budget, cancellation and no network access from

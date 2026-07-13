@@ -1,5 +1,8 @@
+use std::fmt;
+
 use serde::Serialize;
 
+use crate::datasets::{DatasetClass, GenerationError, SORT_DATASET_SPEC};
 use crate::index::ProjectionSummary;
 use crate::registry::{Algorithm, Claim, Implementation, Problem, Registry};
 
@@ -14,6 +17,7 @@ pub struct WebProjection<'a> {
     problems: Vec<WebProblem<'a>>,
     algorithms: Vec<WebAlgorithm<'a>>,
     implementations: Vec<WebImplementation<'a>>,
+    datasets: Vec<WebDataset>,
 }
 
 #[derive(Serialize)]
@@ -50,6 +54,17 @@ struct WebImplementation<'a> {
 }
 
 #[derive(Serialize)]
+struct WebDataset {
+    spec_id: &'static str,
+    case_id: &'static str,
+    problem_id: &'static str,
+    class: &'static str,
+    seed: u64,
+    values: Vec<i32>,
+    content_digest_sha256: String,
+}
+
+#[derive(Serialize)]
 struct WebClaim<'a, T> {
     value: &'a T,
     level: String,
@@ -61,8 +76,22 @@ impl<'a> WebProjection<'a> {
         registry: &'a Registry,
         summary: &'a ProjectionSummary,
         source_commit: &'a str,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, GenerationError> {
+        let datasets = SORT_DATASET_SPEC
+            .generate_all()?
+            .into_iter()
+            .map(|dataset| WebDataset {
+                spec_id: dataset.spec_id,
+                case_id: dataset.case_id,
+                problem_id: dataset.problem_id,
+                class: dataset_class_name(dataset.class),
+                seed: dataset.seed,
+                values: dataset.values,
+                content_digest_sha256: dataset.content_digest_sha256,
+            })
+            .collect();
+
+        Ok(Self {
             format: WEB_PROJECTION_FORMAT,
             source_commit,
             registry_digest: &summary.digest,
@@ -78,7 +107,8 @@ impl<'a> WebProjection<'a> {
                 .iter()
                 .map(WebImplementation::from)
                 .collect(),
-        }
+            datasets,
+        })
     }
 }
 
@@ -131,8 +161,48 @@ pub fn to_json(
     registry: &Registry,
     summary: &ProjectionSummary,
     source_commit: &str,
-) -> Result<String, serde_json::Error> {
-    serde_json::to_string_pretty(&WebProjection::new(registry, summary, source_commit))
+) -> Result<String, WebProjectionError> {
+    let projection = WebProjection::new(registry, summary, source_commit)?;
+    Ok(serde_json::to_string_pretty(&projection)?)
+}
+
+fn dataset_class_name(class: DatasetClass) -> &'static str {
+    match class {
+        DatasetClass::Typical => "typical",
+        DatasetClass::Boundary => "boundary",
+        DatasetClass::Degenerate => "degenerate",
+        DatasetClass::Adversarial => "adversarial",
+        DatasetClass::Regression => "regression",
+    }
+}
+
+#[derive(Debug)]
+pub enum WebProjectionError {
+    Dataset(GenerationError),
+    Json(serde_json::Error),
+}
+
+impl fmt::Display for WebProjectionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Dataset(error) => write!(formatter, "cannot generate Web dataset: {error}"),
+            Self::Json(error) => write!(formatter, "cannot serialize Web projection: {error}"),
+        }
+    }
+}
+
+impl std::error::Error for WebProjectionError {}
+
+impl From<GenerationError> for WebProjectionError {
+    fn from(error: GenerationError) -> Self {
+        Self::Dataset(error)
+    }
+}
+
+impl From<serde_json::Error> for WebProjectionError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::Json(error)
+    }
 }
 
 #[cfg(test)]
@@ -160,6 +230,23 @@ mod tests {
         assert_eq!(value["counts"]["problems"], 10);
         assert_eq!(value["counts"]["algorithms"], 15);
         assert_eq!(value["counts"]["implementations"], 20);
+        assert_eq!(value["datasets"].as_array().unwrap().len(), 5);
+        assert_eq!(
+            value["datasets"][4]["case_id"],
+            "sort.regression.duplicates"
+        );
+        assert_eq!(
+            value["datasets"][4]["values"],
+            serde_json::json!([5, -1, 5, 3, 0, -8, 3])
+        );
+        assert_eq!(value["datasets"][4]["class"], "regression");
+        assert_eq!(
+            value["datasets"][4]["content_digest_sha256"]
+                .as_str()
+                .unwrap()
+                .len(),
+            64
+        );
         assert!(first.contains("order.is_sorted.adjacent"));
     }
 }

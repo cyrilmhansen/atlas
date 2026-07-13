@@ -59,18 +59,14 @@
                 <h3 id="input-heading">Working data</h3>
               </div>
               <select id="dataset-select" aria-label="Dataset">
-                <option value="sorted">Sorted</option>
-                <option value="duplicates">Duplicates</option>
-                <option value="mixed_duplicates">Mixed duplicates</option>
-                <option value="inversion" selected>Single inversion</option>
-                <option value="odd">Odd length</option>
-                <option value="descending">Descending</option>
+                <option value="">Loading DatasetSpec cases</option>
               </select>
             </div>
             <label for="sequence-input">Signed 32-bit integers</label>
-            <textarea id="sequence-input" rows="3" spellcheck="false">1, 2, 5, 4, 6</textarea>
+            <textarea id="sequence-input" rows="3" spellcheck="false"></textarea>
+            <p class="dataset-context" id="dataset-context">Dataset provenance pending.</p>
             <div class="input-actions">
-              <span id="input-count">5 values</span>
+              <span id="input-count">Pending</span>
               <button id="run-button" class="primary-command" type="button">Run</button>
             </div>
           </section>

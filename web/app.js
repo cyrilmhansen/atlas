@@ -4,19 +4,10 @@ import init, {
   observe_reverse_i32,
 } from "./pkg/atlas_web.js";
 
-const datasets = {
-  sorted: [1, 2, 3, 5, 8, 13],
-  duplicates: [-2, 0, 0, 4, 4, 9],
-  mixed_duplicates: [2, 1, 2, 1, 3, 1],
-  inversion: [1, 2, 5, 4, 6],
-  odd: [4, -1, 7, 7, 2],
-  descending: [8, 6, 4, 2, 0, -2],
-};
-
 const algorithmUi = {
   is_sorted: {
     id: "order.is_sorted.adjacent",
-    dataset: "inversion",
+    dataset: "sort.regression.duplicates",
     boundary: "Read-only input; no output transport copy.",
     resultLabel: "Result",
     comparisonLabel: "Comparisons",
@@ -27,7 +18,7 @@ const algorithmUi = {
   },
   insertion: {
     id: "sort.insertion",
-    dataset: "mixed_duplicates",
+    dataset: "sort.regression.duplicates",
     boundary: "Algorithm is in-place; the Web observation copies tagged output for display.",
     resultLabel: "Correction + stability",
     comparisonLabel: "Comparisons",
@@ -38,7 +29,7 @@ const algorithmUi = {
   },
   reverse: {
     id: "reverse.symmetric.in_place",
-    dataset: "odd",
+    dataset: "sort.regression.duplicates",
     boundary: "Algorithm is in-place; the Web observation copies output for display.",
     resultLabel: "Correction + involution",
     comparisonLabel: "Semantic reads / writes",
@@ -54,7 +45,7 @@ const elements = Object.fromEntries(
     "entity-count", "registry-digest", "source-commit", "algorithm-id", "algorithm-name",
     "execution-boundary", "result-label", "comparison-label", "secondary-label",
     "time-complexity", "time-provenance", "space-complexity", "space-provenance",
-    "dataset-select", "sequence-input", "input-count", "run-button", "runtime-status",
+    "dataset-select", "dataset-context", "sequence-input", "input-count", "run-button", "runtime-status",
     "sorted-result", "comparison-count", "inversion-index", "local-time",
     "runtime-context", "sequence-heading", "sequence-visual", "legend-text",
     "catalog-search", "catalog-body",
@@ -64,6 +55,29 @@ const elements = Object.fromEntries(
 let projection;
 let wasmReady = false;
 let activeAlgorithm = "is_sorted";
+
+function datasetOptionLabel(dataset) {
+  const name = dataset.case_id.split(".").at(-1).replaceAll("_", " ");
+  return `${dataset.class[0].toUpperCase()}${dataset.class.slice(1)} - ${name}`;
+}
+
+function selectDataset(caseId) {
+  const dataset = projection.datasets.find((item) => item.case_id === caseId);
+  if (!dataset) throw new Error(`derived projection is missing dataset case ${caseId}`);
+  elements["dataset-select"].value = dataset.case_id;
+  elements["sequence-input"].value = dataset.values.join(", ");
+  elements["dataset-context"].textContent = `${dataset.spec_id} for ${dataset.problem_id}; ${dataset.class}; seed ${dataset.seed}; sha256 ${dataset.content_digest_sha256}`;
+}
+
+function populateDatasets() {
+  elements["dataset-select"].replaceChildren(...projection.datasets.map((dataset) => {
+    const option = document.createElement("option");
+    option.value = dataset.case_id;
+    option.textContent = datasetOptionLabel(dataset);
+    return option;
+  }));
+  selectDataset(algorithmUi[activeAlgorithm].dataset);
+}
 
 function parseSequence() {
   const source = elements["sequence-input"].value.trim();
@@ -315,9 +329,8 @@ document.querySelectorAll("[data-algorithm]").forEach((option) => {
       item.classList.toggle("is-active", item === option);
       item.setAttribute("aria-pressed", String(item === option));
     });
-    const dataset = algorithmUi[activeAlgorithm].dataset;
-    elements["dataset-select"].value = dataset;
-    elements["sequence-input"].value = datasets[dataset].join(", ");
+    if (!projection) return;
+    selectDataset(algorithmUi[activeAlgorithm].dataset);
     applyProjection();
     runObservation();
   });
@@ -335,12 +348,12 @@ document.querySelectorAll("[data-view]").forEach((tab) => {
 });
 
 elements["dataset-select"].addEventListener("change", () => {
-  const values = datasets[elements["dataset-select"].value];
-  elements["sequence-input"].value = values.join(", ");
+  selectDataset(elements["dataset-select"].value);
   runObservation();
 });
 elements["sequence-input"].addEventListener("input", () => {
   elements["dataset-select"].value = "";
+  elements["dataset-context"].textContent = "Custom ephemeral input; no registry evidence.";
   try {
     const count = parseSequence().length;
     elements["input-count"].textContent = `${count} value${count === 1 ? "" : "s"}`;
@@ -359,9 +372,6 @@ if (requestedAlgorithm && algorithmUi[requestedAlgorithm]) {
     item.classList.toggle("is-active", selected);
     item.setAttribute("aria-pressed", String(selected));
   });
-  const dataset = algorithmUi[activeAlgorithm].dataset;
-  elements["dataset-select"].value = dataset;
-  elements["sequence-input"].value = datasets[dataset].join(", ");
 }
 
 try {
@@ -371,6 +381,7 @@ try {
   ]);
   if (!projectionResponse.ok) throw new Error(`cannot load registry projection (${projectionResponse.status})`);
   projection = await projectionResponse.json();
+  populateDatasets();
   applyProjection();
   wasmReady = true;
   setRuntimeStatus("WASM ready", "ready");
@@ -378,5 +389,5 @@ try {
 } catch (error) {
   setRuntimeStatus("Runtime unavailable", "error");
   elements["runtime-context"].textContent = error instanceof Error ? error.message : String(error);
-  renderSequence(datasets[algorithmUi[activeAlgorithm].dataset]);
+  renderSequence([]);
 }

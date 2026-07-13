@@ -55,6 +55,14 @@ second reversal restoring the input are checked independently in the browser
 and binding tests. The returned array is an explicit Web transport copy and
 does not alter the algorithm's sourced `O(1)` auxiliary-space claim.
 
+The derived projection also materializes the five deterministic cases from
+`dataset.sequence.sort.m2.v0`. Each browser choice carries its original spec,
+case, problem, class, seed, values and canonical content digest. These cases
+are reused by `is_sorted` and `reverse` because their integer-sequence input
+shape is compatible; they remain attributed to `sequence.sort` and are not
+presented as problem-specific specifications for those operations. Edited input
+is immediately marked as custom, ephemeral and without registry evidence.
+
 The browser timing is calibrated over a bounded repeated batch and includes the
 JavaScript/WebAssembly call boundary and observation allocation. The display
 records repetitions, elapsed batch duration and browser identity. It is neither
@@ -62,7 +70,6 @@ algorithm-only timing nor portable benchmark evidence.
 
 ## Current limits
 
-- Dataset choices are local UI fixtures, not yet generated from `DatasetSpec`.
 - The static bundle is built and tested locally but not published.
 - Projection JSON and generated bindings are ignored build products.
 - MIR, target code and semantic trace playback are not executed in the browser.

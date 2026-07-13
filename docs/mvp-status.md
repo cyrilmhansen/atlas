@@ -25,7 +25,9 @@ comparison/swap counts and visible original indices while distinguishing Web
 transport copies from the algorithm's `O(1)` auxiliary-space claim. The third
 gate adds symmetric reverse, exact source-level read/write/swap counts and an
 involution check. All three curated execution workloads are complete;
-DatasetSpec-derived choices and the complete reproducible bundle gate remain.
+the Web selector now materializes five deterministic cases from the accepted
+sorting DatasetSpec with their original attribution and content digests. The
+complete reproducible bundle gate remains.
 
 Current corpus progress:
 

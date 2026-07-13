@@ -1533,3 +1533,21 @@ scripts/check-mvp2.sh
 cargo test -p atlas --all-targets --locked --offline
 scripts/check-mvp2.sh
 ```
+
+## 2026-07-13 - MVP 4 LP64 MIR probe
+
+### Result
+
+- Activated MVP 4 under DEC-039 with the original MIR upstream pinned as a
+  submodule and a private interpreter-only C shim.
+- Added independent `u32` offset, handle, and region-plus-offset reference
+  experiments. Their checked failure modes are not host pointers or MIR values.
+- Added a standard RV64 LP64 C/QEMU-user probe. RV64ILP32 is explicitly
+  deferred after the local compiler rejected it for RV64.
+
+### Verification
+
+```sh
+cargo test -p atlas-mir --locked --offline
+sh scripts/check-rv64-lp64-abi.sh
+```

@@ -1,9 +1,8 @@
 # Atlas executable
 
 Atlas executable is an executable registry of problems, algorithms,
-implementations, and execution observations. MVP 3 is closed locally as the
-narrow experiment in explainable selection and linear composition defined by
-DEC-038.
+implementations, and execution observations. MVP 4 is active as a narrow LP64
+MIR adapter probe under DEC-039.
 
 The current MVP 1 corpus contains 10 problems, 15 algorithms, and 20 tested Rust
 implementations. Schema hardening, local evidence integrity, deterministic
@@ -14,7 +13,9 @@ indexing, the acceptance gate, and the local Git baseline are complete.
 - `registry/atlas.yaml`: authoritative aggregate source registry;
 - `crates/atlas-algorithms`: minimal-runtime implementations;
 - `crates/atlas`: registry model, validation, and reference CLI;
+- `crates/atlas-mir`: experimental MIR adapter boundary;
 - `docs/schema-0.1.md`: current public schema contract;
+- `docs/mir-integration.md`: exact MVP 4 MIR build and execution boundary;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;
 - `docs/mvp1-review.md`: MVP 1 exit-criteria audit;
@@ -56,6 +57,8 @@ cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh
 scripts/check-mvp2.sh
+cargo test -p atlas-mir --locked --offline
+sh scripts/check-rv64-lp64-abi.sh
 cargo run -p atlas --example dataset_specs
 cargo run -p atlas --example semantic_traces
 cargo run -p atlas --example pseudocode_ast
@@ -184,5 +187,6 @@ scope](docs/decisions/DEC-036-close-mvp2-scope.md), [the MVP 3
 activation](docs/decisions/DEC-037-activate-mvp3.md), [the MVP 3 closure
 scope](docs/decisions/DEC-038-close-mvp3-scope.md), [schema
 0.1](docs/schema-0.1.md), and [accepted decisions](docs/decisions/). The [MVP
-1 review](docs/mvp1-review.md), [MVP 3 review](docs/mvp3-review.md), and
+1 review](docs/mvp1-review.md), [MVP 3 review](docs/mvp3-review.md), [MVP 4
+review](docs/mvp4-review.md), [MIR integration](docs/mir-integration.md), and
 [roadmap](docs/roadmap.md) describe the next decisions.

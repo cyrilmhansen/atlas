@@ -1,14 +1,15 @@
 # MVP status
 
-- Active MVP: **none**
-- Status: MVP 3 closed locally under DEC-038; MVP 4 is not activated
+- Active MVP: **MVP 4 - LP64 MIR adapter probe**
+- Status: narrow experimental first slice under DEC-039
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 
-## Current position
+## Current slice
 
-MVP 1, MVP 2, and MVP 3 are closed locally. The next active scope requires a
-separate decision; no current work may infer MVP 4 activation from this status.
+MVP 1, MVP 2, and MVP 3 are closed locally. MVP 4 tests the MIR adapter
+boundary with a standard RV64 LP64 ABI probe and independent compact-reference
+comparison; it does not activate RV64ILP32 or a fantasy computer.
 
 Current corpus progress:
 
@@ -101,3 +102,16 @@ modifying the registry. They remain bounded to reviewed candidates; generation
 with an override is deferred until its exact source is verified.
 
 See `docs/mvp3-review.md` for the acceptance checks and deliberate limits.
+
+## MVP 4 first slice
+
+`atlas-mir` pins the original MIR upstream and executes a scalar interpreter
+smoke test through a private C shim. The registry, composition model and native
+backend do not depend on MIR.
+
+The three compact guest-reference candidates are tested independently:
+offset, handle, and region-plus-offset. `scripts/check-rv64-lp64-abi.sh` proves
+the local RV64 LP64 compiler/QEMU-user path. It is not a MIR RISC-V or
+RV64ILP32 test.
+
+See `docs/mvp4-review.md` and DEC-039 for the accepted scope and limits.

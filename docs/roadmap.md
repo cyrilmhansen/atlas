@@ -156,7 +156,8 @@ The first explicit override surface is also implemented: `--force` and
 reason or rejecting an empty candidate set. This satisfies the forcing/forbid
 experiment without turning MVP 3 into general search or mutable registry state.
 
-MVP 4 remains the first phase allowed to introduce MIR, but is not activated.
-The `atlas-algorithms` core APIs provide the native reference backend; MIR
-remains an adapter and never defines registry semantics, compact references, or
-evidence formats.
+MVP 4 is active under DEC-039 as a narrow LP64 MIR interpreter and QEMU-user
+probe. The `atlas-algorithms` core APIs remain the native reference backend;
+MIR remains an adapter and never defines registry semantics, compact references,
+or evidence formats. JIT, MIR RISC-V code generation, RV64ILP32 and a fantasy
+computer are deferred until separate reproducible experiments justify them.

@@ -1273,6 +1273,32 @@ cargo run -q -p atlas --locked --offline -- compose cleanup --rust
 cargo run -q -p atlas --locked --offline --example cleanup_generated
 ```
 
+## 2026-07-13 - Second cleanup selection objective
+
+### Result
+
+- Added `atlas compose cleanup --goal expected-time` alongside the default
+  declared-allocation objective.
+- The expected-time objective selects copy/filter, merge sort, and hash
+  deduplication for `i32`, stating the `Eq + Hash` condition and each declared
+  complexity reason.
+- The allocation-oriented candidate becomes an explicit rejection because of
+  its declared quadratic insertion-sort and deduplication worst cases.
+
+### Limits
+
+- This comparison uses declarations only, not benchmark measurements. Hash
+  deduplication retains its adversarial quadratic worst case.
+- Rust generation remains rejected for this new objective until a matching
+  source program is compiled and exercised.
+
+### Verification
+
+```sh
+cargo test -p atlas --all-targets --locked --offline
+cargo run -q -p atlas --locked --offline -- compose cleanup --goal expected-time
+```
+
 The gate creates only ignored generated observations under `build/executions/`.
 
 ## 2026-07-12 - Replayable observations and baseline resource metrics

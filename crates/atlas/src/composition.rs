@@ -92,6 +92,27 @@ pub fn cleanup_minimize_declared_allocations() -> CleanupComposition {
     }
 }
 
+/// Selects the same pipeline for declared expected time rather than allocation.
+///
+/// This is a statement about registry complexity claims. It is not a benchmark
+/// result and does not claim a universal latency ordering.
+pub fn cleanup_minimize_declared_expected_time() -> CleanupComposition {
+    let allocation_plan = cleanup_minimize_declared_allocations();
+    let mut selected = allocation_plan.rejected;
+    selected.decision = "selected: filter is O(n), merge sort is O(n log n), and hash deduplication is declared O(n) expected for i32";
+    let mut rejected = allocation_plan.selected;
+    rejected.decision = "rejected: insertion sort and quadratic deduplication both have declared O(n^2) worst-case time";
+
+    CleanupComposition {
+        id: "sequence.cleanup.experimental.v1",
+        goal: "minimize declared expected time",
+        input: "mutable Vec<i32>; predicate: i32 -> bool; order: ascending; equality/hash: i32 implements Eq + Hash",
+        output: "StableUniqueSequence<i32>",
+        selected,
+        rejected,
+    }
+}
+
 pub fn render(composition: &CleanupComposition) -> String {
     let mut output = format!(
         "plan: {}\ngoal: {}\ninput: {}\noutput: {}\nselected:\n",
@@ -130,7 +151,10 @@ fn render_candidate(output: &mut String, candidate: &CandidatePlan) {
 
 #[cfg(test)]
 mod tests {
-    use super::{cleanup_minimize_declared_allocations, render, render_rust_orchestration};
+    use super::{
+        cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time, render,
+        render_rust_orchestration,
+    };
 
     #[test]
     fn selected_cleanup_plan_makes_mutations_copies_and_allocations_visible() {
@@ -175,5 +199,16 @@ mod tests {
         assert!(source.contains("filter_in_place(values, predicate)"));
         assert!(source.contains("insertion_sort_by(values, i32::cmp)"));
         assert!(source.contains("deduplicate_quadratic(values)"));
+    }
+
+    #[test]
+    fn expected_time_objective_selects_the_other_compatible_candidate() {
+        let composition = cleanup_minimize_declared_expected_time();
+
+        assert_eq!(composition.goal, "minimize declared expected time");
+        assert_eq!(composition.selected.id, "cleanup.copy_merge_hash");
+        assert!(composition.input.contains("Eq + Hash"));
+        assert!(composition.selected.decision.contains("O(n log n)"));
+        assert!(composition.rejected.decision.contains("O(n^2)"));
     }
 }

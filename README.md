@@ -33,6 +33,7 @@ cargo run -p atlas -- search "merge sort"
 cargo run -p atlas -- explain search.binary.rust.slice.v1
 cargo run -p atlas -- qualify sequence.sort --stable --in-place --allocation none
 cargo run -p atlas -- compose cleanup
+cargo run -p atlas -- compose cleanup --goal expected-time
 cargo run -p atlas -- compose cleanup --rust
 cargo run -p atlas --example cleanup_generated
 cargo run -p atlas -- index
@@ -113,6 +114,8 @@ a rejected alternative, and all visible mutations, copies, and allocations.
 `compose cleanup --rust` renders the corresponding Rust orchestration; the
 identical `cleanup_generated` example is compiled and runnable. This remains a
 single-scenario generator, not a general planner or a persistent plan format.
+`--goal expected-time` instead selects from declared complexity claims and
+explains the allocation-heavier alternative; it does not use benchmark results.
 
 ## Runtime boundary
 

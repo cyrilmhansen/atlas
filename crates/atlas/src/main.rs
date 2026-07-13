@@ -6,7 +6,8 @@ use std::process::{Command, ExitCode};
 
 use atlas::comparisons::ComparisonReport;
 use atlas::composition::{
-    cleanup_minimize_declared_allocations, render as render_composition, render_rust_orchestration,
+    cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time,
+    render as render_composition, render_rust_orchestration,
 };
 use atlas::executions::{ExecutionMode, ExecutionRecord};
 use atlas::index::rebuild_database;
@@ -58,27 +59,48 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
         );
         return ExitCode::from(2);
     }
-    let render_rust = match arguments.next() {
-        None => false,
-        Some(option) if option == "--rust" => true,
-        Some(option) => {
-            eprintln!("unknown compose option {:?}; expected --rust", option);
-            return ExitCode::from(2);
+    let mut render_rust = false;
+    let mut expected_time = false;
+    while let Some(option) = arguments.next() {
+        match option.to_str() {
+            Some("--rust") if !render_rust => render_rust = true,
+            Some("--goal") if !expected_time => match arguments.next().as_deref() {
+                Some(value) if value == "expected-time" => expected_time = true,
+                Some(value) => {
+                    eprintln!("unknown compose goal {:?}; expected expected-time", value);
+                    return ExitCode::from(2);
+                }
+                None => {
+                    eprintln!("--goal requires expected-time");
+                    return ExitCode::from(2);
+                }
+            },
+            Some(option) => {
+                eprintln!(
+                    "unknown compose option {option:?}; expected --goal expected-time or --rust"
+                );
+                return ExitCode::from(2);
+            }
+            None => {
+                eprintln!("compose options must be valid UTF-8");
+                return ExitCode::from(2);
+            }
         }
-    };
-    if arguments.next().is_some() {
-        eprintln!("compose accepts cleanup and optional --rust");
-        print_usage();
+    }
+    if render_rust && expected_time {
+        eprintln!("--rust is currently verified only for the allocation objective");
         return ExitCode::from(2);
     }
 
     if render_rust {
         print!("{}", render_rust_orchestration());
     } else {
-        print!(
-            "{}",
-            render_composition(&cleanup_minimize_declared_allocations())
-        );
+        let composition = if expected_time {
+            cleanup_minimize_declared_expected_time()
+        } else {
+            cleanup_minimize_declared_allocations()
+        };
+        print!("{}", render_composition(&composition));
     }
     ExitCode::SUCCESS
 }
@@ -828,6 +850,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--rust]\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--rust]\n  atlas index [DB_PATH]"
     );
 }

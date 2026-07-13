@@ -133,6 +133,12 @@ The selected scenario can render verified Rust source under `--rust`; the source
 is compiled as the `cleanup_generated` example. It remains an internal
 single-scenario generation experiment, not a plan format or compiler service.
 
+The same scenario also demonstrates a second `expected-time` objective from
+declared complexity claims, selecting the copying merge/hash candidate under its
+`i32: Eq + Hash` condition. This demonstrates an explicit trade-off, not a
+benchmark-derived ranking. Rust generation for that candidate remains deferred
+until a matching program is separately verified.
+
 MVP 4 remains the first phase allowed to introduce MIR. The `atlas-algorithms`
 core APIs provide the native reference backend; MIR remains an adapter and never
 defines registry semantics, compact references, or evidence formats.

@@ -23,6 +23,14 @@ an explicitly rejected compatible alternative. Its copied filter output, merge
 scratch storage, hash-set storage, and output allocation explain the rejection
 for this one objective.
 
+`atlas compose cleanup --goal expected-time` selects that same copying
+merge/hash candidate instead. The selection is explicitly conditional on
+`i32: Eq + Hash`: filter is declared `O(n)`, merge sort `O(n log n)`, and hash
+deduplication `O(n)` expected. The alternative is rejected for its declared
+quadratic insertion-sort and quadratic-deduplication worst cases. This is not a
+measurement or a universal latency claim; hash deduplication retains its
+declared adversarial `O(n^2)` worst case.
+
 `atlas compose cleanup --rust` renders the Rust orchestration for the selected
 candidate. The source is also `crates/atlas/examples/cleanup_generated.rs`, so
 Cargo compiles and runs the exact emitted program. It filters a caller-owned
@@ -39,12 +47,16 @@ deduplicated vector.
   The separately runnable Cargo example is the verification boundary.
 - The objective interprets declared effects only. It does not turn them into
   empirical allocation measurements.
+- Rust source generation is verified only for the allocation objective. Atlas
+  rejects `--goal expected-time --rust` until that second source is separately
+  compiled and exercised.
 
 ## Acceptance checks
 
 ```sh
 cargo test -p atlas --locked --offline
 cargo run -q -p atlas --locked --offline -- compose cleanup
+cargo run -q -p atlas --locked --offline -- compose cleanup --goal expected-time
 cargo run -q -p atlas --locked --offline -- compose cleanup --rust
 cargo run -q -p atlas --locked --offline --example cleanup_generated
 ```

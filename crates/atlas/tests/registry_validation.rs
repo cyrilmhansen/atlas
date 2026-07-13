@@ -760,6 +760,23 @@ fn cli_renders_a_compilable_cleanup_orchestration() {
 }
 
 #[test]
+fn cli_selects_the_expected_time_cleanup_candidate() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "cleanup", "--goal", "expected-time"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("goal: minimize declared expected time"));
+    assert!(stdout.contains("selected:\n  id: cleanup.copy_merge_hash"));
+    assert!(stdout.contains("i32 implements Eq + Hash"));
+    assert!(stdout.contains("rejected: insertion sort and quadratic deduplication"));
+}
+
+#[test]
 fn cli_rejects_unknown_composition_options() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
@@ -770,6 +787,19 @@ fn cli_rejects_unknown_composition_options() {
 
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("unknown compose option"));
+}
+
+#[test]
+fn cli_rejects_expected_time_rust_generation_until_it_is_verified() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "cleanup", "--goal", "expected-time", "--rust"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("verified only"));
 }
 
 #[test]

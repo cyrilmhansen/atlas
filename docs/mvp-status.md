@@ -1,15 +1,14 @@
 # MVP status
 
-- Active MVP: **MVP 3 - explainable selection and linear composition**
-- Status: narrow experimental first slice under DEC-037
+- Active MVP: **none**
+- Status: MVP 3 closed locally under DEC-038; MVP 4 is not activated
 - MVP 1: closed locally at baseline `8a2a520`
-- MVP 2 activated: 2026-07-12
+- MVP 2: closed locally under DEC-036
 
-## Current slice
+## Current position
 
-Qualify deterministic dataset specifications and regenerable execution
-observations without changing the Git-authoritative schema 0.1. The current
-slice has a local gate at `scripts/check-mvp2.sh`; it does not run timing.
+MVP 1, MVP 2, and MVP 3 are closed locally. The next active scope requires a
+separate decision; no current work may infer MVP 4 activation from this status.
 
 Current corpus progress:
 
@@ -69,7 +68,7 @@ See `docs/mvp1-review.md` for evidence and recommended closure order.
 See `docs/mvp2-review.md` and DEC-036 for evidence, limits, and impact on the
 next MVP.
 
-## MVP 3 first slice
+## MVP 3 closure
 
 `atlas compose cleanup` builds one internally represented
 `filter -> sort -> deduplicate` pipeline from existing sequence components. It

@@ -1515,3 +1515,21 @@ first establish a measurement boundary, provenance, and query semantics.
 ```sh
 scripts/check-mvp2.sh
 ```
+
+## 2026-07-13 - MVP 3 closure scope
+
+### Result
+
+- Closed MVP 3 locally under DEC-038 after five bounded composition scenarios:
+  cleanup, find, partition-sort, unique-sort, and merge-sorted.
+- Preserved the internal-only model, fixed reviewed candidate pairs, compiled
+  examples, and visible declared effects as the delivered scope.
+- Explicitly deferred persistent plans, public planning semantics, general
+  candidate search, runtime source execution, and MIR coupling.
+
+### Verification
+
+```sh
+cargo test -p atlas --all-targets --locked --offline
+scripts/check-mvp2.sh
+```

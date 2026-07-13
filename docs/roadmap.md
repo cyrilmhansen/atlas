@@ -121,8 +121,8 @@ shows one representation fits both cases without backend coupling.
 
 ## MVP 3 and MVP 4
 
-MVP 3 is active under DEC-037 as a narrow experiment in explainable constrained
-selection and linear composition. Its first slice uses one real sequence
+MVP 3 is closed locally under DEC-038 after a narrow experiment in explainable
+constrained selection and linear composition. Its first slice uses one real sequence
 pipeline, internal structural types, and a non-public readable plan. The first
 scenario, `atlas compose cleanup`, selects in-place filter, insertion sort, and
 quadratic deduplication for declared intermediate allocation minimization; it
@@ -156,6 +156,7 @@ The first explicit override surface is also implemented: `--force` and
 reason or rejecting an empty candidate set. This satisfies the forcing/forbid
 experiment without turning MVP 3 into general search or mutable registry state.
 
-MVP 4 remains the first phase allowed to introduce MIR. The `atlas-algorithms`
-core APIs provide the native reference backend; MIR remains an adapter and never
-defines registry semantics, compact references, or evidence formats.
+MVP 4 remains the first phase allowed to introduce MIR, but is not activated.
+The `atlas-algorithms` core APIs provide the native reference backend; MIR
+remains an adapter and never defines registry semantics, compact references, or
+evidence formats.

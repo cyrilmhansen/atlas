@@ -1,8 +1,9 @@
 # Atlas executable
 
 Atlas executable is an executable registry of problems, algorithms,
-implementations, and execution observations. MVP 3 is active as a narrow
-experiment in explainable selection and linear composition.
+implementations, and execution observations. MVP 3 is closed locally as the
+narrow experiment in explainable selection and linear composition defined by
+DEC-038.
 
 The current MVP 1 corpus contains 10 problems, 15 algorithms, and 20 tested Rust
 implementations. Schema hardening, local evidence integrity, deterministic
@@ -180,7 +181,8 @@ Git. The command prints deterministic logical row counts and a SHA-256 digest.
 
 See [the MVP status](docs/mvp-status.md), [the MVP 2 closure
 scope](docs/decisions/DEC-036-close-mvp2-scope.md), [the MVP 3
-activation](docs/decisions/DEC-037-activate-mvp3.md), [schema
+activation](docs/decisions/DEC-037-activate-mvp3.md), [the MVP 3 closure
+scope](docs/decisions/DEC-038-close-mvp3-scope.md), [schema
 0.1](docs/schema-0.1.md), and [accepted decisions](docs/decisions/). The [MVP
 1 review](docs/mvp1-review.md), [MVP 3 review](docs/mvp3-review.md), and
 [roadmap](docs/roadmap.md) describe the next decisions.

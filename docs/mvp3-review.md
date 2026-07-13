@@ -1,7 +1,7 @@
 # MVP 3 review
 
-Review date: 2026-07-13. Active scope: the narrow experimental composition
-slice authorized by DEC-037.
+Review date: 2026-07-13. Closed scope: the narrow experimental composition
+slice authorized by DEC-037 and closed by DEC-038.
 
 ## Demonstrated scenario
 
@@ -117,3 +117,22 @@ cargo run -q -p atlas --locked --offline -- compose cleanup --forbid filter.in_p
 
 The unit tests require every selected mutation, copy, and allocation to remain
 visible. CLI tests require the rejected alternative and its reason to render.
+
+## Exit criteria
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Explain inputs, outputs, effects, and rejected alternatives | Complete | Five rendered, bounded scenarios in `atlas compose` |
+| Make a declared-cost trade-off visible | Complete | `cleanup --goal expected-time` switches the reviewed candidate |
+| Establish and retain preconditions through composition | Complete | `find`, `partition-sort`, and `merge-sorted` |
+| Render orchestration independently of runtime execution | Complete | Five committed, compiled Cargo examples |
+| Preserve schema and registry authority | Complete | Internal Rust model only; registry schema 0.1 unchanged |
+| Avoid a general planner, persistent plans, generation service, and MIR | Complete | Explicitly excluded by DEC-037 and DEC-038 |
+
+## Closure impact
+
+DEC-038 closes MVP 3 without promoting the internal composition model to a
+public contract. A later phase must make a new decision before serializing
+plans, expanding candidate search, or compiling generated source at runtime.
+MVP 4 remains inactive; MIR work requires separate scope, ABI, and memory-model
+validation.

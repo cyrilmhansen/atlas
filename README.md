@@ -38,6 +38,9 @@ cargo run -p atlas -- compose cleanup --rust
 cargo run -p atlas -- compose cleanup --goal expected-time --rust
 cargo run -p atlas --example cleanup_generated
 cargo run -p atlas --example cleanup_expected_time_generated
+cargo run -p atlas -- compose find
+cargo run -p atlas -- compose find --rust
+cargo run -p atlas --example find_generated
 cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh
@@ -119,6 +122,9 @@ single-scenario generator, not a general planner or a persistent plan format.
 `--goal expected-time` instead selects from declared complexity claims and
 explains the allocation-heavier alternative; it does not use benchmark results.
 Its `--rust` variant is separately compiled as `cleanup_expected_time_generated`.
+`compose find` demonstrates a produced precondition: it sorts before binary
+search, makes that dependency visible, and renders a verified Rust example under
+`--rust`.
 
 ## Runtime boundary
 

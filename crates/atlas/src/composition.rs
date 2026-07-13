@@ -4,11 +4,12 @@
 //! a persistent format, and it does not attempt to enumerate arbitrary graphs.
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CleanupComposition {
+pub struct Composition {
     pub id: &'static str,
     pub goal: &'static str,
     pub input: &'static str,
     pub output: &'static str,
+    pub preconditions: &'static [&'static str],
     pub selected: CandidatePlan,
     pub rejected: CandidatePlan,
 }
@@ -29,12 +30,13 @@ pub struct PlanStep {
 }
 
 /// Selects the first real MVP 3 pipeline for the declared-allocation objective.
-pub fn cleanup_minimize_declared_allocations() -> CleanupComposition {
-    CleanupComposition {
+pub fn cleanup_minimize_declared_allocations() -> Composition {
+    Composition {
         id: "sequence.cleanup.experimental.v1",
         goal: "minimize declared intermediate allocations",
         input: "mutable Vec<i32>; predicate: i32 -> bool; order: ascending",
         output: "StableUniqueSequence<i32>",
+        preconditions: &[],
         selected: CandidatePlan {
             id: "cleanup.in_place_insertion_quadratic",
             steps: vec![
@@ -96,28 +98,87 @@ pub fn cleanup_minimize_declared_allocations() -> CleanupComposition {
 ///
 /// This is a statement about registry complexity claims. It is not a benchmark
 /// result and does not claim a universal latency ordering.
-pub fn cleanup_minimize_declared_expected_time() -> CleanupComposition {
+pub fn cleanup_minimize_declared_expected_time() -> Composition {
     let allocation_plan = cleanup_minimize_declared_allocations();
     let mut selected = allocation_plan.rejected;
     selected.decision = "selected: filter is O(n), merge sort is O(n log n), and hash deduplication is declared O(n) expected for i32";
     let mut rejected = allocation_plan.selected;
     rejected.decision = "rejected: insertion sort and quadratic deduplication both have declared O(n^2) worst-case time";
 
-    CleanupComposition {
+    Composition {
         id: "sequence.cleanup.experimental.v1",
         goal: "minimize declared expected time",
         input: "mutable Vec<i32>; predicate: i32 -> bool; order: ascending; equality/hash: i32 implements Eq + Hash",
         output: "StableUniqueSequence<i32>",
+        preconditions: &[],
         selected,
         rejected,
     }
 }
 
-pub fn render(composition: &CleanupComposition) -> String {
+/// Selects a sorting/searching composition that establishes binary search's
+/// sorted-input precondition without a declared intermediate allocation.
+pub fn find_minimize_declared_allocations() -> Composition {
+    Composition {
+        id: "sequence.find.experimental.v1",
+        goal: "satisfy sorted-input precondition with no declared intermediate allocation",
+        input: "mutable Vec<i32>; needle: i32; order: ascending",
+        output: "Option<Index<input.sequence>>",
+        preconditions: &[
+            "binary search requires input.sequence sorted according to the comparison order",
+            "step 1 establishes the binary-search precondition before step 2",
+        ],
+        selected: CandidatePlan {
+            id: "find.insertion_binary",
+            steps: vec![
+                PlanStep {
+                    implementation_id: "sort.insertion.rust.slice.v1",
+                    input: "input Vec<i32>",
+                    output: "the same sorted Vec<i32>",
+                    effects: &["mutates input.sequence", "allocation: none"],
+                },
+                PlanStep {
+                    implementation_id: "search.binary.rust.slice.v1",
+                    input: "the sorted Vec<i32> and needle",
+                    output: "Option<Index<input.sequence>>",
+                    effects: &["reads input.sequence", "allocation: none"],
+                },
+            ],
+            decision: "selected: insertion sorting establishes the required order without a declared intermediate allocation",
+        },
+        rejected: CandidatePlan {
+            id: "find.merge_binary",
+            steps: vec![
+                PlanStep {
+                    implementation_id: "sort.merge.rust.slice.v1",
+                    input: "input Vec<i32>",
+                    output: "the same sorted Vec<i32>",
+                    effects: &["mutates input.sequence", "allocation: auxiliary Vec<T>"],
+                },
+                PlanStep {
+                    implementation_id: "search.binary.rust.slice.v1",
+                    input: "the sorted Vec<i32> and needle",
+                    output: "Option<Index<input.sequence>>",
+                    effects: &["reads input.sequence", "allocation: none"],
+                },
+            ],
+            decision: "rejected: it establishes the same precondition but declares merge-sort scratch storage",
+        },
+    }
+}
+
+pub fn render(composition: &Composition) -> String {
     let mut output = format!(
-        "plan: {}\ngoal: {}\ninput: {}\noutput: {}\nselected:\n",
+        "plan: {}\ngoal: {}\ninput: {}\noutput: {}\n",
         composition.id, composition.goal, composition.input, composition.output
     );
+    if !composition.preconditions.is_empty() {
+        output.push_str("preconditions:\n");
+        for precondition in composition.preconditions {
+            output.push_str(&format!("  - {precondition}\n"));
+        }
+    }
+    output.push_str("selected:\n");
     render_candidate(&mut output, &composition.selected);
     output.push_str("rejected:\n");
     render_candidate(&mut output, &composition.rejected);
@@ -135,6 +196,11 @@ pub fn render_rust_orchestration() -> &'static str {
 /// Returns the verified Rust source for the expected-time selected candidate.
 pub fn render_expected_time_rust_orchestration() -> &'static str {
     include_str!("../examples/cleanup_expected_time_generated.rs")
+}
+
+/// Returns the verified Rust source for the precondition-focused candidate.
+pub fn render_find_rust_orchestration() -> &'static str {
+    include_str!("../examples/find_generated.rs")
 }
 
 fn render_candidate(output: &mut String, candidate: &CandidatePlan) {
@@ -157,8 +223,9 @@ fn render_candidate(output: &mut String, candidate: &CandidatePlan) {
 #[cfg(test)]
 mod tests {
     use super::{
-        cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time, render,
-        render_expected_time_rust_orchestration, render_rust_orchestration,
+        cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time,
+        find_minimize_declared_allocations, render, render_expected_time_rust_orchestration,
+        render_find_rust_orchestration, render_rust_orchestration,
     };
 
     #[test]
@@ -224,5 +291,25 @@ mod tests {
         assert!(source.contains("filter_copy(values, predicate)"));
         assert!(source.contains("merge_sort_by(&mut filtered, i32::cmp)"));
         assert!(source.contains("deduplicate_hash(&filtered)"));
+    }
+
+    #[test]
+    fn find_plan_exposes_and_establishes_binary_search_precondition() {
+        let composition = find_minimize_declared_allocations();
+        let output = render(&composition);
+
+        assert_eq!(composition.selected.id, "find.insertion_binary");
+        assert!(output.contains("preconditions:"));
+        assert!(output.contains("step 1 establishes the binary-search precondition"));
+        assert!(output.contains("search.binary.rust.slice.v1"));
+        assert!(output.contains("rejected: it establishes the same precondition"));
+    }
+
+    #[test]
+    fn generated_find_rust_orchestration_matches_the_selected_operations() {
+        let source = render_find_rust_orchestration();
+
+        assert!(source.contains("insertion_sort_by(values, i32::cmp)"));
+        assert!(source.contains("binary_search_by(values, needle, i32::cmp)"));
     }
 }

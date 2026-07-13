@@ -139,6 +139,11 @@ declared complexity claims, selecting the copying merge/hash candidate under its
 benchmark-derived ranking. Both selected candidates render Rust source compiled
 as a matching example; this still does not create a general compiler service.
 
+A second scenario, `atlas compose find`, demonstrates an explicit produced
+precondition: insertion sort establishes the ordering required by binary search.
+The plan and compiled Rust example make that mutation and the rejected
+allocation-heavy merge alternative visible.
+
 MVP 4 remains the first phase allowed to introduce MIR. The `atlas-algorithms`
 core APIs provide the native reference backend; MIR remains an adapter and never
 defines registry semantics, compact references, or evidence formats.

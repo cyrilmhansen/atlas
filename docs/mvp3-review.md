@@ -39,6 +39,18 @@ deduplicated vector. `--goal expected-time --rust` likewise renders and is
 identical to `cleanup_expected_time_generated`; it copies the filter result,
 sorts that copy with merge sort, and performs hash-based deduplication.
 
+`atlas compose find` adds a structurally different composition:
+
+```text
+sort.insertion -> search.binary
+```
+
+The plan states binary search's sorted-input precondition and explicitly marks
+the sort step as establishing it. It rejects merge sort for the allocation
+objective because merge scratch is declared. `atlas compose find --rust` is
+identical to the compiled `find_generated` example; it accepts a mutable slice,
+sorts it, then returns the first matching index from binary search.
+
 ## Deliberate limits
 
 - The types are internal Rust values for this scenario, not schema 0.1 fields
@@ -60,6 +72,9 @@ cargo run -q -p atlas --locked --offline -- compose cleanup --rust
 cargo run -q -p atlas --locked --offline -- compose cleanup --goal expected-time --rust
 cargo run -q -p atlas --locked --offline --example cleanup_generated
 cargo run -q -p atlas --locked --offline --example cleanup_expected_time_generated
+cargo run -q -p atlas --locked --offline -- compose find
+cargo run -q -p atlas --locked --offline -- compose find --rust
+cargo run -q -p atlas --locked --offline --example find_generated
 ```
 
 The unit tests require every selected mutation, copy, and allocation to remain

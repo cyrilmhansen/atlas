@@ -1206,6 +1206,33 @@ sh -n scripts/check-mvp2.sh
 scripts/check-mvp2.sh
 ```
 
+## 2026-07-13 - Produced precondition composition
+
+### Result
+
+- Added `atlas compose find`, a `sort -> binary search` composition with the
+  binary-search ordering requirement and its producing sort step made explicit.
+- Selected in-place insertion sort for the declared allocation objective and
+  rejected merge sort because it declares auxiliary scratch storage.
+- Added `atlas compose find --rust` and the identical, compiled
+  `find_generated` example, which sorts a mutable slice then returns the first
+  matching binary-search index.
+
+### Limits
+
+- This is a fixed two-candidate composition; it does not infer arbitrary
+  precondition producers from schema 0.1 strings.
+- The generated program validates orchestration correctness, not a performance
+  superiority claim.
+
+### Verification
+
+```sh
+cargo test -p atlas --all-targets --locked --offline
+cargo run -q -p atlas --locked --offline -- compose find
+cargo run -q -p atlas --locked --offline --example find_generated
+```
+
 ## 2026-07-13 - MVP 3 activation
 
 ### Result

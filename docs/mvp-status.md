@@ -85,4 +85,8 @@ The same scenario also supports `--goal expected-time`, using declared
 complexity claims only. Both selected alternatives have independently compiled
 and runnable Rust orchestration examples; Atlas itself does not execute them.
 
+`atlas compose find` is the second composition scenario. It records the sorted
+input required by binary search, the step that establishes it, and a rejected
+merge-sort alternative before rendering a compiled Rust orchestration.
+
 See `docs/mvp3-review.md` for the acceptance checks and deliberate limits.

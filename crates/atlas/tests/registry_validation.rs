@@ -807,6 +807,39 @@ fn cli_renders_a_compilable_expected_time_cleanup_orchestration() {
 }
 
 #[test]
+fn cli_renders_the_precondition_focused_find_composition() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "find"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("plan: sequence.find.experimental.v1"));
+    assert!(stdout.contains("preconditions:"));
+    assert!(stdout.contains("step 1 establishes the binary-search precondition"));
+    assert!(stdout.contains("selected:\n  id: find.insertion_binary"));
+}
+
+#[test]
+fn cli_renders_a_compilable_find_orchestration() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "find", "--rust"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("pub fn find(values: &mut [i32], needle: &i32)"));
+    assert!(stdout.contains("insertion_sort_by(values, i32::cmp)"));
+    assert!(stdout.contains("binary_search_by(values, needle, i32::cmp)"));
+}
+
+#[test]
 fn cli_explains_binary_search_chain_with_requirements_and_effects() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))

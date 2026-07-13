@@ -7,7 +7,8 @@ use std::process::{Command, ExitCode};
 use atlas::comparisons::ComparisonReport;
 use atlas::composition::{
     cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time,
-    render as render_composition, render_expected_time_rust_orchestration,
+    find_minimize_declared_allocations, render as render_composition,
+    render_expected_time_rust_orchestration, render_find_rust_orchestration,
     render_rust_orchestration,
 };
 use atlas::executions::{ExecutionMode, ExecutionRecord};
@@ -49,15 +50,16 @@ fn main() -> ExitCode {
 
 fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
     let Some(scenario) = arguments.next() else {
-        eprintln!("compose requires the experimental scenario cleanup");
+        eprintln!("compose requires the experimental scenario cleanup or find");
         print_usage();
         return ExitCode::from(2);
     };
-    if scenario != "cleanup" {
-        eprintln!(
-            "unknown composition scenario {:?}; expected cleanup",
-            scenario
-        );
+    let Some(scenario) = scenario.to_str() else {
+        eprintln!("composition scenario must be valid UTF-8");
+        return ExitCode::from(2);
+    };
+    if !matches!(scenario, "cleanup" | "find") {
+        eprintln!("unknown composition scenario {scenario:?}; expected cleanup or find");
         return ExitCode::from(2);
     }
     let mut render_rust = false;
@@ -66,7 +68,13 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
         match option.to_str() {
             Some("--rust") if !render_rust => render_rust = true,
             Some("--goal") if !expected_time => match arguments.next().as_deref() {
-                Some(value) if value == "expected-time" => expected_time = true,
+                Some(value) if value == "expected-time" && scenario == "cleanup" => {
+                    expected_time = true
+                }
+                Some(value) if value == "expected-time" => {
+                    eprintln!("expected-time is currently supported only for cleanup");
+                    return ExitCode::from(2);
+                }
                 Some(value) => {
                     eprintln!("unknown compose goal {:?}; expected expected-time", value);
                     return ExitCode::from(2);
@@ -89,16 +97,20 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
         }
     }
     if render_rust {
-        if expected_time {
-            print!("{}", render_expected_time_rust_orchestration());
-        } else {
-            print!("{}", render_rust_orchestration());
+        match (scenario, expected_time) {
+            ("cleanup", true) => print!("{}", render_expected_time_rust_orchestration()),
+            ("cleanup", false) => print!("{}", render_rust_orchestration()),
+            ("find", false) => print!("{}", render_find_rust_orchestration()),
+            ("find", true) => unreachable!("expected-time is rejected for find"),
+            _ => unreachable!("scenario is validated before rendering"),
         }
     } else {
-        let composition = if expected_time {
-            cleanup_minimize_declared_expected_time()
-        } else {
-            cleanup_minimize_declared_allocations()
+        let composition = match (scenario, expected_time) {
+            ("cleanup", true) => cleanup_minimize_declared_expected_time(),
+            ("cleanup", false) => cleanup_minimize_declared_allocations(),
+            ("find", false) => find_minimize_declared_allocations(),
+            ("find", true) => unreachable!("expected-time is rejected for find"),
+            _ => unreachable!("scenario is validated before rendering"),
         };
         print!("{}", render_composition(&composition));
     }
@@ -850,6 +862,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--rust]\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--rust]\n  atlas compose find [--rust]\n  atlas index [DB_PATH]"
     );
 }

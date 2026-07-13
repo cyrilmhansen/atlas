@@ -28,8 +28,13 @@
       <section id="execute-view" class="view" role="tabpanel" aria-labelledby="execute-tab">
         <div class="algorithm-band">
           <div>
-            <p class="entity-id">order.is_sorted.adjacent</p>
+            <div class="algorithm-selector" role="group" aria-label="Executable algorithm">
+              <button class="algorithm-option is-active" type="button" data-algorithm="is_sorted" aria-pressed="true">Is sorted</button>
+              <button class="algorithm-option" type="button" data-algorithm="insertion" aria-pressed="false">Insertion sort</button>
+            </div>
+            <p class="entity-id" id="algorithm-id">order.is_sorted.adjacent</p>
             <h2 id="algorithm-name">Adjacent sortedness</h2>
+            <p class="execution-boundary" id="execution-boundary">Read-only input; no output transport copy.</p>
           </div>
           <div class="complexity-strip">
             <div>
@@ -38,7 +43,7 @@
               <small id="time-provenance">registry</small>
             </div>
             <div>
-              <span>Auxiliary space</span>
+              <span>Algorithm auxiliary space</span>
               <strong id="space-complexity">O(1)</strong>
               <small id="space-provenance">registry</small>
             </div>
@@ -55,6 +60,7 @@
               <select id="dataset-select" aria-label="Dataset">
                 <option value="sorted">Sorted</option>
                 <option value="duplicates">Duplicates</option>
+                <option value="mixed_duplicates">Mixed duplicates</option>
                 <option value="inversion" selected>Single inversion</option>
                 <option value="descending">Descending</option>
               </select>
@@ -77,15 +83,15 @@
             </div>
             <div class="result-grid">
               <div class="result-primary">
-                <span>Result</span>
+                <span id="result-label">Result</span>
                 <strong id="sorted-result">Pending</strong>
               </div>
               <div>
-                <span>Comparisons</span>
+                <span id="comparison-label">Comparisons</span>
                 <strong id="comparison-count">-</strong>
               </div>
               <div>
-                <span>First inversion</span>
+                <span id="secondary-label">First inversion</span>
                 <strong id="inversion-index">-</strong>
               </div>
               <div>
@@ -103,7 +109,7 @@
               <p class="section-index">03</p>
               <h3 id="sequence-heading">Sequence state</h3>
             </div>
-            <span class="legend"><i></i> first decreasing pair</span>
+            <span class="legend"><i></i><span id="legend-text">first decreasing pair</span></span>
           </div>
           <div id="sequence-visual" class="sequence-visual"></div>
         </section>

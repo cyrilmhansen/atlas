@@ -1,24 +1,28 @@
-import init, { observe_is_sorted_i32 } from "./pkg/atlas_web.js";
+import init, { observe_insertion_sort_i32, observe_is_sorted_i32 } from "./pkg/atlas_web.js";
 
 const datasets = {
   sorted: [1, 2, 3, 5, 8, 13],
   duplicates: [-2, 0, 0, 4, 4, 9],
+  mixed_duplicates: [2, 1, 2, 1, 3, 1],
   inversion: [1, 2, 5, 4, 6],
   descending: [8, 6, 4, 2, 0, -2],
 };
 
 const elements = Object.fromEntries(
   [
-    "entity-count", "registry-digest", "source-commit", "algorithm-name",
+    "entity-count", "registry-digest", "source-commit", "algorithm-id", "algorithm-name",
+    "execution-boundary", "result-label", "comparison-label", "secondary-label",
     "time-complexity", "time-provenance", "space-complexity", "space-provenance",
     "dataset-select", "sequence-input", "input-count", "run-button", "runtime-status",
     "sorted-result", "comparison-count", "inversion-index", "local-time",
-    "runtime-context", "sequence-visual", "catalog-search", "catalog-body",
+    "runtime-context", "sequence-heading", "sequence-visual", "legend-text",
+    "catalog-search", "catalog-body",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
 let projection;
 let wasmReady = false;
+let activeAlgorithm = "is_sorted";
 
 function parseSequence() {
   const source = elements["sequence-input"].value.trim();
@@ -38,7 +42,7 @@ function setRuntimeStatus(label, state) {
   elements["runtime-status"].className = `runtime-status${state ? ` is-${state}` : ""}`;
 }
 
-function renderSequence(values, firstInversion = null) {
+function renderSequence(values, highlight = {}) {
   const visual = elements["sequence-visual"];
   visual.replaceChildren();
   if (values.length === 0) {
@@ -52,9 +56,11 @@ function renderSequence(values, firstInversion = null) {
   values.forEach((value, index) => {
     const column = document.createElement("div");
     column.className = "value-column";
-    if (firstInversion !== null && (index === firstInversion || index === firstInversion - 1)) {
+    if (highlight.firstInversion !== undefined
+      && (index === highlight.firstInversion || index === highlight.firstInversion - 1)) {
       column.classList.add("is-inversion");
     }
+    if (highlight.originalIndices && highlight.originalIndices[index] !== index) column.classList.add("is-moved");
     const bar = document.createElement("div");
     bar.className = "value-bar";
     bar.style.height = `${Math.max(8, Math.round((Math.abs(value) / scale) * 130))}px`;
@@ -62,12 +68,16 @@ function renderSequence(values, firstInversion = null) {
     const label = document.createElement("span");
     label.textContent = String(value);
     column.append(bar, label);
+    if (highlight.originalIndices) {
+      const origin = document.createElement("small");
+      origin.textContent = `from #${highlight.originalIndices[index]}`;
+      column.append(origin);
+    }
     visual.append(column);
   });
 }
 
-function measureLocalCall(values, expectedSorted) {
-  const input = new Int32Array(values);
+function measureLocalCall(runOnce, sampleBit, expectedBit) {
   let iterations = 1;
   let executedIterations = 0;
   let elapsedMilliseconds = 0;
@@ -78,15 +88,16 @@ function measureLocalCall(values, expectedSorted) {
     checksum = 0;
     const start = performance.now();
     for (let index = 0; index < iterations; index += 1) {
-      const observation = observe_is_sorted_i32(input);
-      checksum ^= observation.sorted ? 1 : 0;
+      const observation = runOnce();
+      checksum ^= sampleBit(observation);
       observation.free();
     }
     elapsedMilliseconds = performance.now() - start;
     if (elapsedMilliseconds >= 12 || iterations >= 131072) break;
     iterations *= 2;
   }
-  if (Boolean(checksum & 1) !== (expectedSorted && executedIterations % 2 === 1)) {
+  const expectedChecksum = executedIterations % 2 === 1 ? expectedBit : 0;
+  if (checksum !== expectedChecksum) {
     throw new Error("repeated WASM observation changed its result");
   }
   return {
@@ -98,26 +109,69 @@ function measureLocalCall(values, expectedSorted) {
   };
 }
 
+function displayTiming(timing, boundary) {
+  elements["local-time"].textContent = timing.microsecondsPerCall === null
+    ? "Below timer resolution"
+    : `${timing.microsecondsPerCall.toFixed(2)} us/call`;
+  elements["runtime-context"].textContent = `${timing.iterations} repeated ${boundary} calls in ${timing.elapsedMilliseconds.toFixed(1)} ms; ${navigator.userAgent}. Not algorithm-only or portable benchmark evidence.`;
+}
+
+function runIsSorted(values) {
+  const input = new Int32Array(values);
+  const observation = observe_is_sorted_i32(input);
+  const firstInversion = observation.first_inversion;
+  const expectedBit = observation.sorted ? 1 : 0;
+  const timing = measureLocalCall(
+    () => observe_is_sorted_i32(input),
+    (sample) => sample.sorted ? 1 : 0,
+    expectedBit,
+  );
+  elements["sorted-result"].textContent = observation.sorted ? "Sorted" : "Not sorted";
+  elements["sorted-result"].className = observation.sorted ? "is-true" : "is-false";
+  elements["comparison-count"].textContent = String(observation.comparisons);
+  elements["inversion-index"].textContent = firstInversion ?? "None";
+  renderSequence(values, { firstInversion });
+  displayTiming(timing, "JS/WASM observation");
+  observation.free();
+}
+
+function runInsertionSort(values) {
+  const input = new Int32Array(values);
+  const observation = observe_insertion_sort_i32(input);
+  const output = Array.from(observation.values);
+  const originalIndices = Array.from(observation.original_indices);
+  const sorted = output.every((value, index) => index === 0 || output[index - 1] <= value);
+  const sortedIndices = [...originalIndices].sort((left, right) => left - right);
+  const permutation = originalIndices.length === values.length
+    && sortedIndices.every((originalIndex, index) => originalIndex === index);
+  const valuesMatchOrigins = output.length === values.length
+    && output.every((value, index) => values[originalIndices[index]] === value);
+  const stable = output.every((value, index) => index === 0
+    || output[index - 1] !== value
+    || originalIndices[index - 1] < originalIndices[index]);
+  const correct = sorted && permutation && valuesMatchOrigins && stable;
+  const expectedBit = observation.comparisons & 1;
+  const timing = measureLocalCall(
+    () => observe_insertion_sort_i32(input),
+    (sample) => sample.comparisons & 1,
+    expectedBit,
+  );
+  elements["sorted-result"].textContent = correct ? "Stable sorted" : "Correction failed";
+  elements["sorted-result"].className = correct ? "is-true" : "is-false";
+  elements["comparison-count"].textContent = String(observation.comparisons);
+  elements["inversion-index"].textContent = String(observation.swaps);
+  renderSequence(output, { originalIndices });
+  displayTiming(timing, "JS/WASM sort observation");
+  observation.free();
+}
+
 function runObservation() {
   try {
     const values = parseSequence();
     elements["input-count"].textContent = `${values.length} value${values.length === 1 ? "" : "s"}`;
     if (!wasmReady) throw new Error("WebAssembly runtime is not ready");
-
-    const observation = observe_is_sorted_i32(new Int32Array(values));
-    const firstInversion = observation.first_inversion;
-    const timing = measureLocalCall(values, observation.sorted);
-
-    elements["sorted-result"].textContent = observation.sorted ? "Sorted" : "Not sorted";
-    elements["sorted-result"].className = observation.sorted ? "is-true" : "is-false";
-    elements["comparison-count"].textContent = String(observation.comparisons);
-    elements["inversion-index"].textContent = firstInversion ?? "None";
-    elements["local-time"].textContent = timing.microsecondsPerCall === null
-      ? "Below timer resolution"
-      : `${timing.microsecondsPerCall.toFixed(2)} us/call`;
-    elements["runtime-context"].textContent = `${timing.iterations} repeated JS/WASM calls in ${timing.elapsedMilliseconds.toFixed(1)} ms; ${navigator.userAgent}. Not algorithm-only or portable benchmark evidence.`;
-    renderSequence(values, firstInversion);
-    observation.free();
+    if (activeAlgorithm === "is_sorted") runIsSorted(values);
+    else runInsertionSort(values);
     setRuntimeStatus("WASM ready", "ready");
   } catch (error) {
     elements["sorted-result"].textContent = "Invalid input";
@@ -168,15 +222,41 @@ function applyProjection() {
   elements["registry-digest"].textContent = projection.registry_digest;
   elements["source-commit"].textContent = `source ${projection.source_commit}`;
 
-  const algorithm = projection.algorithms.find((item) => item.id === "order.is_sorted.adjacent");
-  if (!algorithm) throw new Error("derived projection is missing order.is_sorted.adjacent");
+  const algorithmId = activeAlgorithm === "is_sorted" ? "order.is_sorted.adjacent" : "sort.insertion";
+  const algorithm = projection.algorithms.find((item) => item.id === algorithmId);
+  if (!algorithm) throw new Error(`derived projection is missing ${algorithmId}`);
+  elements["algorithm-id"].textContent = algorithm.id;
   elements["algorithm-name"].textContent = algorithm.name.value;
   elements["time-complexity"].textContent = algorithm.time_worst.value;
   elements["time-provenance"].textContent = `${algorithm.time_worst.level}: ${algorithm.time_worst.source}`;
   elements["space-complexity"].textContent = algorithm.auxiliary_memory.value;
   elements["space-provenance"].textContent = `${algorithm.auxiliary_memory.level}: ${algorithm.auxiliary_memory.source}`;
+  const insertion = activeAlgorithm === "insertion";
+  elements["execution-boundary"].textContent = insertion
+    ? "Algorithm is in-place; the Web observation copies tagged output for display."
+    : "Read-only input; no output transport copy.";
+  elements["result-label"].textContent = insertion ? "Correction + stability" : "Result";
+  elements["secondary-label"].textContent = insertion ? "Adjacent swaps" : "First inversion";
+  elements["sequence-heading"].textContent = insertion ? "Stable sorted output" : "Sequence state";
+  elements["legend-text"].textContent = insertion ? "moved from original index" : "first decreasing pair";
+  elements["legend-text"].parentElement.classList.toggle("is-moved", insertion);
   renderCatalog();
 }
+
+document.querySelectorAll("[data-algorithm]").forEach((option) => {
+  option.addEventListener("click", () => {
+    activeAlgorithm = option.dataset.algorithm;
+    document.querySelectorAll("[data-algorithm]").forEach((item) => {
+      item.classList.toggle("is-active", item === option);
+      item.setAttribute("aria-pressed", String(item === option));
+    });
+    const dataset = activeAlgorithm === "insertion" ? "mixed_duplicates" : "inversion";
+    elements["dataset-select"].value = dataset;
+    elements["sequence-input"].value = datasets[dataset].join(", ");
+    applyProjection();
+    runObservation();
+  });
+});
 
 document.querySelectorAll("[data-view]").forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -205,6 +285,17 @@ elements["sequence-input"].addEventListener("input", () => {
 });
 elements["run-button"].addEventListener("click", runObservation);
 elements["catalog-search"].addEventListener("input", renderCatalog);
+
+if (new URLSearchParams(window.location.search).get("algorithm") === "insertion") {
+  activeAlgorithm = "insertion";
+  document.querySelectorAll("[data-algorithm]").forEach((item) => {
+    const selected = item.dataset.algorithm === activeAlgorithm;
+    item.classList.toggle("is-active", selected);
+    item.setAttribute("aria-pressed", String(selected));
+  });
+  elements["dataset-select"].value = "mixed_duplicates";
+  elements["sequence-input"].value = datasets.mixed_duplicates.join(", ");
+}
 
 try {
   const [projectionResponse] = await Promise.all([

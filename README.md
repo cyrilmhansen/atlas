@@ -16,10 +16,10 @@ The current MVP 1 corpus contains 10 problems, 15 algorithms, and 20 tested Rust
 implementations. Schema hardening, local evidence integrity, deterministic
 indexing, the acceptance gate, and the local Git baseline are complete.
 
-MVP 5 is active under DEC-056. Its first static Web slice projects the complete
-registry and executes adjacent `is_sorted` locally through a private
-`wasm-bindgen` facade. See `docs/mvp5-web.md` for its exact authority and timing
-boundaries.
+MVP 5 is active under DEC-056. Its static Web slice projects the complete
+registry and executes adjacent `is_sorted` plus stable insertion sort locally
+through a private `wasm-bindgen` facade. See `docs/mvp5-web.md` for its exact
+authority and timing boundaries.
 
 ## Project map
 

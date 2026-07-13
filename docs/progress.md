@@ -1,5 +1,32 @@
 # Progress log
 
+## 2026-07-14 - Stable insertion in the Web artifact
+
+### Result
+
+- Added the second curated WASM operation by calling the native generic
+  insertion sort over private `(value, original_index)` items.
+- Verified sorted order, permutation and stable ordering of duplicate original
+  indices across native Rust and generated JavaScript bindings.
+- Counted comparator calls and adjacent swaps directly at the native comparator
+  boundary; a `Less` result maps to the immediately following swap.
+- Displayed sourced `O(n^2)` time and `O(1)` algorithm auxiliary space while
+  making tagged Web input and returned output copies explicit.
+- Added a responsive algorithm selector and a stable-output visualization with
+  original indices.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm --locked --offline`
+- `scripts/check-web.sh`
+- Headless Chrome desktop/mobile insertion rendering and DOM inspection
+
+### Limits
+
+- `reverse` remains the third and final curated execution workload.
+- UI fixtures are still local constants rather than generated DatasetSpec cases.
+- Local timing includes observation construction and the JS/WASM boundary.
+
 ## 2026-07-14 - First MVP 5 native/WASM execution
 
 ### Result

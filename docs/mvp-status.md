@@ -20,7 +20,10 @@ First gate status: complete under DEC-057. The private projection reproduces 10
 problems, 15 algorithms and 20 implementations with the logical registry
 digest. The browser and Node.js bindings execute adjacent `is_sorted`, report
 exact comparisons and the first inversion, and reject inputs longer than 4096
-elements. Stable insertion and `reverse` remain pending.
+elements. The second gate adds stable insertion over tagged values, exact
+comparison/swap counts and visible original indices while distinguishing Web
+transport copies from the algorithm's `O(1)` auxiliary-space claim. `reverse`
+remains pending.
 
 Current corpus progress:
 

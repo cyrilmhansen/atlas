@@ -16,6 +16,7 @@ wasm-bindgen \
   target/wasm32-unknown-unknown/release/atlas_web_wasm.wasm
 
 node web/tests/is_sorted.cjs "$node_output/atlas_web.js"
+node web/tests/insertion_sort.cjs "$node_output/atlas_web.js"
 node web/tests/projection.cjs build/web/data/atlas.json
 
 test -s build/web/index.html

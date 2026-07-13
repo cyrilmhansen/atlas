@@ -9,8 +9,11 @@ DEC-039.
 The shim creates and executes a scalar `i64` addition, then a three-value
 minimum whose two semantic comparisons call a private trace import. Rust checks
 the final minimum and ordered comparison values against the native algorithm.
-This is a runtime smoke test, not a public backend API or an Atlas evidence
-format.
+This now includes a private lowering of the read, predicate, swap and boundary
+subset of `partition_ast()` to the interpreter. It partitions little-endian
+guest `i64` values by evenness, compares the result to native Rust, and checks
+each trace node and operation type against the AST. It is not a public backend
+API or an Atlas evidence format.
 
 The compact-reference comparison is independent of MIR: `GuestOffset(u32)`,
 `GuestHandle(u32)`, and `GuestRegionOffset` have separate testable failure
@@ -31,7 +34,8 @@ JIT limits.
 ## Deliberate limits
 
 - No public plan or backend schema exists.
-- No Atlas plan is translated to MIR yet.
+- Only a private, specialized `partition_ast()` subset is lowered to MIR; no
+  generic plan or backend API exists.
 - No MIR JIT, MIR RISC-V backend, or QEMU system machine is exercised.
 - RV64ILP32 is deferred; the standard LP64 ABI does not define guest-reference
   representation.

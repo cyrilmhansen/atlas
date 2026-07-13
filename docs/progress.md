@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-07-13 - Private partition AST-to-MIR lowering
+
+### Result
+
+- Accepted a private partition-AST lowering and little-endian guest data under
+  DEC-041.
+- Added bounded guest `i64` loads and stores through `u32` byte offsets; host
+  pointers remain private to the shim.
+- Compared MIR and native partition results across empty, all-matching,
+  all-rejected and mixed inputs.
+- Verified each emitted trace node exists in `partition_ast()` and declares the
+  same semantic operation kind.
+
+### Limits
+
+- The lowering supports only the explicit partition subset and evenness
+  predicate; it is not an AST compiler.
+- Guest memory is little-endian. Big-endian needs a separate reproducible
+  system-emulation and toolchain experiment.
+
 ## 2026-07-13 - MVP 4 bounded guest offsets
 
 ### Result

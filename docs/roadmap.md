@@ -198,13 +198,14 @@ passes a host pointer as a guest reference.
 
 ### 2. Lower one existing algorithm AST to private MIR
 
-Status: pending class C decision on the translation boundary.
+Status: first private partition subset accepted and implemented under DEC-041.
 
 - Keep the native algorithm as the correction oracle.
 - Reuse an existing typed AST rather than inventing a second semantic model.
-- Translate exactly one scalar or bounded-sequence algorithm to private MIR.
-- Check result and semantic trace against the native execution on deterministic
-  cases.
+- The partition read, predicate, swap and boundary subset now lowers to private
+  MIR over the selected offset region.
+- Result and typed semantic trace links are checked against native Rust and the
+  existing AST on deterministic boundary and mixed cases.
 
 Exit evidence: one AST-backed algorithm runs through native Rust and MIR with
 the same declared semantics. No public backend trait or persistent plan format
@@ -278,10 +279,9 @@ and make trace validation weaker.
 | B. Private lowering of one existing typed AST | Tests the intended adapter direction while retaining a narrow, reversible implementation. |
 | C. Public generic backend trait and plan format | Reusable on paper, but premature and schema-shaping. |
 
-Recommendation: **B**, beginning with a deliberately small existing AST
-fragment. The minimum experiment can remain a trace/import probe; selection of
-the first AST-backed algorithm follows its inspected AST shape. Decision class:
-**C**, because it defines the first real MIR coupling.
+Accepted: **B** under DEC-041, beginning with the explicit partition subset.
+The minimum experiment remains a trace/import probe; no generic lowering or
+public backend trait is implied.
 
 ### C3. Status of MIR semantic traces
 

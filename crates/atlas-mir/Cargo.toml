@@ -10,4 +10,5 @@ build = "build.rs"
 path = "src/lib.rs"
 
 [dev-dependencies]
+atlas = { path = "../atlas" }
 atlas-algorithms = { path = "../atlas-algorithms" }

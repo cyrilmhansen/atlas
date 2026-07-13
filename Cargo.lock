@@ -32,6 +32,7 @@ dependencies = [
 name = "atlas-mir"
 version = "0.1.0"
 dependencies = [
+ "atlas",
  "atlas-algorithms",
 ]
 

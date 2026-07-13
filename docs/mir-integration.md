@@ -75,6 +75,21 @@ that storage, making this private API deterministic for concurrent Rust callers.
 A future trace transport must define its own concurrency properties explicitly
 before it can cross this private adapter boundary.
 
+## Partition AST lowering
+
+DEC-041 lowers the read, predicate, swap and boundary subset of the existing
+`partition_ast()` into a private MIR interpreter program. Its only predicate is
+signed `i64` evenness. The native Rust partition remains the correction oracle.
+The adapter serializes a bounded little-endian guest byte region, passes only
+its `u32` byte offsets to MIR, and imports private host functions for `i64`
+loads, stores and operation tracing.
+
+Each trace entry contains an exact partition AST node ID and its semantic kind.
+The test validates both the node's existence and type against `partition_ast()`.
+The trace is bounded to 128 entries and exposes truncation instead of silently
+claiming a complete trace. This lowering is not a generic AST compiler, a
+public backend API, or an RV64 code-generation test.
+
 MIR generator interfaces are not compiled by this crate. Enabling them requires
 a separate decision, host-JIT smoke test, and size/latency measurement protocol.
 MIR RISC-V generation is a later experiment and cannot be inferred from the

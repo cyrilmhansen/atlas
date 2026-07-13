@@ -112,6 +112,11 @@ reference implementation. It is private, bounded, in-memory instrumentation,
 not an execution record or evidence format. The registry, composition model and
 native backend do not depend on MIR.
 
+The adapter now also lowers the explicit read, predicate, swap and boundary
+subset of the experimental partition AST. It operates on little-endian `i64`
+values in the selected bounded offset region and checks result and typed AST
+trace links against the native partition implementation.
+
 The three compact guest-reference candidates were tested independently: offset,
 handle, and region-plus-offset. DEC-040 selects bounded `u32` byte offsets in
 one fixed-capacity region for the first guest-memory experiment.

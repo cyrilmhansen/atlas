@@ -77,7 +77,32 @@ pub struct PartitionTrace {
     pub truncated: bool,
 }
 
+/// One AST operation emitted by the private `is_sorted` MIR lowering.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct IsSortedTraceEvent {
+    pub ast_node_id: &'static str,
+    pub operation: IsSortedTraceOperation,
+}
+
+/// Semantic kind asserted by an `is_sorted` trace event.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum IsSortedTraceOperation {
+    Read,
+    Compare,
+}
+
+/// Bounded, process-local trace from the private `is_sorted` MIR lowering.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IsSortedTrace {
+    pub sorted: bool,
+    /// Index of the right-hand value in the first inverted adjacent pair.
+    pub first_inversion: Option<usize>,
+    pub events: Vec<IsSortedTraceEvent>,
+    pub truncated: bool,
+}
+
 const PARTITION_TRACE_CAPACITY: usize = 128;
+const IS_SORTED_TRACE_CAPACITY: usize = 128;
 
 #[repr(C)]
 struct RawPartitionTrace {
@@ -85,6 +110,15 @@ struct RawPartitionTrace {
     count: u32,
     truncated: u32,
     events: [u32; PARTITION_TRACE_CAPACITY],
+}
+
+#[repr(C)]
+struct RawIsSortedTrace {
+    sorted: u32,
+    first_inversion: u32,
+    count: u32,
+    truncated: u32,
+    events: [u32; IS_SORTED_TRACE_CAPACITY],
 }
 
 impl GuestOffset {
@@ -359,6 +393,88 @@ fn partition_trace_event(code: u32) -> Result<PartitionTraceEvent, GuestMemoryEr
     })
 }
 
+/// Lowers adjacent signed `i64` reads and comparisons from `is_sorted_ast()`
+/// to MIR over a bounded little-endian offset region.
+pub fn interpret_is_sorted_i64(values: &[i64]) -> Result<IsSortedTrace, GuestMemoryError> {
+    let byte_length = values
+        .len()
+        .checked_mul(8)
+        .ok_or(GuestMemoryError::AddressOverflow)?;
+    let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let element_count =
+        u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut memory = OffsetMemory::new(byte_length as usize);
+    for (index, value) in values.iter().copied().enumerate() {
+        let offset = u32::try_from(index)
+            .ok()
+            .and_then(|index| index.checked_mul(8))
+            .ok_or(GuestMemoryError::AddressOverflow)?;
+        memory.write_i64_le(GuestOffset::new(offset), value)?;
+    }
+    let mut raw = RawIsSortedTrace {
+        sorted: 0,
+        first_inversion: u32::MAX,
+        count: 0,
+        truncated: 0,
+        events: [0; IS_SORTED_TRACE_CAPACITY],
+    };
+    let status = unsafe {
+        atlas_mir_interpret_is_sorted_i64(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            element_count,
+            &mut raw,
+        )
+    };
+    if status != 0 {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    if raw.sorted > 1 {
+        return Err(GuestMemoryError::InvalidTraceEvent);
+    }
+    let count = usize::try_from(raw.count).map_err(|_| GuestMemoryError::InvalidTraceEvent)?;
+    if count > IS_SORTED_TRACE_CAPACITY {
+        return Err(GuestMemoryError::InvalidTraceEvent);
+    }
+    let sorted = raw.sorted != 0;
+    let first_inversion = match (sorted, raw.first_inversion) {
+        (true, u32::MAX) => None,
+        (false, index) if (index as usize) < values.len() => Some(index as usize),
+        _ => return Err(GuestMemoryError::InvalidTraceEvent),
+    };
+    let events = raw.events[..count]
+        .iter()
+        .copied()
+        .map(is_sorted_trace_event)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(IsSortedTrace {
+        sorted,
+        first_inversion,
+        events,
+        truncated: raw.truncated != 0,
+    })
+}
+
+fn is_sorted_trace_event(code: u32) -> Result<IsSortedTraceEvent, GuestMemoryError> {
+    let (ast_node_id, operation) = match code {
+        1 => ("is-sorted.left.read", IsSortedTraceOperation::Read),
+        2 => ("is-sorted.right.read", IsSortedTraceOperation::Read),
+        3 => (
+            "is-sorted.adjacent.compare",
+            IsSortedTraceOperation::Compare,
+        ),
+        _ => return Err(GuestMemoryError::InvalidTraceEvent),
+    };
+    Ok(IsSortedTraceEvent {
+        ast_node_id,
+        operation,
+    })
+}
+
 unsafe extern "C" {
     fn atlas_mir_interpret_add_u64(left: u64, right: u64) -> u64;
     fn atlas_mir_interpret_minimum3_i64(
@@ -373,13 +489,20 @@ unsafe extern "C" {
         element_count: u32,
         trace: *mut RawPartitionTrace,
     ) -> i32;
+    fn atlas_mir_interpret_is_sorted_i64(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        trace: *mut RawIsSortedTrace,
+    ) -> i32;
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
         CompareEvent, GuestMemoryError, GuestOffset, GuestRegionOffset, HandleMemory, OffsetMemory,
-        RegionMemory, interpret_add_u64, interpret_minimum3_i64, interpret_partition_even_i64,
+        RegionMemory, interpret_add_u64, interpret_is_sorted_i64, interpret_minimum3_i64,
+        interpret_partition_even_i64,
     };
 
     #[test]
@@ -465,6 +588,53 @@ mod tests {
                 assert_eq!(ast.operation_by_id(event.ast_node_id), Some(expected));
             }
         }
+    }
+
+    #[test]
+    fn mir_is_sorted_lowering_matches_native_and_ast_operations() {
+        let ast = atlas::ast::is_sorted_ast();
+        for values in [vec![], vec![42], vec![-2, 0, 0, 4], vec![3, 2, 1]] {
+            let trace = interpret_is_sorted_i64(&values).expect("MIR is-sorted execution");
+            let native = atlas_algorithms::is_sorted::is_sorted_by(&values, i64::cmp);
+            let expected_inversion = values
+                .windows(2)
+                .position(|pair| pair[0] > pair[1])
+                .map(|index| index + 1);
+
+            assert_eq!(trace.sorted, native);
+            assert_eq!(trace.first_inversion, expected_inversion);
+            assert!(!trace.truncated);
+            for event in &trace.events {
+                let expected = match event.operation {
+                    super::IsSortedTraceOperation::Read => atlas::ast::SemanticOperation::Read,
+                    super::IsSortedTraceOperation::Compare => {
+                        atlas::ast::SemanticOperation::Compare
+                    }
+                };
+                assert_eq!(ast.operation_by_id(event.ast_node_id), Some(expected));
+            }
+        }
+    }
+
+    #[test]
+    fn mir_is_sorted_stops_after_the_first_inversion() {
+        let trace = interpret_is_sorted_i64(&[3, 2, 1]).expect("MIR is-sorted execution");
+
+        assert!(!trace.sorted);
+        assert_eq!(trace.first_inversion, Some(1));
+        assert_eq!(trace.events.len(), 3);
+        assert_eq!(
+            trace
+                .events
+                .iter()
+                .map(|event| event.ast_node_id)
+                .collect::<Vec<_>>(),
+            [
+                "is-sorted.left.read",
+                "is-sorted.right.read",
+                "is-sorted.adjacent.compare",
+            ]
+        );
     }
 
     #[test]

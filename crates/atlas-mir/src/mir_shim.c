@@ -416,3 +416,159 @@ int atlas_mir_interpret_partition_even_i64(uint8_t *guest_bytes, uint32_t byte_l
   MIR_finish(context);
   return atlas_mir_guest_memory_error;
 }
+
+enum {
+  ATLAS_MIR_IS_SORTED_TRACE_CAPACITY = 128,
+  ATLAS_MIR_IS_SORTED_LEFT_READ = 1,
+  ATLAS_MIR_IS_SORTED_RIGHT_READ = 2,
+  ATLAS_MIR_IS_SORTED_ADJACENT_COMPARE = 3,
+};
+
+typedef struct {
+  uint32_t sorted;
+  uint32_t first_inversion;
+  uint32_t count;
+  uint32_t truncated;
+  uint32_t events[ATLAS_MIR_IS_SORTED_TRACE_CAPACITY];
+} atlas_mir_is_sorted_trace_t;
+
+static atlas_mir_is_sorted_trace_t atlas_mir_is_sorted_trace;
+
+static void atlas_mir_record_is_sorted_operation(int64_t event) {
+  uint32_t index = atlas_mir_is_sorted_trace.count;
+
+  if (index >= ATLAS_MIR_IS_SORTED_TRACE_CAPACITY) {
+    atlas_mir_is_sorted_trace.truncated = 1;
+    return;
+  }
+  atlas_mir_is_sorted_trace.events[index] = (uint32_t)event;
+  atlas_mir_is_sorted_trace.count = index + 1;
+}
+
+int atlas_mir_interpret_is_sorted_i64(uint8_t *guest_bytes, uint32_t byte_length,
+                                      uint32_t element_count,
+                                      atlas_mir_is_sorted_trace_t *trace) {
+  MIR_context_t context;
+  MIR_module_t module;
+  MIR_type_t result_types[1] = {MIR_T_I64};
+  MIR_item_t function;
+  MIR_item_t load_import;
+  MIR_item_t load_proto;
+  MIR_item_t trace_import;
+  MIR_item_t trace_proto;
+  MIR_reg_t count_register;
+  MIR_reg_t index_register;
+  MIR_reg_t left_offset_register;
+  MIR_reg_t right_offset_register;
+  MIR_reg_t left_value_register;
+  MIR_reg_t right_value_register;
+  MIR_label_t loop;
+  MIR_label_t sorted;
+  MIR_label_t inversion;
+  MIR_val_t arguments[1] = {{.i = element_count}};
+  MIR_val_t result[1];
+
+  if ((uint64_t)element_count * 8 != byte_length) return 1;
+  context = MIR_init();
+  module = MIR_new_module(context, "atlas_mir_is_sorted_offset");
+  function = MIR_new_func(context, "is_sorted_i64", 1, result_types, 1, MIR_T_I64,
+                          "element_count");
+  load_import = MIR_new_import(context, "atlas_mir_guest_load_i64");
+  load_proto = MIR_new_proto(context, "atlas_mir_guest_load_i64_proto", 1, result_types, 1,
+                             MIR_T_I64, "offset");
+  trace_import = MIR_new_import(context, "atlas_mir_record_is_sorted_operation");
+  trace_proto = MIR_new_proto(context, "atlas_mir_record_is_sorted_operation_proto", 0, NULL,
+                              1, MIR_T_I64, "event");
+  count_register = MIR_reg(context, "element_count", function->u.func);
+  index_register = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "index");
+  left_offset_register =
+      MIR_new_func_reg(context, function->u.func, MIR_T_I64, "left_offset");
+  right_offset_register =
+      MIR_new_func_reg(context, function->u.func, MIR_T_I64, "right_offset");
+  left_value_register =
+      MIR_new_func_reg(context, function->u.func, MIR_T_I64, "left_value");
+  right_value_register =
+      MIR_new_func_reg(context, function->u.func, MIR_T_I64, "right_value");
+  loop = MIR_new_label(context);
+  sorted = MIR_new_label(context);
+  inversion = MIR_new_label(context);
+
+  memset(&atlas_mir_is_sorted_trace, 0, sizeof(atlas_mir_is_sorted_trace));
+  atlas_mir_guest_bytes = guest_bytes;
+  atlas_mir_guest_byte_length = byte_length;
+  atlas_mir_guest_memory_error = 0;
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MOV, MIR_new_reg_op(context, index_register),
+                               MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function, loop);
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_BGE, MIR_new_label_op(context, sorted),
+                               MIR_new_reg_op(context, index_register),
+                               MIR_new_reg_op(context, count_register)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 3, MIR_new_ref_op(context, trace_proto),
+                                    MIR_new_ref_op(context, trace_import),
+                                    MIR_new_int_op(context, ATLAS_MIR_IS_SORTED_LEFT_READ)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_SUB,
+                               MIR_new_reg_op(context, left_offset_register),
+                               MIR_new_reg_op(context, index_register), MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MUL,
+                               MIR_new_reg_op(context, left_offset_register),
+                               MIR_new_reg_op(context, left_offset_register),
+                               MIR_new_int_op(context, 8)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, load_proto),
+                                    MIR_new_ref_op(context, load_import),
+                                    MIR_new_reg_op(context, left_value_register),
+                                    MIR_new_reg_op(context, left_offset_register)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 3, MIR_new_ref_op(context, trace_proto),
+                                    MIR_new_ref_op(context, trace_import),
+                                    MIR_new_int_op(context, ATLAS_MIR_IS_SORTED_RIGHT_READ)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MUL,
+                               MIR_new_reg_op(context, right_offset_register),
+                               MIR_new_reg_op(context, index_register), MIR_new_int_op(context, 8)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, load_proto),
+                                    MIR_new_ref_op(context, load_import),
+                                    MIR_new_reg_op(context, right_value_register),
+                                    MIR_new_reg_op(context, right_offset_register)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 3, MIR_new_ref_op(context, trace_proto),
+                                    MIR_new_ref_op(context, trace_import),
+                                    MIR_new_int_op(context,
+                                                   ATLAS_MIR_IS_SORTED_ADJACENT_COMPARE)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_BGT, MIR_new_label_op(context, inversion),
+                               MIR_new_reg_op(context, left_value_register),
+                               MIR_new_reg_op(context, right_value_register)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_ADD, MIR_new_reg_op(context, index_register),
+                               MIR_new_reg_op(context, index_register), MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_JMP, MIR_new_label_op(context, loop)));
+  MIR_append_insn(context, function, inversion);
+  MIR_append_insn(context, function,
+                  MIR_new_ret_insn(context, 1,
+                                   MIR_new_reg_op(context, index_register)));
+  MIR_append_insn(context, function, sorted);
+  MIR_append_insn(context, function,
+                  MIR_new_ret_insn(context, 1, MIR_new_int_op(context, 0)));
+  MIR_finish_func(context);
+  MIR_finish_module(context);
+  MIR_load_external(context, "atlas_mir_guest_load_i64", atlas_mir_guest_load_i64);
+  MIR_load_external(context, "atlas_mir_record_is_sorted_operation",
+                    atlas_mir_record_is_sorted_operation);
+  MIR_load_module(context, module);
+  MIR_link(context, MIR_set_interp_interface, NULL);
+  MIR_interp_arr(context, function, result, 1, arguments);
+  atlas_mir_is_sorted_trace.sorted = result[0].i == 0;
+  atlas_mir_is_sorted_trace.first_inversion =
+      result[0].i == 0 ? UINT32_MAX : (uint32_t)result[0].i;
+  *trace = atlas_mir_is_sorted_trace;
+  MIR_finish(context);
+  return atlas_mir_guest_memory_error;
+}

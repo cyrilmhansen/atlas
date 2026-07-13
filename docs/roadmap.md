@@ -256,7 +256,7 @@ additive, bounded and never required for registry or composition operation.
 |---|---|---|---|
 | Complete | scalar operations and private trace imports | addition, minimum | result and exact trace checks |
 | Complete | one guest offset region, reads, writes and swaps | even partition | native output/boundary equality and typed AST trace links |
-| Next | adjacent reads and comparisons | `sequence.is_sorted` | boolean result and first inversion behavior |
+| Complete | adjacent reads and comparisons | `sequence.is_sorted` | boolean result, first inversion behavior and typed AST trace links |
 | Next | scalar selection scan | `sequence.minimum`, `sequence.maximum` | value/index tie policy |
 | Later | swap-only sequence mutation | `sequence.reverse` | exact reversal and double-reversal property |
 | Later | shifted writes | insertion sort | sortedness, stability and permutation |

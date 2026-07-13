@@ -95,6 +95,20 @@ a separate decision, host-JIT smoke test, and size/latency measurement protocol.
 MIR RISC-V generation is a later experiment and cannot be inferred from the
 LP64 QEMU probe.
 
+## Read-only is-sorted AST lowering
+
+DEC-043 adds `is_sorted_ast()` for `order.is_sorted.adjacent` and lowers its
+adjacent signed-`i64` reads and comparison to the host MIR interpreter. It
+reuses the same bounded little-endian guest byte region as partition, but makes
+no guest writes or allocations. Rust native `is_sorted_by` remains the
+correction oracle.
+
+The private result contains the sorted boolean and, on failure, the index of
+the right-hand element of the first inverted pair. For example, `[3, 2]`
+reports `false` and index `1`. Its bounded trace emits exact node IDs for the
+left read, right read and adjacent comparison. Tests check result, first
+inversion, early stop and every trace node's declared AST operation type.
+
 ## Dual-backend progression
 
 DEC-042 keeps native Rust and MIR indefinitely. Rust remains the qualified

@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-07-13 - Private is-sorted AST-to-MIR lowering
+
+### Result
+
+- Accepted DEC-043 and added the read-only `is_sorted_ast()` model.
+- Lowered adjacent signed `i64` reads and comparisons to the host MIR
+  interpreter over the existing little-endian guest-offset region.
+- Compared the MIR boolean and first inversion index against native Rust on
+  empty, singleton, sorted, duplicate and inverted inputs.
+- Verified each trace node exists in `is_sorted_ast()` and declares the same
+  semantic operation kind; verified that the trace stops after the first
+  inversion.
+
+### Limits
+
+- The lowering supports signed `i64` natural ordering only; generic
+  comparators, persistent traces and a generic AST compiler remain out of
+  scope.
+- The bounded trace is process-local instrumentation, not evidence.
+
 ## 2026-07-13 - Dual native/MIR backend policy
 
 - Accepted DEC-042: Rust native and MIR remain coexisting backends indefinitely.

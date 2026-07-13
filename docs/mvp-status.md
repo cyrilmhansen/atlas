@@ -17,6 +17,11 @@ Current corpus progress:
 - Algorithms: 15 / 15
 - Implementations: 20 / 20
 
+Current MIR adapter progress: scalar arithmetic and comparison traces, mutable
+even partition, and read-only adjacent `is_sorted` are independently checked
+against their native Rust counterparts. These private interpreter experiments
+do not add registry implementations or change the MVP corpus counts.
+
 ## MVP 1 closure
 
 - 10 problems

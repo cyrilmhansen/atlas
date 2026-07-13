@@ -129,9 +129,6 @@ impl AlgorithmAst {
             .map(|parameter| (parameter.name, parameter.mode))
             .collect();
         validate_operation_modes(&self.body, &modes, &mut errors);
-        if self.effects.mutates.is_empty() {
-            errors.push("at least one mutated value must be explicit".to_owned());
-        }
         errors
     }
 }
@@ -439,7 +436,7 @@ fn e(source: &'static str) -> Expression {
     match source {
         "0" => Expression::Integer(0),
         "values" => values(),
-        "middle" | "boundary" => index(source),
+        "middle" | "boundary" | "index" => index(source),
         "length(values)" => Expression::Length(Box::new(values())),
         "floor(length(values) / 2)" => binary(
             Bin::Divide,
@@ -452,7 +449,14 @@ fn e(source: &'static str) -> Expression {
             Expression::Integer(2),
         ),
         "left < right" => binary(Bin::LessThan, index("left"), index("right")),
+        "index < length(values)" => binary(
+            Bin::LessThan,
+            index("index"),
+            Expression::Length(Box::new(values())),
+        ),
         "left + 1" => binary(Bin::Add, index("left"), Expression::Integer(1)),
+        "index + 1" => binary(Bin::Add, index("index"), Expression::Integer(1)),
+        "index - 1" => binary(Bin::Subtract, index("index"), Expression::Integer(1)),
         "right - 1" => binary(Bin::Subtract, index("right"), Expression::Integer(1)),
         "left maximum <= right minimum" => Expression::Call {
             function: "runs_are_ordered",
@@ -520,6 +524,18 @@ fn operation_operands(id: &str) -> Vec<Expression> {
             ),
         ],
         "partition.boundary" => vec![variable("boundary", ValueType::Index), index("left")],
+        "is-sorted.left.read" => vec![at(
+            values(),
+            binary(Bin::Subtract, index("index"), Expression::Integer(1)),
+        )],
+        "is-sorted.right.read" => vec![at(values(), index("index"))],
+        "is-sorted.adjacent.compare" => vec![
+            at(
+                values(),
+                binary(Bin::Subtract, index("index"), Expression::Integer(1)),
+            ),
+            at(values(), index("index")),
+        ],
         id if id.ends_with(".assert") => vec![Expression::Call {
             function: "invariant",
             arguments: vec![values()],
@@ -784,13 +800,77 @@ pub fn partition_ast() -> AlgorithmAst {
     }
 }
 
+pub fn is_sorted_ast() -> AlgorithmAst {
+    use SemanticOperation as Op;
+    AlgorithmAst {
+        ast_version: "experimental-0",
+        id: "ast.order.is_sorted.adjacent.v0",
+        algorithm_id: "order.is_sorted.adjacent",
+        parameters: vec![
+            Parameter {
+                name: "values",
+                data_type: "Sequence<T>",
+                value_type: ValueType::Sequence,
+                mode: ParameterMode::Read,
+            },
+            Parameter {
+                name: "order",
+                data_type: "TotalOrder<T>",
+                value_type: ValueType::Comparator,
+                mode: ParameterMode::Read,
+            },
+        ],
+        effects: EffectSummary {
+            mutates: vec![],
+            allocations: vec![],
+            copies: vec![],
+        },
+        body: vec![
+            Statement::Let {
+                name: "index",
+                expression: Expression::Integer(1),
+            },
+            Statement::While {
+                condition: e("index < length(values)"),
+                body: vec![
+                    operation("is-sorted.left.read", Op::Read, "values[index - 1]"),
+                    operation("is-sorted.right.read", Op::Read, "values[index]"),
+                    operation(
+                        "is-sorted.adjacent.compare",
+                        Op::Compare,
+                        "order(values[index - 1], values[index])",
+                    ),
+                    Statement::If {
+                        condition: Expression::Call {
+                            function: "adjacent_inversion",
+                            arguments: operation_operands("is-sorted.adjacent.compare"),
+                            result_type: ValueType::Bool,
+                        },
+                        then_branch: vec![Statement::Return {
+                            expression: Expression::Boolean(false),
+                        }],
+                        else_branch: vec![],
+                    },
+                    Statement::Let {
+                        name: "index",
+                        expression: e("index + 1"),
+                    },
+                ],
+            },
+            Statement::Return {
+                expression: Expression::Boolean(true),
+            },
+        ],
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{SemanticOperation, Statement, merge_sort_ast, partition_ast};
+    use super::{SemanticOperation, Statement, is_sorted_ast, merge_sort_ast, partition_ast};
 
     #[test]
     fn both_models_are_valid_and_render_deterministically() {
-        for ast in [merge_sort_ast(), partition_ast()] {
+        for ast in [merge_sort_ast(), partition_ast(), is_sorted_ast()] {
             assert!(ast.validate().is_empty());
             assert_eq!(ast.render(), ast.render());
             assert!(ast.render().contains("effects mutate="));
@@ -830,6 +910,25 @@ mod tests {
         assert!(operations.contains(&SemanticOperation::Partition));
         assert!(!operations.contains(&SemanticOperation::Allocate));
         assert!(ast.effects.allocations.is_empty());
+    }
+
+    #[test]
+    fn is_sorted_model_is_read_only_and_stops_on_an_adjacent_inversion() {
+        let ast = is_sorted_ast();
+        let operations = ast.operation_kinds();
+
+        assert!(ast.effects.mutates.is_empty());
+        assert!(ast.effects.allocations.is_empty());
+        assert_eq!(
+            ast.operation_by_id("is-sorted.left.read"),
+            Some(SemanticOperation::Read)
+        );
+        assert_eq!(
+            ast.operation_by_id("is-sorted.adjacent.compare"),
+            Some(SemanticOperation::Compare)
+        );
+        assert!(operations.contains(&SemanticOperation::Read));
+        assert!(operations.contains(&SemanticOperation::Compare));
     }
 
     #[test]

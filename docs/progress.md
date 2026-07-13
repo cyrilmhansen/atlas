@@ -1,5 +1,26 @@
 # Progress log
 
+## 2026-07-13 - Read-only RV64 guest-memory import
+
+### Result
+
+- Accepted DEC-050 (`rv64-guest-A`) and generated adjacent `is_sorted` as RV64
+  code with two calls per comparison to a checked guest-load import.
+- Reused the native/interpreter correction cases for empty, singleton,
+  sorted-duplicate and first-inversion inputs encoded as explicit little-endian
+  bytes; all four pass under QEMU user mode.
+- Observed exactly ten valid imports and verified that an inconsistent span is
+  rejected before generated execution without changing the result or count.
+- Copied and inspected the 128-byte generated function, finding two `jalr`
+  calls, conditional branches and a return.
+
+### Limits
+
+- The import and active region are private single-threaded probe state, not a
+  guest ABI or concurrency model.
+- No RV64 store, mutation, semantic trace, second region, allocator or
+  persistent target artifact is introduced.
+
 ## 2026-07-13 - Standalone MIR RV64 generator probe
 
 ### Result

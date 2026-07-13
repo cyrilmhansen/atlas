@@ -28,3 +28,5 @@ CI runs this separately from the existing compiler/ABI smoke test.
   persistent representation or registry identity.
 - Extending the probe to Atlas guest memory, imports or multiple regions remains
   a separate decision because it couples target ABI and runtime semantics.
+- DEC-050 later accepts one private read-only guest import without changing the
+  scalar probe or promoting its temporary artifact.

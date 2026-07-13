@@ -43,16 +43,18 @@ guest ABI.
 runs it with `qemu-riscv64`. It confirms the Linux toolchain/emulator path and
 64-bit pointer width. DEC-049 separately cross-compiles and runs MIR's generator
 itself, verifies a generated scalar addition and inspects its 16-byte RV64 code.
-Neither probe validates RV64ILP32 or bare metal/Newlib.
+DEC-050 adds adjacent `is_sorted` with a checked little-endian offset load and
+inspects its 128-byte generated code. None validates RV64ILP32 or bare
+metal/Newlib.
 
 ## Deliberate limits
 
 - No public plan, backend schema or persistent MIR artifact exists.
 - Only private specialized programs exist. Partition and `is_sorted` link
   traces to exact AST nodes; the other experiments are not AST lowerings.
-- Host JIT is exercised only for correction and structural inspection. The
-  scalar MIR RV64 backend is exercised, but no RV64 guest-memory import, timed
-  JIT measurement or QEMU system machine is exercised.
+- Host JIT is exercised only for correction and structural inspection. RV64
+  covers scalar generation and one read-only guest import, but no target store,
+  timed JIT measurement or QEMU system machine is exercised.
 - RV64ILP32 is deferred; the standard LP64 ABI does not define guest-reference
   representation.
 - Guest memory has one fixed-capacity little-endian region with private 8-byte

@@ -7,12 +7,14 @@ emulator=${QEMU_RISCV64:-qemu-riscv64}
 workspace=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 prefix=${TMPDIR:-/tmp}/atlas-mir-rv64-generator-$$
 binary=$prefix.elf
-code=$prefix.bin
-disassembly=$prefix.txt
+add_code=$prefix-add.bin
+sorted_code=$prefix-is-sorted.bin
+add_disassembly=$prefix-add.txt
+sorted_disassembly=$prefix-is-sorted.txt
 probe_object=$prefix-probe.o
 mir_object=$prefix-mir.o
 generator_object=$prefix-generator.o
-trap 'rm -f "$binary" "$code" "$disassembly" "$probe_object" "$mir_object" "$generator_object"' EXIT
+trap 'rm -f "$binary" "$add_code" "$sorted_code" "$add_disassembly" "$sorted_disassembly" "$probe_object" "$mir_object" "$generator_object"' EXIT
 
 for tool in "$compiler" "$objdump" "$emulator" file; do
   if ! command -v "$tool" >/dev/null; then
@@ -37,13 +39,21 @@ fi
   "$generator_object" -ldl -lm -o "$binary"
 file "$binary" | grep -q 'ELF 64-bit LSB executable, UCB RISC-V'
 
-result=$("$emulator" "$binary" "$code")
+result=$("$emulator" "$binary" "$add_code" "$sorted_code")
 printf '%s\n' "$result" | grep -Eq '^mir-rv64:add:42:bytes:[1-9][0-9]*$'
-test -s "$code"
+printf '%s\n' "$result" | grep -Eq '^mir-rv64:is_sorted:cases:4:loads:10:bytes:[1-9][0-9]*$'
+test -s "$add_code"
+test -s "$sorted_code"
 
-"$objdump" -D -b binary -m riscv:rv64 "$code" >"$disassembly"
-grep -Eq '[[:space:]](add|c\.add)[[:space:]]' "$disassembly"
-grep -Eq '[[:space:]]ret([[:space:]]|$)' "$disassembly"
+"$objdump" -D -b binary -m riscv:rv64 "$add_code" >"$add_disassembly"
+grep -Eq '[[:space:]](add|c\.add)[[:space:]]' "$add_disassembly"
+grep -Eq '[[:space:]]ret([[:space:]]|$)' "$add_disassembly"
+"$objdump" -D -b binary -m riscv:rv64 "$sorted_code" >"$sorted_disassembly"
+grep -Eq '[[:space:]](jal|jalr)[[:space:]]' "$sorted_disassembly"
+grep -Eq '[[:space:]]b(eq|ne|lt|ge|ltu|geu)[[:space:]]' "$sorted_disassembly"
+grep -Eq '[[:space:]]ret([[:space:]]|$)' "$sorted_disassembly"
 
 printf '%s\n' "$result"
-grep -E '[[:space:]](add|c\.add|ret)([[:space:]]|$)' "$disassembly"
+grep -E '[[:space:]](add|c\.add|ret)([[:space:]]|$)' "$add_disassembly"
+grep -E '[[:space:]](jal|jalr|b(eq|ne|lt|ge|ltu|geu)|ret)([[:space:]]|$)' \
+  "$sorted_disassembly"

@@ -183,11 +183,12 @@ reason or rejecting an empty candidate set. This satisfies the forcing/forbid
 experiment without turning MVP 3 into general search or mutable registry state.
 
 MVP 4 is active under DEC-039 as a narrow LP64 MIR interpreter, host-JIT and
-QEMU-user probe. DEC-049 now validates a scalar MIR RV64 generator artifact.
+QEMU-user probe. DEC-049 validates a scalar MIR RV64 generator artifact and
+DEC-050 adds one read-only checked guest import.
 The `atlas-algorithms` core APIs remain the native reference backend; MIR
 remains an adapter and never defines registry semantics, compact references, or
-evidence formats. Timed JIT measurement, RV64 guest-memory imports, RV64ILP32
-and a fantasy computer remain separate experiments.
+evidence formats. Timed JIT measurement, RV64 guest writes, RV64ILP32 and a
+fantasy computer remain separate experiments.
 
 ## MVP 4 execution path
 
@@ -252,17 +253,20 @@ rejecting the MIR generator for this project.
 
 ### 5. Reassess RISC-V code generation and the fantasy-computer profile
 
-Status: standalone scalar generator probe complete under DEC-049; runtime and
-machine profile deferred.
+Status: scalar generator and read-only guest import complete under DEC-049 and
+DEC-050; mutating runtime and machine profile deferred.
 
-- Keep the scalar generator probe independent of registry and guest-memory
-  semantics.
+- Keep the generated probes independent of registry semantics and persistent
+  artifacts.
 - Keep QEMU user mode as the LP64 Linux ABI probe; do not imply a machine model.
-- Define memory, imports, console and clock only if a separate MVP decision
-  activates a system-emulation experiment.
+- Extend guest stores or additional runtime imports only through a separate
+  target-boundary decision.
+- Define devices, console and clock only if a separate MVP decision activates a
+  system-emulation experiment.
 
-Exit evidence: a target-specific probe independent of registry semantics and
-the compact-reference model.
+Exit evidence: target-specific probes remain independent of registry semantics
+while reproducing the selected single-region offset checks where guest memory
+is exercised.
 
 ## Dual-backend rollout
 
@@ -299,15 +303,15 @@ correction complete under DEC-046.
 The checkpoint demonstrates the interpreter and guest-offset boundary across
 read-only scans, selection, swaps and shifted writes. It also demonstrates
 exact AST trace links for two materially different control-flow shapes. It does
-not demonstrate a general AST compiler, timed JIT behavior, RV64 guest-memory
-imports, multi-region memory or a persistent backend artifact. Exact host-code
-spans and instruction shapes plus scalar RV64 generation are observed locally,
-but no timed JIT or executable-allocation protocol has been introduced.
+not demonstrate a general AST compiler, timed JIT behavior, RV64 guest writes,
+multi-region memory or a persistent backend artifact. Exact host-code spans and
+instruction shapes plus scalar and read-only guest RV64 generation are observed
+locally, but no timed JIT or executable-allocation protocol has been introduced.
 
 Recommended order for the remaining MVP 4 work:
 
-1. Decide whether the next RV64 probe should call a checked guest-memory import;
-   this introduces a target ABI/runtime boundary and remains class C.
+1. Decide whether the next RV64 probe should add checked guest writes; this
+   extends the private target ABI/runtime boundary and remains class C.
 2. Add a bounded construction/execution latency or executable-allocation probe
    only if a concrete backend-retention question requires it; retain
    interpreter traces as the observability reference.
@@ -506,4 +510,23 @@ the RV64-compiled generator itself.
 Accepted: **A** under DEC-049. The temporary LP64D probe generates a 16-byte
 addition, executes it under QEMU with result 42, and verifies `add` plus `ret`
 through the cross-toolchain disassembler. Extending RV64 code to Atlas guest
-imports remains class **C**.
+imports remains class **C**. DEC-050 later accepts only the first read-only
+import.
+
+### C9. First RV64 guest-memory import
+
+Context: the scalar generator isolates MIR's target backend, allocator and QEMU
+execution, but it does not cross the runtime call boundary used by Atlas guest
+memory. Read-only adjacent `is_sorted` already has interpreter and host-JIT
+oracles over one bounded offset region.
+
+| Option | Consequence |
+|---|---|
+| A. Checked `is_sorted` load import | Tests target calls, offsets, bounds and control flow without mutation. |
+| B. Start with mutating `reverse` | Covers reads and writes immediately but mixes more failure sources. |
+| C. Stop the RV64 track at scalar generation | Retains the isolated proof but leaves runtime interoperability unknown. |
+
+Accepted: **A** under DEC-050. Four shared correction fixtures pass through the
+generated 128-byte RV64 function, which performs ten checked little-endian
+loads. An inconsistent span is rejected before execution without an import
+call. RV64 stores and mutation remain class **C**.

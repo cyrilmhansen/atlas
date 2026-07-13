@@ -6,10 +6,10 @@ MIR adapter under DEC-039. Its interpreter-only, single-region capability
 checkpoint is complete through DEC-045. DEC-046 adds a narrow host-JIT
 correction path, now including mutating reverse, partition and stable insertion
 probes. Exact generated spans and x86-64 instruction shapes are observable.
-DEC-049 validates
-a standalone scalar MIR-generated RV64 function under QEMU; latency, executable
-allocation footprint, RV64 guest-memory imports and multi-region memory remain
-separate work.
+DEC-049 validates a standalone scalar MIR-generated RV64 function under QEMU;
+DEC-050 adds a private read-only `is_sorted` guest import. Latency, executable
+allocation footprint, RV64 mutation and multi-region memory remain separate
+work.
 
 The current MVP 1 corpus contains 10 problems, 15 algorithms, and 20 tested Rust
 implementations. Schema hardening, local evidence integrity, deterministic

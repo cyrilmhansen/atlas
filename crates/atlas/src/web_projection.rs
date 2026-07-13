@@ -13,11 +13,20 @@ pub struct WebProjection<'a> {
     format: &'static str,
     source_commit: &'a str,
     registry_digest: &'a str,
+    build: WebBuildEnvironment<'a>,
     counts: WebCounts,
     problems: Vec<WebProblem<'a>>,
     algorithms: Vec<WebAlgorithm<'a>>,
     implementations: Vec<WebImplementation<'a>>,
     datasets: Vec<WebDataset>,
+}
+
+#[derive(Clone, Copy, Serialize)]
+pub struct WebBuildEnvironment<'a> {
+    pub rustc: &'a str,
+    pub wasm_bindgen: &'a str,
+    pub target: &'static str,
+    pub profile: &'static str,
 }
 
 #[derive(Serialize)]
@@ -76,6 +85,7 @@ impl<'a> WebProjection<'a> {
         registry: &'a Registry,
         summary: &'a ProjectionSummary,
         source_commit: &'a str,
+        build: WebBuildEnvironment<'a>,
     ) -> Result<Self, GenerationError> {
         let datasets = SORT_DATASET_SPEC
             .generate_all()?
@@ -95,6 +105,7 @@ impl<'a> WebProjection<'a> {
             format: WEB_PROJECTION_FORMAT,
             source_commit,
             registry_digest: &summary.digest,
+            build,
             counts: WebCounts {
                 problems: registry.problems.len(),
                 algorithms: registry.algorithms.len(),
@@ -161,8 +172,9 @@ pub fn to_json(
     registry: &Registry,
     summary: &ProjectionSummary,
     source_commit: &str,
+    build: WebBuildEnvironment<'_>,
 ) -> Result<String, WebProjectionError> {
-    let projection = WebProjection::new(registry, summary, source_commit)?;
+    let projection = WebProjection::new(registry, summary, source_commit, build)?;
     Ok(serde_json::to_string_pretty(&projection)?)
 }
 
@@ -210,7 +222,7 @@ mod tests {
     use crate::index::summarize_registry;
     use crate::registry::Registry;
 
-    use super::{WEB_PROJECTION_FORMAT, to_json};
+    use super::{WEB_PROJECTION_FORMAT, WebBuildEnvironment, to_json};
 
     const REGISTRY: &str = include_str!("../../../registry/atlas.yaml");
 
@@ -219,14 +231,24 @@ mod tests {
         let registry: Registry = serde_yaml::from_str(REGISTRY).unwrap();
         let summary = summarize_registry(&registry).unwrap();
 
-        let first = to_json(&registry, &summary, "0123456789abcdef").unwrap();
-        let second = to_json(&registry, &summary, "0123456789abcdef").unwrap();
+        let build = WebBuildEnvironment {
+            rustc: "rustc 1.90.0 (test)",
+            wasm_bindgen: "wasm-bindgen 0.2.100",
+            target: "wasm32-unknown-unknown",
+            profile: "release",
+        };
+        let first = to_json(&registry, &summary, "0123456789abcdef", build).unwrap();
+        let second = to_json(&registry, &summary, "0123456789abcdef", build).unwrap();
 
         assert_eq!(first, second);
         let value: serde_json::Value = serde_json::from_str(&first).unwrap();
         assert_eq!(value["format"], WEB_PROJECTION_FORMAT);
         assert_eq!(value["source_commit"], "0123456789abcdef");
         assert_eq!(value["registry_digest"], summary.digest);
+        assert_eq!(value["build"]["rustc"], "rustc 1.90.0 (test)");
+        assert_eq!(value["build"]["wasm_bindgen"], "wasm-bindgen 0.2.100");
+        assert_eq!(value["build"]["target"], "wasm32-unknown-unknown");
+        assert_eq!(value["build"]["profile"], "release");
         assert_eq!(value["counts"]["problems"], 10);
         assert_eq!(value["counts"]["algorithms"], 15);
         assert_eq!(value["counts"]["implementations"], 20);

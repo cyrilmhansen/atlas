@@ -29,7 +29,8 @@ scripts/check-web.sh
 `build/web/data/atlas.json` is generated from the validated aggregate YAML. It
 records the source commit and the same logical digest used by the SQLite
 projection. Its `atlas-web-private-v0` shape is disposable and unversioned as a
-public contract.
+public contract. It also records the effective `rustc` and `wasm-bindgen`
+versions, target and profile used to construct the bundle.
 
 `atlas-web-wasm` depends on the `no_std` native algorithm crate. The current
 facade exports adjacent `is_sorted`, stable insertion sort and symmetric reverse
@@ -73,3 +74,11 @@ algorithm-only timing nor portable benchmark evidence.
 - The static bundle is built and tested locally but not published.
 - Projection JSON and generated bindings are ignored build products.
 - MIR, target code and semantic trace playback are not executed in the browser.
+
+## Reproducible bundle gate
+
+The complete bundle has been rebuilt from a Git archive containing no `.git`,
+`target` or ignored build products. With the source commit supplied explicitly,
+`scripts/check-web.sh` reproduced identical SHA-256 hashes for all eight output
+files: HTML, CSS, JavaScript, projection JSON, WASM, JavaScript bindings and both
+TypeScript declarations. See `docs/mvp5-review.md` for the exit audit.

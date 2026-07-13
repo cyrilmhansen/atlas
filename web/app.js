@@ -42,7 +42,7 @@ const algorithmUi = {
 
 const elements = Object.fromEntries(
   [
-    "entity-count", "registry-digest", "source-commit", "algorithm-id", "algorithm-name",
+    "entity-count", "registry-digest", "source-commit", "build-environment", "algorithm-id", "algorithm-name",
     "execution-boundary", "result-label", "comparison-label", "secondary-label",
     "time-complexity", "time-provenance", "space-complexity", "space-provenance",
     "dataset-select", "dataset-context", "sequence-input", "input-count", "run-button", "runtime-status",
@@ -302,6 +302,7 @@ function applyProjection() {
   elements["entity-count"].textContent = `${total} entities from validated YAML`;
   elements["registry-digest"].textContent = projection.registry_digest;
   elements["source-commit"].textContent = `source ${projection.source_commit}`;
+  elements["build-environment"].textContent = `${projection.build.rustc}; ${projection.build.wasm_bindgen}; ${projection.build.target} ${projection.build.profile}`;
 
   const ui = algorithmUi[activeAlgorithm];
   const algorithm = projection.algorithms.find((item) => item.id === ui.id);

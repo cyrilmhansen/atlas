@@ -1,7 +1,7 @@
 # MVP status
 
 - Active MVP: **MVP 5**
-- Status: MVP 1 through MVP 4 closed; MVP 5 active under DEC-056
+- Status: MVP 1 through MVP 4 closed; MVP 5 exit evidence complete, formal closure pending
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
@@ -27,7 +27,9 @@ gate adds symmetric reverse, exact source-level read/write/swap counts and an
 involution check. All three curated execution workloads are complete;
 the Web selector now materializes five deterministic cases from the accepted
 sorting DatasetSpec with their original attribution and content digests. The
-complete reproducible bundle gate remains.
+bundle records its effective build and browser environments. A Git archive
+without repository metadata or prior build products reproduces all eight bundle
+files bit for bit. MVP 5 is ready for a formal class C closure decision.
 
 Current corpus progress:
 

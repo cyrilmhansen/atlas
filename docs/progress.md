@@ -1,5 +1,30 @@
 # Progress log
 
+## 2026-07-14 - Reproducible MVP 5 bundle gate
+
+### Result
+
+- Added effective `rustc` and `wasm-bindgen` versions, WASM target and release
+  profile to the derived projection and visible artifact footer.
+- Rebuilt the static artifact from a Git archive without `.git`, `target` or
+  ignored outputs while explicitly preserving the source commit identity.
+- Verified identical SHA-256 hashes for all eight normal/archive bundle files.
+- Audited every MVP 5 exit criterion in `docs/mvp5-review.md`; formal closure
+  remains a class C decision.
+
+### Verification
+
+- `scripts/check-web.sh`
+- clean-archive `ATLAS_SOURCE_COMMIT=<commit> scripts/check-web.sh`
+- sorted SHA-256 manifest comparison for both `build/web` directories
+
+### Limits
+
+- Reproducibility is demonstrated with the same pinned/local tool environment;
+  the recorded versions make a future environment change explicit.
+- Publication, a stable Web schema, semantic trace playback and MIR execution in
+  the browser remain outside the activated scope.
+
 ## 2026-07-14 - DatasetSpec-derived Web choices
 
 ### Result

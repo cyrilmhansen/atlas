@@ -38,6 +38,7 @@ boundaries.
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;
 - `docs/mvp1-review.md`: MVP 1 exit-criteria audit;
 - `docs/mvp4-review.md`: current single-region MIR checkpoint audit;
+- `docs/mvp5-review.md`: static interactive artifact exit audit;
 - `docs/roadmap.md`: ordered project roadmap;
 - `docs/sqlite-projection-v1.md`: derived index format and digest;
 - `docs/decisions`: accepted architectural decisions.

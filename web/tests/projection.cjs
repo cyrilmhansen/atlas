@@ -5,6 +5,10 @@ const projection = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 assert.equal(projection.format, "atlas-web-private-v0");
 assert.match(projection.source_commit, /^[0-9a-f]{40}$/);
 assert.match(projection.registry_digest, /^[0-9a-f]{64}$/);
+assert.match(projection.build.rustc, /^rustc /);
+assert.equal(projection.build.wasm_bindgen, "wasm-bindgen 0.2.100");
+assert.equal(projection.build.target, "wasm32-unknown-unknown");
+assert.equal(projection.build.profile, "release");
 assert.deepEqual(projection.counts, { problems: 10, algorithms: 15, implementations: 20 });
 
 assert.equal(projection.datasets.length, 5);

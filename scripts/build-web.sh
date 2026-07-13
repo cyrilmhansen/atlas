@@ -6,12 +6,14 @@ cd "$repo_root"
 
 source_commit=${ATLAS_SOURCE_COMMIT:-$(git rev-parse HEAD)}
 output_dir=${ATLAS_WEB_OUTPUT:-build/web}
+rustc_version=$(rustc --version)
+wasm_bindgen_version=$(wasm-bindgen --version)
 
 rm -rf "$output_dir"
 mkdir -p "$output_dir/data" "$output_dir/pkg"
 
 cargo run -q -p atlas --locked --offline --example build_web_projection -- \
-  "$output_dir/data/atlas.json" "$source_commit"
+  "$output_dir/data/atlas.json" "$source_commit" "$rustc_version" "$wasm_bindgen_version"
 cargo build -q -p atlas-web-wasm --target wasm32-unknown-unknown --release --locked --offline
 wasm-bindgen \
   --target web \

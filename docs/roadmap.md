@@ -395,8 +395,11 @@ Current status:
   `dataset.sequence.sort.m2.v0`, retaining spec/problem attribution, class,
   seed and content digest. Compatible reuse for `is_sorted` and `reverse` is
   visible and does not imply new problem-specific specs.
-- The complete bundle gate is pending. Stage 4 and external publication are
-  excluded; the local reproducible portion of stage 5 remains an exit gate.
+- The complete bundle gate passes from a Git archive without `.git`, `target` or
+  prior Web output. All eight generated files match the normal build bit for
+  bit, and effective build/runtime environments are exposed.
+- All activated MVP 5 exit evidence is complete. Stage 4 and external
+  publication remain excluded; formal MVP closure is a pending class C decision.
 
 Resource limits must be part of the local execution boundary: maximum input
 length, trace-event cap, step budget, cancellation and no network access from

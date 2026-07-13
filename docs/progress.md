@@ -1,5 +1,29 @@
 # Progress log
 
+## 2026-07-13 - Reviewable MIR machine-code observer
+
+### Result
+
+- Accepted DEC-047 (`mir-observer-A`) for local preparation without external
+  push.
+- Added a synchronous callback after complete function publication and
+  relocation, plus an upstream standalone test.
+- Exported the original-project diff as `patches/mir/code-observer.patch`.
+- Added an idempotent, commit-checked patch bootstrap used by acceptance scripts
+  and CI while retaining the original retrievable submodule gitlink.
+- Copied scalar JIT bytes through the private Atlas adapter and verified result,
+  exact non-zero length and SHA-256 computation after MIR context destruction.
+- Added `observe_jit_code` as a local, untimed diagnostic of target, length,
+  digest and bytes.
+
+### Limits
+
+- Applying the vendored patch intentionally dirties the MIR working tree; no
+  unpublished gitlink is committed or pushed.
+- Lazy basic-block fragments, executable allocation footprint and disassembly
+  remain outside this patch.
+- Relocated-code digests are local diagnostics, not portable identities.
+
 ## 2026-07-13 - Explicit MIR optimization-level matrix
 
 ### Result

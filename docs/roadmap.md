@@ -381,6 +381,12 @@ expose exact generated-code length. The size protocol must therefore choose
 between parsing pinned debug output, measuring executable allocation footprint,
 or proposing a narrow upstream API; these observations are not interchangeable.
 
+DEC-047 selects the narrow upstream API path for local preparation. The patch
+now observes exact relocated function bytes without IO, and Atlas verifies a
+copied scalar observation after context destruction. Integration remains
+provisional until the patch is reviewed and available from the original MIR
+remote; disassembly is a separate dependency decision.
+
 ### C4. Rust toolchain support baseline
 
 Context: the workspace declares Rust 1.85, but the currently locked

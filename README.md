@@ -58,6 +58,8 @@ cargo run -p atlas -- compose unique-sort --rust
 cargo run -p atlas --example unique_sort_generated
 cargo run -p atlas -- compose cleanup --forbid filter.in_place.rust.vec.v1
 cargo run -p atlas -- index
+git submodule update --init --recursive
+scripts/apply-mir-patches.sh
 cargo test --workspace
 scripts/check-mvp1.sh
 scripts/check-mvp2.sh

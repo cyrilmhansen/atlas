@@ -1,0 +1,131 @@
+diff --git a/GNUmakefile b/GNUmakefile
+index 17cf98b6..951fd88a 100644
+--- a/GNUmakefile
++++ b/GNUmakefile
+@@ -479 +479 @@ clean-mir-interp-tests:
+-.PHONY: gen-test gen-test-loop gen-test-sieve gen-issue219-test gen-test-get-thunk-addr
++.PHONY: gen-test gen-test-loop gen-test-sieve gen-issue219-test gen-test-get-thunk-addr gen-test-code-observer
+@@ -483 +483 @@ clean-mir-interp-tests:
+-gen-test: gen-test-loop gen-test-sieve gen-test-get-thunk-addr gen-issue219-test gen-test1 gen-test2 gen-test3 gen-test4 gen-test5 gen-test6 gen-test7\
++gen-test: gen-test-loop gen-test-sieve gen-test-get-thunk-addr gen-test-code-observer gen-issue219-test gen-test1 gen-test2 gen-test3 gen-test4 gen-test5 gen-test6 gen-test7\
+@@ -501,0 +502,4 @@ gen-test-get-thunk-addr: $(BUILD_DIR)/mir.$(OBJSUFF) $(BUILD_DIR)/mir-gen.$(OBJS
++gen-test-code-observer: $(BUILD_DIR)/mir.$(OBJSUFF) $(BUILD_DIR)/mir-gen.$(OBJSUFF) $(SRC_DIR)/mir-tests/code-observer.c | $(BUILD_DIR)/mir-tests
++	$(COMPILE_AND_LINK) $^ $(LDLIBS) $(EXEO)$(BUILD_DIR)/mir-tests/gen-code-observer-test$(EXE)
++	$(BUILD_DIR)/mir-tests/gen-code-observer-test
++
+@@ -556,0 +561 @@ clean-mir-gen-tests:
++	$(RM) $(BUILD_DIR)/mir-tests/gen-code-observer-test$(EXE)
+diff --git a/mir-gen.c b/mir-gen.c
+index a7808948..2856a7ec 100644
+--- a/mir-gen.c
++++ b/mir-gen.c
+@@ -210,0 +211,2 @@ struct gen_ctx {
++  MIR_gen_code_observer_t code_observer;
++  void *code_observer_data;
+@@ -254,0 +257,2 @@ struct gen_ctx {
++#define code_observer gen_ctx->code_observer
++#define code_observer_data gen_ctx->code_observer_data
+@@ -9498,0 +9503,2 @@ static void *generate_func_code (MIR_context_t ctx, MIR_item_t func_item, int ma
++    if (code_observer != NULL)
++      code_observer (ctx, func_item, machine_code, code_len, code_observer_data);
+@@ -9560,0 +9567,11 @@ void MIR_gen_set_optimize_level (MIR_context_t ctx, unsigned int level) {
++void MIR_gen_set_code_observer (MIR_context_t ctx, MIR_gen_code_observer_t observer,
++                                void *user_data) {
++  gen_ctx_t gen_ctx = *gen_ctx_loc (ctx);
++  if (gen_ctx == NULL) {
++    fprintf (stderr, "Calling MIR_gen_set_code_observer before MIR_gen_init -- good bye\n");
++    exit (1);
++  }
++  code_observer = observer;
++  code_observer_data = user_data;
++}
++
+@@ -9669,0 +9687,2 @@ void MIR_gen_init (MIR_context_t ctx) {
++  code_observer = NULL;
++  code_observer_data = NULL;
+diff --git a/mir-gen.h b/mir-gen.h
+index 5ec08680..b21337ee 100644
+--- a/mir-gen.h
++++ b/mir-gen.h
+@@ -22,0 +23,7 @@ extern void MIR_gen_set_optimize_level (MIR_context_t ctx, unsigned int level);
++typedef void (*MIR_gen_code_observer_t) (MIR_context_t ctx, MIR_item_t func_item,
++                                         const uint8_t *code, size_t code_len, void *user_data);
++/* The observer is called synchronously after complete function code is published and relocated.
++   The code remains valid until MIR_finish.  Separately generated lazy basic blocks are not
++   observed.  The observer must not reenter the MIR context. */
++extern void MIR_gen_set_code_observer (MIR_context_t ctx, MIR_gen_code_observer_t observer,
++                                       void *user_data);
+diff --git a/mir-tests/code-observer.c b/mir-tests/code-observer.c
+new file mode 100644
+index 00000000..80a96fb9
+--- /dev/null
++++ b/mir-tests/code-observer.c
+@@ -0,0 +1,68 @@
++#include "../mir-gen.h"
++
++#include <stdlib.h>
++#include <string.h>
++
++#define CHECK(condition) \
++  do {                   \
++    if (!(condition)) abort (); \
++  } while (0)
++
++struct observation {
++  MIR_context_t ctx;
++  MIR_item_t func_item;
++  const uint8_t *code;
++  uint8_t *copy;
++  size_t code_len;
++  size_t calls;
++};
++
++static void observe_code (MIR_context_t ctx, MIR_item_t func_item, const uint8_t *code,
++                          size_t code_len, void *user_data) {
++  struct observation *observation = user_data;
++  CHECK (ctx == observation->ctx);
++  CHECK (func_item == observation->func_item);
++  CHECK (code != NULL && code_len != 0);
++  CHECK (observation->calls == 0);
++  observation->code = code;
++  observation->code_len = code_len;
++  observation->copy = malloc (code_len);
++  CHECK (observation->copy != NULL);
++  memcpy (observation->copy, code, code_len);
++  observation->calls++;
++}
++
++int main (void) {
++  typedef uint64_t (*add_func_t) (uint64_t, uint64_t);
++  MIR_context_t ctx = MIR_init ();
++  MIR_module_t module = MIR_new_module (ctx, "code_observer");
++  MIR_type_t result_types[1] = {MIR_T_I64};
++  MIR_item_t func = MIR_new_func (ctx, "add", 1, result_types, 2, MIR_T_I64, "left", MIR_T_I64,
++                                  "right");
++  MIR_reg_t left = MIR_reg (ctx, "left", func->u.func);
++  MIR_reg_t right = MIR_reg (ctx, "right", func->u.func);
++  MIR_reg_t result = MIR_new_func_reg (ctx, func->u.func, MIR_T_I64, "result");
++  struct observation observation = {.ctx = ctx, .func_item = func};
++
++  MIR_append_insn (ctx, func,
++                   MIR_new_insn (ctx, MIR_ADD, MIR_new_reg_op (ctx, result),
++                                 MIR_new_reg_op (ctx, left), MIR_new_reg_op (ctx, right)));
++  MIR_append_insn (ctx, func, MIR_new_ret_insn (ctx, 1, MIR_new_reg_op (ctx, result)));
++  MIR_finish_func (ctx);
++  MIR_finish_module (ctx);
++  MIR_load_module (ctx, module);
++  MIR_gen_init (ctx);
++  MIR_gen_set_code_observer (ctx, observe_code, &observation);
++  MIR_link (ctx, MIR_set_gen_interface, NULL);
++
++  CHECK (observation.calls == 1);
++  CHECK (memcmp (observation.copy, observation.code, observation.code_len) == 0);
++  CHECK (((add_func_t) func->addr) (40, 2) == 42);
++  MIR_gen (ctx, func);
++  CHECK (observation.calls == 1);
++
++  free (observation.copy);
++  MIR_gen_finish (ctx);
++  MIR_finish (ctx);
++  return 0;
++}

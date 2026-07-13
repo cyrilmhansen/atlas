@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "mir.h"
@@ -844,8 +845,28 @@ int atlas_mir_interpret_insertion_pairs(uint8_t *guest_bytes, uint32_t byte_leng
   return atlas_mir_guest_memory_error;
 }
 
-uint64_t atlas_mir_jit_add_u64_at_level(uint64_t left, uint64_t right,
-                                        uint32_t optimize_level) {
+struct atlas_mir_code_observation {
+  uint8_t *code;
+  size_t code_length;
+  uint32_t calls;
+};
+
+static void atlas_mir_observe_code(MIR_context_t context, MIR_item_t function,
+                                   const uint8_t *code, size_t code_length,
+                                   void *user_data) {
+  struct atlas_mir_code_observation *observation = user_data;
+  (void)context;
+  (void)function;
+  if (observation->calls++ != 0 || code == NULL || code_length == 0) return;
+  observation->code = malloc(code_length);
+  if (observation->code == NULL) return;
+  memcpy(observation->code, code, code_length);
+  observation->code_length = code_length;
+}
+
+static uint64_t atlas_mir_jit_add_u64_impl(
+    uint64_t left, uint64_t right, uint32_t optimize_level,
+    struct atlas_mir_code_observation *observation) {
   typedef uint64_t (*atlas_mir_add_fn_t)(uint64_t, uint64_t);
   MIR_context_t context = MIR_init();
   MIR_module_t module = MIR_new_module(context, "atlas_mir_jit_add");
@@ -872,6 +893,8 @@ uint64_t atlas_mir_jit_add_u64_at_level(uint64_t left, uint64_t right,
   MIR_load_module(context, module);
   MIR_gen_init(context);
   MIR_gen_set_optimize_level(context, optimize_level);
+  if (observation != NULL)
+    MIR_gen_set_code_observer(context, atlas_mir_observe_code, observation);
   MIR_link(context, MIR_set_gen_interface, NULL);
   generated = (atlas_mir_add_fn_t)function->addr;
   result = generated(left, right);
@@ -879,6 +902,28 @@ uint64_t atlas_mir_jit_add_u64_at_level(uint64_t left, uint64_t right,
   MIR_finish(context);
   return result;
 }
+
+uint64_t atlas_mir_jit_add_u64_at_level(uint64_t left, uint64_t right,
+                                        uint32_t optimize_level) {
+  return atlas_mir_jit_add_u64_impl(left, right, optimize_level, NULL);
+}
+
+int atlas_mir_observe_jit_add_u64(uint64_t left, uint64_t right,
+                                  uint32_t optimize_level, uint64_t *result,
+                                  uint8_t **code, size_t *code_length) {
+  struct atlas_mir_code_observation observation = {0};
+  if (result == NULL || code == NULL || code_length == NULL || optimize_level > 3) return 1;
+  *result = atlas_mir_jit_add_u64_impl(left, right, optimize_level, &observation);
+  if (observation.calls != 1 || observation.code == NULL || observation.code_length == 0) {
+    free(observation.code);
+    return 1;
+  }
+  *code = observation.code;
+  *code_length = observation.code_length;
+  return 0;
+}
+
+void atlas_mir_free_observed_code(uint8_t *code) { free(code); }
 
 int atlas_mir_jit_is_sorted_i64_at_level(uint8_t *guest_bytes, uint32_t byte_length,
                                          uint32_t element_count, uint32_t *first_inversion,

@@ -8,6 +8,7 @@ run() {
     "$@"
 }
 
+run ./scripts/apply-mir-patches.sh
 run cargo fmt --all -- --check
 
 run cargo test -p atlas-algorithms --no-default-features --locked --offline

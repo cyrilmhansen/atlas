@@ -118,6 +118,14 @@ pub enum JitOptimizationLevel {
     Full = 3,
 }
 
+/// Process-local copy of one completely generated host function.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct JitCodeObservation {
+    pub result: u64,
+    pub optimization: JitOptimizationLevel,
+    pub machine_code: Vec<u8>,
+}
+
 const PARTITION_TRACE_CAPACITY: usize = 128;
 const IS_SORTED_TRACE_CAPACITY: usize = 128;
 
@@ -327,6 +335,37 @@ pub fn jit_add_u64_with_optimization(
     optimization: JitOptimizationLevel,
 ) -> u64 {
     unsafe { atlas_mir_jit_add_u64_at_level(left, right, optimization as u32) }
+}
+
+/// Generates scalar addition and copies its relocated host machine code.
+pub fn observe_jit_add_u64(
+    left: u64,
+    right: u64,
+    optimization: JitOptimizationLevel,
+) -> Result<JitCodeObservation, GuestMemoryError> {
+    let mut result = 0;
+    let mut code = std::ptr::null_mut();
+    let mut code_length = 0;
+    let status = unsafe {
+        atlas_mir_observe_jit_add_u64(
+            left,
+            right,
+            optimization as u32,
+            &mut result,
+            &mut code,
+            &mut code_length,
+        )
+    };
+    if status != 0 || code.is_null() || code_length == 0 {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    let machine_code = unsafe { std::slice::from_raw_parts(code, code_length) }.to_vec();
+    unsafe { atlas_mir_free_observed_code(code) };
+    Ok(JitCodeObservation {
+        result,
+        optimization,
+        machine_code,
+    })
 }
 
 /// Executes a three-value minimum program and returns its explicit MIR trace.
@@ -706,6 +745,15 @@ pub fn interpret_insertion_pairs(values: &mut [InsertionPair]) -> Result<(), Gue
 unsafe extern "C" {
     fn atlas_mir_interpret_add_u64(left: u64, right: u64) -> u64;
     fn atlas_mir_jit_add_u64_at_level(left: u64, right: u64, optimize_level: u32) -> u64;
+    fn atlas_mir_observe_jit_add_u64(
+        left: u64,
+        right: u64,
+        optimize_level: u32,
+        result: *mut u64,
+        code: *mut *mut u8,
+        code_length: *mut usize,
+    ) -> i32;
+    fn atlas_mir_free_observed_code(code: *mut u8);
     fn atlas_mir_interpret_minimum3_i64(
         left: i64,
         middle: i64,
@@ -752,12 +800,15 @@ unsafe extern "C" {
 
 #[cfg(test)]
 mod tests {
+    use sha2::{Digest, Sha256};
+
     use super::{
         CompareEvent, GuestMemoryError, GuestOffset, GuestRegionOffset, HandleMemory,
         JitIsSortedResult, JitOptimizationLevel, OffsetMemory, RegionMemory, interpret_add_u64,
         interpret_is_sorted_i64, interpret_maximum_i64, interpret_minimum_i64,
         interpret_minimum3_i64, interpret_partition_even_i64, jit_add_u64,
         jit_add_u64_with_optimization, jit_is_sorted_i64, jit_is_sorted_i64_with_optimization,
+        observe_jit_add_u64,
     };
 
     #[test]
@@ -785,6 +836,19 @@ mod tests {
         ] {
             assert_eq!(jit_add_u64_with_optimization(u64::MAX, 2, optimization), 1);
         }
+    }
+
+    #[test]
+    fn mir_host_jit_observer_copies_relocated_code_after_context_cleanup() {
+        let observation = observe_jit_add_u64(40, 2, JitOptimizationLevel::Default)
+            .expect("MIR host JIT code observation");
+        assert_eq!(observation.result, 42);
+        assert_eq!(observation.optimization, JitOptimizationLevel::Default);
+        assert!(!observation.machine_code.is_empty());
+
+        let digest = Sha256::digest(&observation.machine_code);
+        assert_eq!(digest.len(), 32);
+        assert!(digest.iter().any(|byte| *byte != 0));
     }
 
     #[test]

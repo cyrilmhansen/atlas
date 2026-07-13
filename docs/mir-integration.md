@@ -16,6 +16,7 @@ the private archives with `dl` and `m` on Linux.
 
 ```sh
 git submodule update --init --recursive
+scripts/apply-mir-patches.sh
 cargo test -p atlas-mir --locked --offline
 ```
 
@@ -178,7 +179,29 @@ pinned MIR generator these mean fast generation, register allocation plus
 combining, the default SSA/GVN/CCP pipeline, and the full pipeline respectively.
 Correction at every level is not a performance comparison.
 
-The public generator API returns a machine-code address but not its exact byte
-length. Upstream retains the length only while publishing code and can print it
-through generator debugging. Atlas does not currently parse that diagnostic or
-modify the MIR submodule, so exact generated-code size remains unavailable.
+At the DEC-046 checkpoint, the public generator API returned a machine-code
+address but not its exact byte length. Upstream retained the length only while
+publishing code and could print it through generator debugging. Atlas declined
+to parse that diagnostic as a persistent solution.
+
+DEC-047 prepares a local upstream-compatible correction to that limitation. A
+synchronous generator callback observes a complete function after publication
+and relocation. The scalar Atlas probe copies the bounded byte slice before the
+MIR context is destroyed, then verifies its length and digest without invoking
+debug IO or external tools. The callback does not cover separately generated
+lazy basic blocks.
+
+Atlas vendors the reviewable diff in `patches/mir/code-observer.patch` while the
+gitlink remains on the original MIR commit. `scripts/apply-mir-patches.sh`
+checks that commit and applies the overlay idempotently; CI runs it immediately
+after checkout. Once the patch has an upstream-retrievable commit, the
+submodule can be updated and the overlay removed.
+
+The local diagnostic can be inspected without timing or external tools:
+
+```sh
+cargo run -p atlas-mir --example observe_jit_code --locked --offline
+```
+
+It reports the host target, explicit optimization level, correction result,
+exact byte length, local SHA-256 and copied bytes. It does not archive them.

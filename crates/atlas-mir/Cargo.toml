@@ -12,3 +12,4 @@ path = "src/lib.rs"
 [dev-dependencies]
 atlas = { path = "../atlas" }
 atlas-algorithms = { path = "../atlas-algorithms" }
+sha2.workspace = true

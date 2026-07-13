@@ -35,7 +35,9 @@ cargo run -p atlas -- qualify sequence.sort --stable --in-place --allocation non
 cargo run -p atlas -- compose cleanup
 cargo run -p atlas -- compose cleanup --goal expected-time
 cargo run -p atlas -- compose cleanup --rust
+cargo run -p atlas -- compose cleanup --goal expected-time --rust
 cargo run -p atlas --example cleanup_generated
+cargo run -p atlas --example cleanup_expected_time_generated
 cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh
@@ -116,6 +118,7 @@ identical `cleanup_generated` example is compiled and runnable. This remains a
 single-scenario generator, not a general planner or a persistent plan format.
 `--goal expected-time` instead selects from declared complexity claims and
 explains the allocation-heavier alternative; it does not use benchmark results.
+Its `--rust` variant is separately compiled as `cleanup_expected_time_generated`.
 
 ## Runtime boundary
 

@@ -1299,6 +1299,30 @@ cargo test -p atlas --all-targets --locked --offline
 cargo run -q -p atlas --locked --offline -- compose cleanup --goal expected-time
 ```
 
+## 2026-07-13 - Verified expected-time Rust orchestration
+
+### Result
+
+- Added `atlas compose cleanup --goal expected-time --rust` and the identical
+  `cleanup_expected_time_generated` Cargo example.
+- The verified source copies the filter result, merge-sorts that copy, then
+  performs hash-based deduplication; each resulting allocation boundary remains
+  explicit in the source.
+
+### Limits
+
+- The program verifies functional orchestration, not the declared expected-time
+  objective empirically. It does not alter the benchmark boundary from MVP 2.
+- Both generators remain specific to the reviewed `cleanup` scenario.
+
+### Verification
+
+```sh
+cargo test -p atlas --all-targets --locked --offline
+cargo run -q -p atlas --locked --offline -- compose cleanup --goal expected-time --rust
+cargo run -q -p atlas --locked --offline --example cleanup_expected_time_generated
+```
+
 The gate creates only ignored generated observations under `build/executions/`.
 
 ## 2026-07-12 - Replayable observations and baseline resource metrics

@@ -132,6 +132,11 @@ pub fn render_rust_orchestration() -> &'static str {
     include_str!("../examples/cleanup_generated.rs")
 }
 
+/// Returns the verified Rust source for the expected-time selected candidate.
+pub fn render_expected_time_rust_orchestration() -> &'static str {
+    include_str!("../examples/cleanup_expected_time_generated.rs")
+}
+
 fn render_candidate(output: &mut String, candidate: &CandidatePlan) {
     output.push_str(&format!("  id: {}\n", candidate.id));
     for (index, step) in candidate.steps.iter().enumerate() {
@@ -153,7 +158,7 @@ fn render_candidate(output: &mut String, candidate: &CandidatePlan) {
 mod tests {
     use super::{
         cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time, render,
-        render_rust_orchestration,
+        render_expected_time_rust_orchestration, render_rust_orchestration,
     };
 
     #[test]
@@ -210,5 +215,14 @@ mod tests {
         assert!(composition.input.contains("Eq + Hash"));
         assert!(composition.selected.decision.contains("O(n log n)"));
         assert!(composition.rejected.decision.contains("O(n^2)"));
+    }
+
+    #[test]
+    fn generated_expected_time_rust_orchestration_matches_the_selected_operations() {
+        let source = render_expected_time_rust_orchestration();
+
+        assert!(source.contains("filter_copy(values, predicate)"));
+        assert!(source.contains("merge_sort_by(&mut filtered, i32::cmp)"));
+        assert!(source.contains("deduplicate_hash(&filtered)"));
     }
 }

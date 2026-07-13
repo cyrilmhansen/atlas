@@ -7,7 +7,8 @@ use std::process::{Command, ExitCode};
 use atlas::comparisons::ComparisonReport;
 use atlas::composition::{
     cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time,
-    render as render_composition, render_rust_orchestration,
+    render as render_composition, render_expected_time_rust_orchestration,
+    render_rust_orchestration,
 };
 use atlas::executions::{ExecutionMode, ExecutionRecord};
 use atlas::index::rebuild_database;
@@ -87,13 +88,12 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             }
         }
     }
-    if render_rust && expected_time {
-        eprintln!("--rust is currently verified only for the allocation objective");
-        return ExitCode::from(2);
-    }
-
     if render_rust {
-        print!("{}", render_rust_orchestration());
+        if expected_time {
+            print!("{}", render_expected_time_rust_orchestration());
+        } else {
+            print!("{}", render_rust_orchestration());
+        }
     } else {
         let composition = if expected_time {
             cleanup_minimize_declared_expected_time()

@@ -35,7 +35,9 @@ declared adversarial `O(n^2)` worst case.
 candidate. The source is also `crates/atlas/examples/cleanup_generated.rs`, so
 Cargo compiles and runs the exact emitted program. It filters a caller-owned
 vector in place, sorts that vector in place, then returns a separately allocated
-deduplicated vector.
+deduplicated vector. `--goal expected-time --rust` likewise renders and is
+identical to `cleanup_expected_time_generated`; it copies the filter result,
+sorts that copy with merge sort, and performs hash-based deduplication.
 
 ## Deliberate limits
 
@@ -47,9 +49,6 @@ deduplicated vector.
   The separately runnable Cargo example is the verification boundary.
 - The objective interprets declared effects only. It does not turn them into
   empirical allocation measurements.
-- Rust source generation is verified only for the allocation objective. Atlas
-  rejects `--goal expected-time --rust` until that second source is separately
-  compiled and exercised.
 
 ## Acceptance checks
 
@@ -58,7 +57,9 @@ cargo test -p atlas --locked --offline
 cargo run -q -p atlas --locked --offline -- compose cleanup
 cargo run -q -p atlas --locked --offline -- compose cleanup --goal expected-time
 cargo run -q -p atlas --locked --offline -- compose cleanup --rust
+cargo run -q -p atlas --locked --offline -- compose cleanup --goal expected-time --rust
 cargo run -q -p atlas --locked --offline --example cleanup_generated
+cargo run -q -p atlas --locked --offline --example cleanup_expected_time_generated
 ```
 
 The unit tests require every selected mutation, copy, and allocation to remain

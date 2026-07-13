@@ -82,7 +82,7 @@ compiled and run as `cleanup_generated`. Atlas itself does not execute generated
 source.
 
 The same scenario also supports `--goal expected-time`, using declared
-complexity claims only. Its source generation is intentionally deferred until
-the selected alternative has an independently verified program.
+complexity claims only. Both selected alternatives have independently compiled
+and runnable Rust orchestration examples; Atlas itself does not execute them.
 
 See `docs/mvp3-review.md` for the acceptance checks and deliberate limits.

@@ -323,8 +323,8 @@ the memory model or measurement surface.
 
 ## Candidate public interactive artifact
 
-Status: strategic candidate only. No web MVP, public projection format,
-deployment target or browser runtime is activated by DEC-052.
+Status: architecture accepted under DEC-053 through DEC-055, but no Web MVP,
+public projection format, deployment target or browser runtime is active.
 
 The recommended distribution is a static, reproducible website that can be
 hosted on GitHub Pages or opened from a release bundle. It would combine a
@@ -375,7 +375,7 @@ stability and operation counters without exposing a general plugin system.
 
 | Stage | Deliverable | Acceptance boundary |
 |---|---|---|
-| 0. Distribution contract | accepted scope, audience, derived-data policy and browser support | no code before class C decisions below |
+| 0. Distribution contract | accepted scope, audience, derived-data policy and browser support | MVP activation and exit criteria accepted before code |
 | 1. Static catalog | generated entity pages/search data from the validated registry | exact entity counts, links, provenance and commit digest |
 | 2. Local execution | one small `wasm32` crate exposing curated typed functions | browser results equal native correction fixtures and dataset digests |
 | 3. Characteristics | sourced `O(...)` claims plus deterministic operation counters | theoretical, counted and timed properties remain distinct |
@@ -405,8 +405,8 @@ Candidate exit evidence for a future public-artifact MVP:
 
 ## Strategic decisions to prepare
 
-These are intentionally visible before implementation. They are not accepted
-decisions and must not be implemented until validated.
+These are intentionally visible before implementation. Each item records its
+accepted or open status; open class C items must not be implemented by default.
 
 ### C1. First compact-reference model
 
@@ -656,9 +656,9 @@ publication is outside the closed MVPs.
 | B. Static read-only catalog | Lowest runtime risk but does not demonstrate the executable-atlas claim. |
 | C. Application server executing algorithms | Enables centralized measurements but adds operations, security and reproducibility costs. |
 
-Recommendation: **A**, with GitHub Pages or a release bundle considered only
-after the build is reproducible locally. Activation and external publication
-are class **C/D** respectively.
+Accepted: **A** under DEC-053. A reproducible release bundle is the first
+distribution boundary. GitHub Pages and other external publication remain
+class **D** and require separate approval.
 
 ### C13. Browser data and runtime boundary
 
@@ -672,9 +672,9 @@ public Web contracts.
 | B. Parse authoritative YAML directly in the browser | Avoids a projection step but couples UI, validation and schema evolution. |
 | C. Publish a stable JSON API and broad algorithm ABI now | Maximizes reuse but prematurely freezes two public contracts. |
 
-Recommendation: **A**. The projection must include commit and logical digest;
-stabilizing it later requires a separate schema decision. Decision class:
-**C** before implementation because this defines the distribution boundary.
+Accepted: **A** under DEC-054. The projection must include commit and logical
+digest. Its initial shape remains private and disposable; stabilization later
+requires a separate class C schema decision.
 
 ### C14. Interactive characteristics and measurement semantics
 
@@ -688,7 +688,26 @@ performance.
 | B. Browser wall-clock charts as the primary characteristic | Visually simple but noisy and easy to overinterpret. |
 | C. Publish server-produced benchmark rankings | More controlled, but creates infrastructure and evidence-governance work. |
 
-Recommendation: **A**. Count comparisons, reads, writes, swaps, copies and
-auxiliary storage where meaningful; label wall time with dataset and browser
-environment. Decision class: **C** if these fields become a public or persisted
-observation format, otherwise **B** for an explicitly temporary UI projection.
+Accepted: **A** under DEC-055. Count comparisons, reads, writes, swaps, copies
+and auxiliary storage only where their boundary is explicit and tested. Label
+wall time with dataset and browser environment. A public or persisted
+observation format remains a separate class C decision.
+
+### C15. MVP 5 activation boundary
+
+Context: DEC-053 through DEC-055 select the distribution, browser boundary and
+measurement semantics. No implementation MVP is active yet. The first slice
+must demonstrate Atlas publicly without freezing private build formats or
+combining catalog, traces, deployment and general execution into one project.
+
+| Option | Consequence |
+|---|---|
+| A. Activate one local static vertical slice through characteristics | Catalog plus `is_sorted`, stable insertion and `reverse`; sourced complexity, counters and qualified local timing; traces and publication deferred. |
+| B. Activate a read-only static catalog only | Validates projection and presentation cheaply, but does not demonstrate local execution. |
+| C. Activate the complete stages 1-5 roadmap | Delivers traces and deployment together, but creates a broad frontend/runtime/distribution scope with weak intermediate gates. |
+
+Recommendation: **A**. The exit artifact is a locally openable static bundle,
+not a published service. Its projection and WASM facade stay private and
+replaceable. The minimal risk experiment is native/WASM result equivalence for
+`is_sorted` before adding mutation, counters and browser timing. Activation is
+class **C**; external publication remains class **D**.

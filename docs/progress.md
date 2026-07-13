@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-07-13 - Public interactive artifact direction
+
+### Result
+
+- Accepted DEC-053 (`web-A`): a future public Atlas artifact will be a static
+  catalog with curated local Rust/WASM algorithm execution.
+- Accepted DEC-054 (`boundary-A`): browser data will be a disposable projection
+  carrying its source commit and logical registry digest, behind a narrow WASM
+  facade.
+- Accepted DEC-055 (`metrics-A`): sourced complexity, deterministic operation
+  counters and optional local timing remain three distinct characteristics.
+- Kept the registry YAML, native correction path and evidence policy
+  authoritative; no public schema, broad ABI or remote execution was added.
+
+### Limits
+
+- MVP 5 is not activated. Its exact slice and exit criteria remain a class C
+  decision.
+- External publication remains outside the mandate until explicitly approved.
+
 ## 2026-07-13 - MVP 4 closure
 
 ### Result

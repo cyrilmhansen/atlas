@@ -12,8 +12,9 @@
 MVP 1 through MVP 4 are closed locally. MVP 4 tested the MIR adapter boundary
 with a standard RV64 LP64 ABI probe and independent compact-reference
 comparison; it did not activate RV64ILP32 or a fantasy computer. No subsequent
-MVP is active. The public interactive artifact described in the roadmap remains
-a candidate scope, not an implemented distribution contract.
+MVP is active. DEC-053 through DEC-055 select a static Rust/WASM public-artifact
+architecture, a disposable derived projection and separated characteristic
+semantics. They do not yet activate its implementation or publication.
 
 Current corpus progress:
 

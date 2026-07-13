@@ -31,11 +31,13 @@ so a later measurement protocol can vary the level without changing semantics.
   adds no persistent evidence, backend selection or registry implementation.
 - The guest JIT probe proves that generated code can call the same private
   bounds-checked host import as the interpreter.
-- A later approved extension adds guest-memory `reverse` with the same lifecycle
-  and levels, proving generated calls to both checked load and store imports.
-- Construction latency, generated-code size and execution timing remain
-  unmeasured. They require a separate local protocol and must not be mixed with
-  native algorithm benchmarks.
+- Later approved extensions add guest-memory `reverse` and even `partition`
+  with the same lifecycle and levels, proving generated calls to both checked
+  load and store imports while the interpreter retains semantic traces.
+- Exact generated spans are now observable under DEC-047. Construction latency,
+  executable allocation footprint and execution timing remain unmeasured. They
+  require a separate local protocol and must not be mixed with native algorithm
+  benchmarks.
 - Exact generated-code length is not exposed by MIR's public generator API;
   debug-text parsing, allocator-footprint measurement, or a narrow upstream API
   contribution must be evaluated separately.

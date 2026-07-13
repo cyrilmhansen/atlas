@@ -148,6 +148,14 @@ pub struct JitReverseCodeObservation {
     pub machine_code: Vec<u8>,
 }
 
+/// Process-local code copy and boundary for mutating even partition.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct JitPartitionCodeObservation {
+    pub boundary: usize,
+    pub optimization: JitOptimizationLevel,
+    pub machine_code: Vec<u8>,
+}
+
 const PARTITION_TRACE_CAPACITY: usize = 128;
 const IS_SORTED_TRACE_CAPACITY: usize = 128;
 
@@ -420,22 +428,10 @@ pub fn interpret_minimum3_i64(left: i64, middle: i64, right: i64) -> MinimumTrac
 pub fn interpret_partition_even_i64(
     values: &mut [i64],
 ) -> Result<PartitionTrace, GuestMemoryError> {
-    let byte_length = values
-        .len()
-        .checked_mul(8)
-        .ok_or(GuestMemoryError::AddressOverflow)?;
-    let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let (mut memory, byte_length, count) = i64_guest_memory(values)?;
     let _guard = MIR_ADAPTER_LOCK
         .lock()
         .expect("MIR adapter lock must not be poisoned");
-    let mut memory = OffsetMemory::new(byte_length as usize);
-    for (index, value) in values.iter().copied().enumerate() {
-        let offset = u32::try_from(index)
-            .ok()
-            .and_then(|index| index.checked_mul(8))
-            .ok_or(GuestMemoryError::AddressOverflow)?;
-        memory.write_i64_le(GuestOffset::new(offset), value)?;
-    }
     let mut raw = RawPartitionTrace {
         boundary: 0,
         count: 0,
@@ -446,7 +442,7 @@ pub fn interpret_partition_even_i64(
         atlas_mir_interpret_partition_even_i64(
             memory.bytes.as_mut_ptr(),
             byte_length,
-            u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?,
+            count,
             &mut raw,
         )
     };
@@ -457,29 +453,99 @@ pub fn interpret_partition_even_i64(
     if count > PARTITION_TRACE_CAPACITY {
         return Err(GuestMemoryError::InvalidTraceEvent);
     }
-    for (index, value) in values.iter_mut().enumerate() {
-        let offset = u32::try_from(index)
-            .ok()
-            .and_then(|index| index.checked_mul(8))
-            .ok_or(GuestMemoryError::AddressOverflow)?;
-        *value = memory.read_i64_le(GuestOffset::new(offset))?;
-    }
+    copy_i64_guest_memory(&memory, values)?;
     let events = raw.events[..count]
         .iter()
         .copied()
         .map(partition_trace_event)
         .collect::<Result<Vec<_>, _>>()?;
 
-    let boundary = raw.boundary as usize;
-    if boundary > values.len() {
-        return Err(GuestMemoryError::InvalidTraceEvent);
-    }
+    let boundary = checked_partition_boundary(raw.boundary, values.len())?;
 
     Ok(PartitionTrace {
         boundary,
         events,
         truncated: raw.truncated != 0,
     })
+}
+
+/// Partitions even values through MIR's host generator and returns the boundary.
+pub fn jit_partition_even_i64(values: &mut [i64]) -> Result<usize, GuestMemoryError> {
+    jit_partition_even_i64_with_optimization(values, JitOptimizationLevel::Default)
+}
+
+/// Partitions even values with an explicit MIR optimization level.
+pub fn jit_partition_even_i64_with_optimization(
+    values: &mut [i64],
+    optimization: JitOptimizationLevel,
+) -> Result<usize, GuestMemoryError> {
+    let (mut memory, byte_length, count) = i64_guest_memory(values)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut boundary = 0;
+    if unsafe {
+        atlas_mir_jit_partition_even_i64_at_level(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            count,
+            &mut boundary,
+            optimization as u32,
+        )
+    } != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    let boundary = checked_partition_boundary(boundary, values.len())?;
+    copy_i64_guest_memory(&memory, values)?;
+    Ok(boundary)
+}
+
+/// Partitions even values and copies the relocated host function code.
+pub fn observe_jit_partition_even_i64(
+    values: &mut [i64],
+    optimization: JitOptimizationLevel,
+) -> Result<JitPartitionCodeObservation, GuestMemoryError> {
+    let (mut memory, byte_length, count) = i64_guest_memory(values)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut boundary = 0;
+    let mut code = std::ptr::null_mut();
+    let mut code_length = 0;
+    if unsafe {
+        atlas_mir_observe_jit_partition_even_i64(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            count,
+            &mut boundary,
+            optimization as u32,
+            &mut code,
+            &mut code_length,
+        )
+    } != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    let machine_code = copy_observed_code(code, code_length)?;
+    let boundary = checked_partition_boundary(boundary, values.len())?;
+    copy_i64_guest_memory(&memory, values)?;
+    Ok(JitPartitionCodeObservation {
+        boundary,
+        optimization,
+        machine_code,
+    })
+}
+
+fn checked_partition_boundary(
+    boundary: u32,
+    value_count: usize,
+) -> Result<usize, GuestMemoryError> {
+    let boundary = boundary as usize;
+    if boundary > value_count {
+        return Err(GuestMemoryError::InvalidTraceEvent);
+    }
+    Ok(boundary)
 }
 
 fn partition_trace_event(code: u32) -> Result<PartitionTraceEvent, GuestMemoryError> {
@@ -901,6 +967,22 @@ unsafe extern "C" {
         element_count: u32,
         trace: *mut RawPartitionTrace,
     ) -> i32;
+    fn atlas_mir_jit_partition_even_i64_at_level(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        boundary: *mut u32,
+        optimize_level: u32,
+    ) -> i32;
+    fn atlas_mir_observe_jit_partition_even_i64(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        boundary: *mut u32,
+        optimize_level: u32,
+        code: *mut *mut u8,
+        code_length: *mut usize,
+    ) -> i32;
     fn atlas_mir_interpret_is_sorted_i64(
         guest_bytes: *mut u8,
         byte_length: u32,
@@ -1119,6 +1201,43 @@ mod tests {
                     .expect("repeated guest x86-64 shape summary"),
                 guest_shape
             );
+
+            let mut reverse_values = vec![1, 2, 3, 4, 5];
+            let reverse = super::observe_jit_reverse_i64(&mut reverse_values, optimization)
+                .expect("MIR reverse JIT code observation");
+            assert_eq!(reverse_values, [5, 4, 3, 2, 1]);
+            let reverse_shape =
+                summarize_host_code(&reverse.machine_code).expect("reverse x86-64 shape summary");
+            let mut repeated_reverse_values = vec![1, 2, 3, 4, 5];
+            let repeated_reverse =
+                super::observe_jit_reverse_i64(&mut repeated_reverse_values, optimization)
+                    .expect("repeated MIR reverse JIT code observation");
+            assert_eq!(repeated_reverse_values, reverse_values);
+            assert_eq!(
+                summarize_host_code(&repeated_reverse.machine_code)
+                    .expect("repeated reverse x86-64 shape summary"),
+                reverse_shape
+            );
+
+            let mut partition_values = vec![3, 2, 5, 4, 7, 6];
+            let partition =
+                super::observe_jit_partition_even_i64(&mut partition_values, optimization)
+                    .expect("MIR partition JIT code observation");
+            assert_eq!(partition.boundary, 3);
+            assert_eq!(partition_values, [6, 2, 4, 5, 7, 3]);
+            let partition_shape = summarize_host_code(&partition.machine_code)
+                .expect("partition x86-64 shape summary");
+            let mut repeated_partition_values = vec![3, 2, 5, 4, 7, 6];
+            let repeated_partition =
+                super::observe_jit_partition_even_i64(&mut repeated_partition_values, optimization)
+                    .expect("repeated MIR partition JIT code observation");
+            assert_eq!(repeated_partition.boundary, partition.boundary);
+            assert_eq!(repeated_partition_values, partition_values);
+            assert_eq!(
+                summarize_host_code(&repeated_partition.machine_code)
+                    .expect("repeated partition x86-64 shape summary"),
+                partition_shape
+            );
         }
     }
 
@@ -1199,6 +1318,101 @@ mod tests {
                 assert_eq!(ast.operation_by_id(event.ast_node_id), Some(expected));
             }
         }
+    }
+
+    #[test]
+    fn mir_host_jit_partition_matches_interpreter_and_native_at_every_level() {
+        let mut default_values = [3, 2, 5, 4];
+        let default_boundary =
+            super::jit_partition_even_i64(&mut default_values).expect("default JIT partition");
+        assert_eq!(default_boundary, 2);
+        assert_eq!(default_values, [4, 2, 5, 3]);
+
+        for optimization in [
+            JitOptimizationLevel::FastGeneration,
+            JitOptimizationLevel::RegisterAllocation,
+            JitOptimizationLevel::Default,
+            JitOptimizationLevel::Full,
+        ] {
+            for original in [
+                vec![],
+                vec![2],
+                vec![1],
+                vec![2, 4, 6],
+                vec![1, 3, 5],
+                vec![3, 2, 5, 4, 7, 6],
+                vec![i64::MIN, i64::MAX, 0, -1, 2, -3],
+            ] {
+                let mut interpreted = original.clone();
+                let trace = interpret_partition_even_i64(&mut interpreted)
+                    .expect("MIR interpreted partition");
+                let mut native = original.clone();
+                let native_boundary =
+                    atlas_algorithms::partition::partition_in_place(&mut native, |value| {
+                        value % 2 == 0
+                    });
+                let mut generated = original.clone();
+                let generated_boundary =
+                    super::jit_partition_even_i64_with_optimization(&mut generated, optimization)
+                        .expect("MIR generated partition");
+
+                assert_eq!(generated_boundary, native_boundary);
+                assert_eq!(generated_boundary, trace.boundary);
+                assert_eq!(generated, native);
+                assert_eq!(generated, interpreted);
+                assert!(
+                    generated[..generated_boundary]
+                        .iter()
+                        .all(|value| value % 2 == 0)
+                );
+                assert!(
+                    generated[generated_boundary..]
+                        .iter()
+                        .all(|value| value % 2 != 0)
+                );
+                let mut actual_permutation = generated.clone();
+                actual_permutation.sort_unstable();
+                let mut expected_permutation = original.clone();
+                expected_permutation.sort_unstable();
+                assert_eq!(actual_permutation, expected_permutation);
+            }
+        }
+    }
+
+    #[test]
+    fn mir_host_jit_partition_rejects_an_inconsistent_guest_span() {
+        let mut bytes = [0_u8; 8];
+        let mut boundary = u32::MAX;
+        let status = unsafe {
+            super::atlas_mir_jit_partition_even_i64_at_level(
+                bytes.as_mut_ptr(),
+                7,
+                1,
+                &mut boundary,
+                JitOptimizationLevel::Default as u32,
+            )
+        };
+        assert_ne!(status, 0);
+        assert_eq!(boundary, u32::MAX);
+        assert_eq!(bytes, [0; 8]);
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn mir_host_jit_partition_observation_exposes_scans_swap_and_stores() {
+        let mut values = vec![3, 2, 5, 4, 7, 6];
+        let observation =
+            super::observe_jit_partition_even_i64(&mut values, JitOptimizationLevel::Default)
+                .expect("MIR generated partition observation");
+        assert_eq!(observation.boundary, 3);
+        assert_eq!(values, [6, 2, 4, 5, 7, 3]);
+        assert_eq!(observation.optimization, JitOptimizationLevel::Default);
+        let shape =
+            summarize_host_code(&observation.machine_code).expect("partition x86-64 shape summary");
+        assert_eq!(shape.calls, 6);
+        assert!(shape.conditional_branches >= 5);
+        assert!(shape.unconditional_branches >= 3);
+        assert_eq!(shape.returns, 1);
     }
 
     #[test]

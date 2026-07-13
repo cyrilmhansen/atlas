@@ -398,14 +398,15 @@ reconstruct arbitrary control flow. RV64 decoding remains disabled until Atlas
 observes actual RV64 code rather than host x86-64 JIT output.
 
 The untimed level matrix now covers scalar addition, read-only guest-memory
-`is_sorted` and mutating guest-memory `reverse`. It verifies correction and
-repeated structural summaries at levels 0 through 3. On the pinned x86-64
-stack, guest level 1 is smaller than levels 2 and 3 for `is_sorted`, while
-reverse levels 1 through 3 share the same prefix length; level 0 is larger for
-both. Calls and branch classes remain invariant. This rules out using the
-numeric optimization level as a proxy for compactness. The remaining B1 work
-is to separate construction latency, execution latency and executable
-allocation footprint before selecting or ranking a level.
+`is_sorted`, mutating `reverse` and nested-scan `partition`. It verifies
+correction and repeated structural summaries at levels 0 through 3. On the
+pinned x86-64 stack, guest level 1 is smaller than levels 2 and 3 for
+`is_sorted` and partition, while reverse levels 1 through 3 share the same
+prefix length; level 0 is larger for every guest workload. Calls and branch
+classes remain invariant. This rules out using the numeric optimization level
+as a proxy for compactness. The remaining B1 work is to separate construction
+latency, execution latency and executable allocation footprint before selecting
+or ranking a level.
 
 ### C4. Rust toolchain support baseline
 
@@ -457,9 +458,10 @@ surface even if the API remains private.
 
 Accepted: **A** under DEC-046. Scalar addition and guest `is_sorted` now
 reproduce interpreter and native results without timing. The later approved
-`reverse` extension adds checked guest writes without changing the model or
-lifecycle. The remaining measurement protocol is class B; MIR RISC-V
-generation remains outside this decision.
+`reverse` and partition extensions add checked guest writes and nested scans
+without changing the model or lifecycle. The interpreter remains responsible
+for semantic trace events. The remaining measurement protocol is class B; MIR
+RISC-V generation remains outside this decision.
 
 ### C7. Multi-region guest memory
 

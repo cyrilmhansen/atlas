@@ -1,5 +1,24 @@
 # Progress log
 
+## 2026-07-13 - Nested-scan guest partition JIT
+
+### Result
+
+- Added generated even partition over the existing bounded guest offset region,
+  with bidirectional scans, checked swaps and a returned boundary.
+- Verified exact boundary and arrangement against interpreter and native Rust
+  across empty, all, none, mixed and signed-boundary inputs at levels 0 to 3.
+- Independently verified the predicate split and input permutation.
+- Kept AST-linked semantic events in the interpreter and added only structural
+  machine-code observation to the JIT matrix.
+
+### Limits
+
+- The predicate is still the specialized even test from the private MVP 4
+  experiment; there is no general predicate ABI.
+- No JIT semantic trace, timing, executable-allocation measurement or persistent
+  evidence is introduced.
+
 ## 2026-07-13 - Mutating guest-memory reverse JIT
 
 ### Result

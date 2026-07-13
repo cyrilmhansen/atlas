@@ -1,6 +1,6 @@
 use atlas_mir::{
-    JitOptimizationLevel, observe_jit_add_u64, observe_jit_is_sorted_i64, observe_jit_reverse_i64,
-    summarize_host_code,
+    JitOptimizationLevel, observe_jit_add_u64, observe_jit_is_sorted_i64,
+    observe_jit_partition_even_i64, observe_jit_reverse_i64, summarize_host_code,
 };
 
 const OPTIMIZATION_LEVELS: [JitOptimizationLevel; 4] = [
@@ -45,6 +45,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "reverse_i64",
             optimization,
             format!("{values:?}"),
+            &observation.machine_code,
+        )?;
+    }
+    for optimization in OPTIMIZATION_LEVELS {
+        let mut values = vec![3, 2, 5, 4, 7, 6];
+        let observation = observe_jit_partition_even_i64(&mut values, optimization)
+            .map_err(|error| format!("MIR partition observation failed: {error:?}"))?;
+        print_shape(
+            "partition_even_i64",
+            optimization,
+            format!("boundary={} values={values:?}", observation.boundary),
             &observation.machine_code,
         )?;
     }

@@ -166,7 +166,11 @@ flow and calls the same checked guest-load import used by the interpreter. The
 later `reverse` extension is the first generated mutating workload: it calls
 both checked load and store imports over the same bounded offset region. Empty,
 singleton, even and odd inputs compare final memory with both interpreter and
-native Rust results, including a second reversal.
+native Rust results, including a second reversal. Generated even `partition`
+adds nested bidirectional scans, returns the partition boundary and mutates the
+same region without emitting trace events. Its boundary, exact arrangement,
+permutation and predicate split are checked against both reference backends;
+the interpreter remains the only MIR trace backend.
 
 Every call initializes and finishes the generator inside a fresh MIR context,
 so its executable mappings are released with that context. This establishes
@@ -176,10 +180,10 @@ performance remain separate. Atlas does not select JIT over the interpreter.
 
 Atlas explicitly selects MIR optimization level 2 for the ordinary JIT probes;
 it does not rely on the upstream default remaining unchanged. Private
-correction variants also exercise levels 0, 1, 2 and 3 for all three probes. In the
-pinned MIR generator these mean fast generation, register allocation plus
-combining, the default SSA/GVN/CCP pipeline, and the full pipeline respectively.
-Correction at every level is not a performance comparison.
+correction variants also exercise levels 0, 1, 2 and 3 for all four probes. In
+the pinned MIR generator these mean fast generation, register allocation plus
+combining, the default SSA/GVN/CCP pipeline, and the full pipeline
+respectively. Correction at every level is not a performance comparison.
 
 At the DEC-046 checkpoint, the public generator API returned a machine-code
 address but not its exact byte length. Upstream retained the length only while
@@ -229,5 +233,7 @@ level 0 produces 144 bytes and 35 instructions. All retain two checked-load
 calls, two conditional branches and two unconditional branches. Generated
 `reverse` retains four calls, one conditional branch and one unconditional
 branch at every level; its prefix ranges from 146 bytes at levels 1 through 3
-to 188 bytes at level 0. These numbers are local structural observations, not
-timing results or a level selection.
+to 188 bytes at level 0. Partition retains six calls, six conditional branches
+and three unconditional branches; level 1 has a 245-byte prefix, levels 2 and 3
+have 247 bytes, and level 0 has 354 bytes. These numbers are local structural
+observations, not timing results or a level selection.

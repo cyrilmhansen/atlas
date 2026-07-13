@@ -6,9 +6,11 @@ DEC-039.
 ## Demonstrated boundary
 
 `atlas-mir` links a private C shim to the pinned upstream MIR interpreter core.
-The shim creates and executes a scalar `i64` addition; Rust receives only a
-`u64` result at its FFI boundary. This is a runtime smoke test, not a translation
-of an Atlas algorithm or a public backend API.
+The shim creates and executes a scalar `i64` addition, then a three-value
+minimum whose two semantic comparisons call a private trace import. Rust checks
+the final minimum and ordered comparison values against the native algorithm.
+This is a runtime smoke test, not a public backend API or an Atlas evidence
+format.
 
 The compact-reference comparison is independent of MIR: `GuestOffset(u32)`,
 `GuestHandle(u32)`, and `GuestRegionOffset` have separate testable failure

@@ -3,6 +3,10 @@
 //! Atlas semantics remain outside this crate. The adapter currently proves one
 //! scalar MIR interpreter call and compares guest-reference representations.
 
+use std::sync::Mutex;
+
+static MINIMUM_TRACE_LOCK: Mutex<()> = Mutex::new(());
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct GuestOffset(u32);
 
@@ -24,6 +28,26 @@ pub enum GuestMemoryError {
     OutOfBounds,
     InvalidHandle,
     InvalidRegion,
+}
+
+/// One semantic comparison explicitly emitted by the experimental MIR program.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(C)]
+pub struct CompareEvent {
+    pub candidate: i64,
+    pub current: i64,
+}
+
+/// Bounded, process-local trace for the three-value minimum experiment.
+///
+/// This is debugging instrumentation only. It is neither an Atlas evidence
+/// format nor a stable FFI contract.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(C)]
+pub struct MinimumTrace {
+    pub minimum: i64,
+    pub count: u32,
+    pub events: [CompareEvent; 2],
 }
 
 impl GuestOffset {
@@ -145,21 +169,101 @@ pub fn interpret_add_u64(left: u64, right: u64) -> u64 {
     unsafe { atlas_mir_interpret_add_u64(left, right) }
 }
 
+/// Executes a three-value minimum program and returns its explicit MIR trace.
+pub fn interpret_minimum3_i64(left: i64, middle: i64, right: i64) -> MinimumTrace {
+    let _guard = MINIMUM_TRACE_LOCK
+        .lock()
+        .expect("minimum trace lock must not be poisoned");
+    let mut trace = MinimumTrace {
+        minimum: 0,
+        count: 0,
+        events: [
+            CompareEvent {
+                candidate: 0,
+                current: 0,
+            },
+            CompareEvent {
+                candidate: 0,
+                current: 0,
+            },
+        ],
+    };
+
+    unsafe {
+        atlas_mir_interpret_minimum3_i64(left, middle, right, &mut trace);
+    }
+    trace
+}
+
 unsafe extern "C" {
     fn atlas_mir_interpret_add_u64(left: u64, right: u64) -> u64;
+    fn atlas_mir_interpret_minimum3_i64(
+        left: i64,
+        middle: i64,
+        right: i64,
+        trace: *mut MinimumTrace,
+    );
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        GuestMemoryError, GuestOffset, GuestRegionOffset, HandleMemory, OffsetMemory, RegionMemory,
-        interpret_add_u64,
+        CompareEvent, GuestMemoryError, GuestOffset, GuestRegionOffset, HandleMemory, OffsetMemory,
+        RegionMemory, interpret_add_u64, interpret_minimum3_i64,
     };
 
     #[test]
     fn mir_interpreter_executes_a_scalar_function() {
         assert_eq!(interpret_add_u64(40, 2), 42);
         assert_eq!(interpret_add_u64(12, 30), 42);
+    }
+
+    #[test]
+    fn mir_trace_records_stable_minimum_comparisons() {
+        let trace = interpret_minimum3_i64(7, -2, 4);
+        let native =
+            atlas_algorithms::minimum::minimum_by(&[7_i64, -2, 4], |left: &i64, right: &i64| {
+                left.cmp(right)
+            })
+            .copied()
+            .expect("non-empty native input");
+
+        assert_eq!(trace.minimum, native);
+        assert_eq!(trace.count, 2);
+        assert_eq!(
+            trace.events,
+            [
+                CompareEvent {
+                    candidate: -2,
+                    current: 7,
+                },
+                CompareEvent {
+                    candidate: 4,
+                    current: -2,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn mir_trace_keeps_the_first_value_on_a_tie() {
+        let trace = interpret_minimum3_i64(1, 1, 2);
+
+        assert_eq!(trace.minimum, 1);
+        assert_eq!(trace.count, 2);
+        assert_eq!(
+            trace.events,
+            [
+                CompareEvent {
+                    candidate: 1,
+                    current: 1,
+                },
+                CompareEvent {
+                    candidate: 2,
+                    current: 1,
+                },
+            ]
+        );
     }
 
     #[test]

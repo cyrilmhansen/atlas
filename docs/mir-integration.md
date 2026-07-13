@@ -61,10 +61,19 @@ it must not determine compact-reference representation.
 
 ## Instrumentation and JIT
 
-The current interpreter probe has no instruction trace, counter, timing or
-allocation statistic. The next interpreter experiment may add explicit MIR calls
-to a private trace import at selected translated operations, recording operation,
-guest-reference value and result. That is not yet an Atlas evidence format.
+The `minimum3_i64` interpreter probe explicitly calls the private import
+`atlas_mir_record_compare(candidate, current)` before each of its two semantic
+comparisons. The shim copies the bounded events and final result into
+`MinimumTrace`, which Rust verifies against the native `sequence.minimum`
+implementation. This trace is process-local, deterministic and deliberately
+scalar: it contains neither guest references nor timing data.
+
+`MinimumTrace` is not an Atlas evidence format, a registry entity, or a stable
+FFI contract. The C shim keeps the active trace in static storage during one
+call and is therefore not reentrant. The Rust entry point serializes access to
+that storage, making this private API deterministic for concurrent Rust callers.
+A future trace transport must define its own concurrency properties explicitly
+before it can cross this private adapter boundary.
 
 MIR generator interfaces are not compiled by this crate. Enabling them requires
 a separate decision, host-JIT smoke test, and size/latency measurement protocol.

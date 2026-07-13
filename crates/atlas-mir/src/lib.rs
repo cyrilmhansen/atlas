@@ -7,7 +7,7 @@ mod disassembly;
 
 pub use disassembly::{
     DisassembledInstruction, DisassemblyError, DisassemblyTermination, HostCodeDisassembly,
-    disassemble_host_code,
+    HostCodeShape, disassemble_host_code, summarize_host_code,
 };
 
 use std::sync::Mutex;
@@ -891,7 +891,7 @@ mod tests {
         interpret_add_u64, interpret_is_sorted_i64, interpret_maximum_i64, interpret_minimum_i64,
         interpret_minimum3_i64, interpret_partition_even_i64, jit_add_u64,
         jit_add_u64_with_optimization, jit_is_sorted_i64, jit_is_sorted_i64_with_optimization,
-        observe_jit_add_u64, observe_jit_is_sorted_i64,
+        observe_jit_add_u64, observe_jit_is_sorted_i64, summarize_host_code,
     };
 
     #[test]
@@ -992,6 +992,59 @@ mod tests {
                 .iter()
                 .any(|instruction| instruction.mnemonic.starts_with('j'))
         );
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn mir_host_jit_shape_matrix_is_correct_and_reproducible() {
+        for optimization in [
+            JitOptimizationLevel::FastGeneration,
+            JitOptimizationLevel::RegisterAllocation,
+            JitOptimizationLevel::Default,
+            JitOptimizationLevel::Full,
+        ] {
+            let add =
+                observe_jit_add_u64(40, 2, optimization).expect("MIR scalar JIT code observation");
+            assert_eq!(add.result, 42);
+            let add_shape =
+                summarize_host_code(&add.machine_code).expect("scalar x86-64 shape summary");
+            assert_eq!(add_shape.calls, 0);
+            assert_eq!(add_shape.conditional_branches, 0);
+            assert_eq!(add_shape.unconditional_branches, 0);
+            assert_eq!(add_shape.returns, 1);
+
+            let repeated_add = observe_jit_add_u64(40, 2, optimization)
+                .expect("repeated MIR scalar JIT code observation");
+            assert_eq!(
+                summarize_host_code(&repeated_add.machine_code)
+                    .expect("repeated scalar x86-64 shape summary"),
+                add_shape
+            );
+
+            let is_sorted = observe_jit_is_sorted_i64(&[1, 5, 4, 6], optimization)
+                .expect("MIR guest JIT code observation");
+            assert_eq!(
+                is_sorted.result,
+                JitIsSortedResult {
+                    sorted: false,
+                    first_inversion: Some(2),
+                }
+            );
+            let guest_shape =
+                summarize_host_code(&is_sorted.machine_code).expect("guest x86-64 shape summary");
+            assert_eq!(guest_shape.calls, 2);
+            assert!(guest_shape.conditional_branches >= 2);
+            assert!(guest_shape.unconditional_branches >= 1);
+            assert_eq!(guest_shape.returns, 1);
+
+            let repeated_guest = observe_jit_is_sorted_i64(&[1, 5, 4, 6], optimization)
+                .expect("repeated MIR guest JIT code observation");
+            assert_eq!(
+                summarize_host_code(&repeated_guest.machine_code)
+                    .expect("repeated guest x86-64 shape summary"),
+                guest_shape
+            );
+        }
     }
 
     #[test]

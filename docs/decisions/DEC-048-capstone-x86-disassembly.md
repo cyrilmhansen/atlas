@@ -34,5 +34,7 @@ format requires a separate decision.
   library requirement.
 - Capstone's decoding does not establish reachability, semantic equivalence or
   code quality. Native Rust remains the correction oracle.
+- Structural summaries classify calls and branches from x86 mnemonics; they are
+  local diagnostics rather than an architecture-independent event vocabulary.
 - The Rust binding is MIT licensed and the embedded Capstone engine is BSD
   licensed; distribution review must retain the dependency notices.

@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-07-13 - Untimed MIR optimization shape matrix
+
+### Result
+
+- Added a typed structural summary of observed bytes, decoded prefix, suffix,
+  instructions, calls, branch classes and returns.
+- Compared scalar addition and guest-memory `is_sorted` at MIR levels 0 through
+  3 while checking results and repeated-summary equality.
+- Added `compare_jit_shapes` as a compact tabular diagnostic separate from the
+  full instruction listing.
+- Observed that guest level 1 is smaller than levels 2 and 3 on the pinned
+  x86-64 stack; optimization level is therefore not a monotonic size proxy.
+
+### Limits
+
+- Instruction classes use the x86 Capstone mnemonics and the existing
+  first-return boundary heuristic.
+- The matrix contains no timing, executable-allocation measurement, ranking or
+  persistent evidence.
+
 ## 2026-07-13 - Embedded x86-64 MIR disassembly
 
 ### Result

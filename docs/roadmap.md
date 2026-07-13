@@ -397,6 +397,14 @@ functions without defining a persistent instruction schema or pretending to
 reconstruct arbitrary control flow. RV64 decoding remains disabled until Atlas
 observes actual RV64 code rather than host x86-64 JIT output.
 
+The first untimed level matrix is complete for scalar addition and guest-memory
+`is_sorted`. It verifies correction and repeated structural summaries at levels
+0 through 3. On the pinned x86-64 stack, guest level 1 is smaller than levels 2
+and 3, while level 0 is larger; calls and branch classes remain invariant. This
+rules out using the numeric optimization level as a proxy for compactness. The
+remaining B1 work is to separate construction latency, execution latency and
+executable allocation footprint before selecting or ranking a level.
+
 ### C4. Rust toolchain support baseline
 
 Context: the workspace declares Rust 1.85, but the currently locked

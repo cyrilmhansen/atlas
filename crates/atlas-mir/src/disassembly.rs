@@ -34,6 +34,20 @@ pub enum DisassemblyTermination {
     UndecodableByte,
 }
 
+/// Small structural summary of one process-local code observation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct HostCodeShape {
+    pub observed_bytes: usize,
+    pub decoded_prefix_bytes: usize,
+    pub trailing_bytes: usize,
+    pub instructions: usize,
+    pub calls: usize,
+    pub conditional_branches: usize,
+    pub unconditional_branches: usize,
+    pub returns: usize,
+    pub termination: DisassemblyTermination,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DisassemblyError {
     EmptyCode,
@@ -73,6 +87,32 @@ pub fn disassemble_host_code(code: &[u8]) -> Result<HostCodeDisassembly, Disasse
         return Err(DisassemblyError::EmptyCode);
     }
     disassemble_x86_64(code)
+}
+
+/// Summarizes instruction classes without retaining another copy of the code.
+pub fn summarize_host_code(code: &[u8]) -> Result<HostCodeShape, DisassemblyError> {
+    let disassembly = disassemble_host_code(code)?;
+    let mut shape = HostCodeShape {
+        observed_bytes: code.len(),
+        decoded_prefix_bytes: disassembly.decoded_bytes,
+        trailing_bytes: disassembly.trailing_bytes.len(),
+        instructions: disassembly.instructions.len(),
+        calls: 0,
+        conditional_branches: 0,
+        unconditional_branches: 0,
+        returns: 0,
+        termination: disassembly.termination,
+    };
+    for instruction in &disassembly.instructions {
+        match instruction.mnemonic.as_str() {
+            "call" | "callf" => shape.calls += 1,
+            "jmp" | "jmpf" => shape.unconditional_branches += 1,
+            "ret" | "retf" => shape.returns += 1,
+            mnemonic if mnemonic.starts_with('j') => shape.conditional_branches += 1,
+            _ => {}
+        }
+    }
+    Ok(shape)
 }
 
 #[cfg(target_arch = "x86_64")]
@@ -135,7 +175,9 @@ fn disassemble_x86_64(_code: &[u8]) -> Result<HostCodeDisassembly, DisassemblyEr
 
 #[cfg(test)]
 mod tests {
-    use super::{DisassemblyError, DisassemblyTermination, disassemble_host_code};
+    use super::{
+        DisassemblyError, DisassemblyTermination, disassemble_host_code, summarize_host_code,
+    };
 
     #[test]
     fn empty_observation_is_rejected() {
@@ -174,5 +216,27 @@ mod tests {
             disassemble_host_code(&[0x0f]),
             Err(DisassemblyError::NoInstruction)
         );
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn x86_64_shape_separates_calls_and_branch_classes() {
+        let shape = summarize_host_code(&[
+            0xe8, 0, 0, 0, 0, // call +0
+            0x75, 0, // jne +0
+            0xeb, 0,    // jmp +0
+            0xc3, // ret
+            0xcc, // suffix
+        ])
+        .expect("synthetic control-flow shape");
+        assert_eq!(shape.observed_bytes, 11);
+        assert_eq!(shape.decoded_prefix_bytes, 10);
+        assert_eq!(shape.trailing_bytes, 1);
+        assert_eq!(shape.instructions, 4);
+        assert_eq!(shape.calls, 1);
+        assert_eq!(shape.conditional_branches, 1);
+        assert_eq!(shape.unconditional_branches, 1);
+        assert_eq!(shape.returns, 1);
+        assert_eq!(shape.termination, DisassemblyTermination::Return);
     }
 }

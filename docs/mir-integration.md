@@ -211,3 +211,18 @@ relative offsets and Intel syntax. Atlas stops at the first `ret` and reports
 the remaining observed bytes separately, because MIR's span includes alignment
 padding and relocated import addresses. This is an explicit diagnostic
 heuristic, not general control-flow recovery. Nothing is archived.
+
+The structural matrix is a separate untimed diagnostic:
+
+```sh
+cargo run -p atlas-mir --example compare_jit_shapes --locked --offline
+```
+
+For each optimization level 0 through 3, it first verifies the generated
+result, then reports observed span, prefix through the first return, suffix,
+instruction count, calls and branch classes. On the current pinned x86-64
+stack, level 1 produces the smallest `is_sorted` prefix (112 bytes and 27
+instructions), levels 2 and 3 both produce 119 bytes and 31 instructions, and
+level 0 produces 144 bytes and 35 instructions. All retain two checked-load
+calls, two conditional branches and two unconditional branches. These numbers
+are local structural observations, not timing results or a level selection.

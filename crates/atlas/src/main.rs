@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
 use atlas::comparisons::ComparisonReport;
+use atlas::composition::{cleanup_minimize_declared_allocations, render as render_composition};
 use atlas::executions::{ExecutionMode, ExecutionRecord};
 use atlas::index::rebuild_database;
 use atlas::registry::{
@@ -32,6 +33,7 @@ fn main() -> ExitCode {
         Some("qualify") => qualify_command(arguments),
         Some("replay") => replay_command(arguments),
         Some("compare") => compare_command(arguments),
+        Some("compose") => compose_command(arguments),
         Some("index") => index_command(arguments),
         _ => {
             eprintln!("unknown command {:?}", command);
@@ -39,6 +41,32 @@ fn main() -> ExitCode {
             ExitCode::from(2)
         }
     }
+}
+
+fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
+    let Some(scenario) = arguments.next() else {
+        eprintln!("compose requires the experimental scenario cleanup");
+        print_usage();
+        return ExitCode::from(2);
+    };
+    if arguments.next().is_some() {
+        eprintln!("compose accepts exactly one scenario");
+        print_usage();
+        return ExitCode::from(2);
+    }
+    if scenario != "cleanup" {
+        eprintln!(
+            "unknown composition scenario {:?}; expected cleanup",
+            scenario
+        );
+        return ExitCode::from(2);
+    }
+
+    print!(
+        "{}",
+        render_composition(&cleanup_minimize_declared_allocations())
+    );
+    ExitCode::SUCCESS
 }
 
 fn index_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
@@ -786,6 +814,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup\n  atlas index [DB_PATH]"
     );
 }

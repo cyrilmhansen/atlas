@@ -714,6 +714,36 @@ fn cli_compare_requires_two_execution_ids() {
 }
 
 #[test]
+fn cli_renders_the_experimental_cleanup_composition() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "cleanup"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("plan: sequence.cleanup.experimental.v1"));
+    assert!(stdout.contains("filter.in_place.rust.vec.v1"));
+    assert!(stdout.contains("copies first occurrences into output"));
+    assert!(stdout.contains("rejected:\n  id: cleanup.copy_merge_hash"));
+}
+
+#[test]
+fn cli_rejects_unknown_composition_scenarios() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "unknown"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown composition scenario"));
+}
+
+#[test]
 fn cli_explains_binary_search_chain_with_requirements_and_effects() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))

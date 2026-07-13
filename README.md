@@ -32,6 +32,7 @@ cargo run -p atlas -- show search.linear
 cargo run -p atlas -- search "merge sort"
 cargo run -p atlas -- explain search.binary.rust.slice.v1
 cargo run -p atlas -- qualify sequence.sort --stable --in-place --allocation none
+cargo run -p atlas -- compose cleanup
 cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh
@@ -104,6 +105,11 @@ files, implementation evidence, and Rust test symbols.
 `qualify` is intentionally narrow: it filters recorded properties and prints
 their evidence; it does not rank implementations or infer missing metadata.
 
+`compose cleanup` is the first MVP 3 experiment. It renders one internal,
+non-persistent `filter -> sort -> deduplicate` plan with a selected candidate,
+a rejected alternative, and all visible mutations, copies, and allocations.
+It is not a general planner or an executable program generator.
+
 ## Runtime boundary
 
 `atlas-algorithms` is `#![no_std]`. Core-only algorithms compile without default
@@ -137,5 +143,5 @@ See [the MVP status](docs/mvp-status.md), [the MVP 2 closure
 scope](docs/decisions/DEC-036-close-mvp2-scope.md), [the MVP 3
 activation](docs/decisions/DEC-037-activate-mvp3.md), [schema
 0.1](docs/schema-0.1.md), and [accepted decisions](docs/decisions/). The [MVP
-1 review](docs/mvp1-review.md) and [roadmap](docs/roadmap.md) describe the
-next decisions.
+1 review](docs/mvp1-review.md), [MVP 3 review](docs/mvp3-review.md), and
+[roadmap](docs/roadmap.md) describe the next decisions.

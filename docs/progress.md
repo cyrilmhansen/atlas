@@ -1222,6 +1222,33 @@ Select the first concrete pipeline and the comparison alternatives it must
 explain. The existing corpus supports `filter -> sort -> deduplicate`; `parse`
 and `encode` are not yet registered components.
 
+## 2026-07-13 - First MVP 3 composition plan
+
+### Result
+
+- Added `atlas compose cleanup`, an internal non-persistent plan for
+  `filter -> sort -> deduplicate` under the declared intermediate allocation
+  objective.
+- Selected in-place filtering, insertion sorting, and quadratic deduplication.
+  The plan exposes both input mutations and the required deduplicated output
+  copy/allocation.
+- Rendered the copying merge/hash alternative as rejected, with its extra filter
+  copy, merge scratch, hash-set storage, and output allocation stated.
+
+### Limits
+
+- The type compatibility descriptions are internal to this scenario; schema 0.1
+  remains unchanged.
+- This is a reviewed two-candidate choice, not general plan search or generated
+  executable orchestration.
+
+### Verification
+
+```sh
+cargo test -p atlas --locked --offline
+cargo run -q -p atlas --locked --offline -- compose cleanup
+```
+
 The gate creates only ignored generated observations under `build/executions/`.
 
 ## 2026-07-12 - Replayable observations and baseline resource metrics

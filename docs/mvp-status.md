@@ -71,7 +71,10 @@ next MVP.
 
 ## MVP 3 first slice
 
-Build one internally represented linear pipeline from existing sequence
-components. The plan must expose compatibility, preconditions, mutations,
-allocations, copies, and rejected alternatives. It is experimental and does not
-change schema 0.1 or define a persistent plan format.
+`atlas compose cleanup` builds one internally represented
+`filter -> sort -> deduplicate` pipeline from existing sequence components. It
+exposes compatibility, preconditions, mutations, allocations, copies, and a
+rejected alternative. It is experimental and does not change schema 0.1 or
+define a persistent plan format.
+
+See `docs/mvp3-review.md` for the acceptance checks and deliberate limits.

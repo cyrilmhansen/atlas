@@ -1,5 +1,6 @@
 pub mod ast;
 pub mod comparisons;
+pub mod composition;
 pub mod datasets;
 pub mod executions;
 pub mod expressions;

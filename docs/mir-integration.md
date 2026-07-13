@@ -205,5 +205,9 @@ cargo run -p atlas-mir --example observe_jit_code --locked --offline
 ```
 
 It reports the host target, explicit optimization level, correction result,
-exact byte length, local SHA-256 and copied bytes for both programs. It does not
-archive them.
+exact byte length, local SHA-256 and copied bytes for both programs. Under
+DEC-048, x86-64 hosts additionally report a Capstone instruction listing with
+relative offsets and Intel syntax. Atlas stops at the first `ret` and reports
+the remaining observed bytes separately, because MIR's span includes alignment
+padding and relocated import addresses. This is an explicit diagnostic
+heuristic, not general control-flow recovery. Nothing is archived.

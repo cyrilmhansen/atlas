@@ -9,6 +9,9 @@ build = "build.rs"
 [lib]
 path = "src/lib.rs"
 
+[dependencies]
+capstone.workspace = true
+
 [dev-dependencies]
 atlas = { path = "../atlas" }
 atlas-algorithms = { path = "../atlas-algorithms" }

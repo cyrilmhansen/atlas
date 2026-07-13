@@ -3,6 +3,13 @@
 //! Atlas semantics remain outside this crate. The adapter exercises private
 //! interpreter and host-JIT probes while preserving native Rust as oracle.
 
+mod disassembly;
+
+pub use disassembly::{
+    DisassembledInstruction, DisassemblyError, DisassemblyTermination, HostCodeDisassembly,
+    disassemble_host_code,
+};
+
 use std::sync::Mutex;
 
 static MIR_ADAPTER_LOCK: Mutex<()> = Mutex::new(());
@@ -880,8 +887,8 @@ mod tests {
 
     use super::{
         CompareEvent, GuestMemoryError, GuestOffset, GuestRegionOffset, HandleMemory,
-        JitIsSortedResult, JitOptimizationLevel, OffsetMemory, RegionMemory, interpret_add_u64,
-        interpret_is_sorted_i64, interpret_maximum_i64, interpret_minimum_i64,
+        JitIsSortedResult, JitOptimizationLevel, OffsetMemory, RegionMemory, disassemble_host_code,
+        interpret_add_u64, interpret_is_sorted_i64, interpret_maximum_i64, interpret_minimum_i64,
         interpret_minimum3_i64, interpret_partition_even_i64, jit_add_u64,
         jit_add_u64_with_optimization, jit_is_sorted_i64, jit_is_sorted_i64_with_optimization,
         observe_jit_add_u64, observe_jit_is_sorted_i64,
@@ -944,6 +951,46 @@ mod tests {
             Sha256::digest(&observation.machine_code)
                 .iter()
                 .any(|byte| *byte != 0)
+        );
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn mir_host_jit_observations_have_inspectable_instruction_shapes() {
+        let add = observe_jit_add_u64(40, 2, JitOptimizationLevel::Default)
+            .expect("MIR scalar JIT code observation");
+        let add_disassembly =
+            disassemble_host_code(&add.machine_code).expect("scalar x86-64 disassembly");
+        assert_eq!(
+            add_disassembly.decoded_bytes + add_disassembly.trailing_bytes.len(),
+            add.machine_code.len()
+        );
+        assert!(
+            add_disassembly
+                .instructions
+                .iter()
+                .any(|instruction| instruction.mnemonic == "ret")
+        );
+
+        let is_sorted = observe_jit_is_sorted_i64(&[1, 5, 4, 6], JitOptimizationLevel::Default)
+            .expect("MIR guest JIT code observation");
+        let guest_disassembly =
+            disassemble_host_code(&is_sorted.machine_code).expect("guest x86-64 disassembly");
+        assert_eq!(
+            guest_disassembly.decoded_bytes + guest_disassembly.trailing_bytes.len(),
+            is_sorted.machine_code.len()
+        );
+        assert!(
+            guest_disassembly
+                .instructions
+                .iter()
+                .any(|instruction| instruction.mnemonic == "call")
+        );
+        assert!(
+            guest_disassembly
+                .instructions
+                .iter()
+                .any(|instruction| instruction.mnemonic.starts_with('j'))
         );
     }
 

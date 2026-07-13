@@ -30,8 +30,8 @@ submodule commit: clean clones and CI retain a retrievable original gitlink.
 - Machine-code length and executable allocation footprint remain distinct.
 - A digest of relocated bytes is a local diagnostic, not a portable identity;
   addresses and target-specific relocations may change it.
-- An embedded disassembler remains a separate dependency decision. It will
-  consume a bounded byte slice instead of guessing a function boundary.
+- DEC-048 supplies an embedded x86-64 disassembler as a separate dependency.
+  It consumes this bounded span and reports its boundary heuristic explicitly.
 - Building `atlas-mir` from a fresh checkout requires the patch bootstrap;
   acceptance scripts and CI execute it explicitly.
 - The patch and its upstream test must be reviewed before any external

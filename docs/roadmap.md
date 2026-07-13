@@ -20,7 +20,9 @@ complete interpreter-only capability ladder over one bounded offset region.
 The demonstrated native/MIR pairs now cover partition, `is_sorted`,
 minimum/maximum, reverse and stable insertion, in addition to scalar probes.
 None changes the public registry schema, execution-record format or native
-reference backend.
+reference backend. On x86-64, a narrowly configured embedded Capstone now
+decodes the observed scalar and guest-memory JIT functions without external
+tools; this remains a local diagnostic.
 
 The DOCX snapshot is preserved at `doc/Vision_Atlas_Executable_MVP1-4.docx`.
 `docs/vision.md` is its verified, diffable Markdown conversion and the
@@ -385,8 +387,15 @@ DEC-047 selects the narrow upstream API path for local preparation. The patch
 now observes exact relocated function bytes without IO, and Atlas verifies a
 copied scalar observation and a guest-memory control-flow observation after
 context destruction. Integration remains provisional until the patch is
-reviewed and available from the original MIR remote; disassembly is a separate
-dependency decision.
+reviewed and available from the original MIR remote.
+
+DEC-048 accepts the separate Capstone dependency with only x86 enabled. The
+diagnostic exposes relative instruction offsets, bytes, mnemonics and operands
+through the first return, while retaining padding and relocation data as an
+unclassified suffix. This is enough to inspect the two current generated
+functions without defining a persistent instruction schema or pretending to
+reconstruct arbitrary control flow. RV64 decoding remains disabled until Atlas
+observes actual RV64 code rather than host x86-64 JIT output.
 
 ### C4. Rust toolchain support baseline
 

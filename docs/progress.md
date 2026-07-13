@@ -1,5 +1,24 @@
 # Progress log
 
+## 2026-07-13 - Embedded x86-64 MIR disassembly
+
+### Result
+
+- Accepted DEC-048 (`disasm-A`) and added `capstone 0.14.0` with only its x86
+  backend, full instruction text and standard-library support enabled.
+- Added structured relative offsets, instruction bytes, Intel mnemonics,
+  operands, termination reason and retained suffix bytes.
+- Verified the scalar return plus the guest `is_sorted` branches and checked
+  import calls against actual MIR-generated observations.
+- Extended the untimed diagnostic example with readable instruction listings.
+
+### Limits
+
+- The first-`ret` boundary is valid for the current generated functions but is
+  not a control-flow graph or a general function-boundary algorithm.
+- Only x86-64 host output is enabled. No disassembly is persisted or treated as
+  semantic evidence, and RV64 remains a separate future target.
+
 ## 2026-07-13 - Guest-workload machine-code observation
 
 ### Result

@@ -383,9 +383,10 @@ or proposing a narrow upstream API; these observations are not interchangeable.
 
 DEC-047 selects the narrow upstream API path for local preparation. The patch
 now observes exact relocated function bytes without IO, and Atlas verifies a
-copied scalar observation after context destruction. Integration remains
-provisional until the patch is reviewed and available from the original MIR
-remote; disassembly is a separate dependency decision.
+copied scalar observation and a guest-memory control-flow observation after
+context destruction. Integration remains provisional until the patch is
+reviewed and available from the original MIR remote; disassembly is a separate
+dependency decision.
 
 ### C4. Rust toolchain support baseline
 

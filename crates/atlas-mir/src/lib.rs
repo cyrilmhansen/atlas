@@ -126,6 +126,14 @@ pub struct JitCodeObservation {
     pub machine_code: Vec<u8>,
 }
 
+/// Process-local code copy and result for the guest-memory `is_sorted` probe.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct JitIsSortedCodeObservation {
+    pub result: JitIsSortedResult,
+    pub optimization: JitOptimizationLevel,
+    pub machine_code: Vec<u8>,
+}
+
 const PARTITION_TRACE_CAPACITY: usize = 128;
 const IS_SORTED_TRACE_CAPACITY: usize = 128;
 
@@ -359,8 +367,7 @@ pub fn observe_jit_add_u64(
     if status != 0 || code.is_null() || code_length == 0 {
         return Err(GuestMemoryError::RuntimeFailure);
     }
-    let machine_code = unsafe { std::slice::from_raw_parts(code, code_length) }.to_vec();
-    unsafe { atlas_mir_free_observed_code(code) };
+    let machine_code = copy_observed_code(code, code_length)?;
     Ok(JitCodeObservation {
         result,
         optimization,
@@ -559,23 +566,10 @@ pub fn jit_is_sorted_i64_with_optimization(
     values: &[i64],
     optimization: JitOptimizationLevel,
 ) -> Result<JitIsSortedResult, GuestMemoryError> {
-    let byte_length = values
-        .len()
-        .checked_mul(8)
-        .ok_or(GuestMemoryError::AddressOverflow)?;
-    let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
-    let count = u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let (mut memory, byte_length, count) = i64_guest_memory(values)?;
     let _guard = MIR_ADAPTER_LOCK
         .lock()
         .expect("MIR adapter lock must not be poisoned");
-    let mut memory = OffsetMemory::new(byte_length as usize);
-    for (index, value) in values.iter().copied().enumerate() {
-        let offset = u32::try_from(index)
-            .ok()
-            .and_then(|index| index.checked_mul(8))
-            .ok_or(GuestMemoryError::AddressOverflow)?;
-        memory.write_i64_le(GuestOffset::new(offset), value)?;
-    }
     let mut first_inversion = u32::MAX;
     if unsafe {
         atlas_mir_jit_is_sorted_i64_at_level(
@@ -589,9 +583,69 @@ pub fn jit_is_sorted_i64_with_optimization(
     {
         return Err(GuestMemoryError::RuntimeFailure);
     }
+    jit_is_sorted_result(first_inversion, values.len())
+}
+
+/// Generates the guest-memory adjacent scan and copies its relocated host code.
+pub fn observe_jit_is_sorted_i64(
+    values: &[i64],
+    optimization: JitOptimizationLevel,
+) -> Result<JitIsSortedCodeObservation, GuestMemoryError> {
+    let (mut memory, byte_length, count) = i64_guest_memory(values)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut first_inversion = u32::MAX;
+    let mut code = std::ptr::null_mut();
+    let mut code_length = 0;
+    if unsafe {
+        atlas_mir_observe_jit_is_sorted_i64(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            count,
+            &mut first_inversion,
+            optimization as u32,
+            &mut code,
+            &mut code_length,
+        )
+    } != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    let machine_code = copy_observed_code(code, code_length)?;
+    let result = jit_is_sorted_result(first_inversion, values.len())?;
+    Ok(JitIsSortedCodeObservation {
+        result,
+        optimization,
+        machine_code,
+    })
+}
+
+fn i64_guest_memory(values: &[i64]) -> Result<(OffsetMemory, u32, u32), GuestMemoryError> {
+    let byte_length = values
+        .len()
+        .checked_mul(8)
+        .ok_or(GuestMemoryError::AddressOverflow)?;
+    let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let count = u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let mut memory = OffsetMemory::new(byte_length as usize);
+    for (index, value) in values.iter().copied().enumerate() {
+        let offset = u32::try_from(index)
+            .ok()
+            .and_then(|index| index.checked_mul(8))
+            .ok_or(GuestMemoryError::AddressOverflow)?;
+        memory.write_i64_le(GuestOffset::new(offset), value)?;
+    }
+    Ok((memory, byte_length, count))
+}
+
+fn jit_is_sorted_result(
+    first_inversion: u32,
+    value_count: usize,
+) -> Result<JitIsSortedResult, GuestMemoryError> {
     let first_inversion = if first_inversion == u32::MAX {
         None
-    } else if (first_inversion as usize) < values.len() {
+    } else if (first_inversion as usize) < value_count {
         Some(first_inversion as usize)
     } else {
         return Err(GuestMemoryError::InvalidTraceEvent);
@@ -600,6 +654,19 @@ pub fn jit_is_sorted_i64_with_optimization(
         sorted: first_inversion.is_none(),
         first_inversion,
     })
+}
+
+fn copy_observed_code(code: *mut u8, code_length: usize) -> Result<Vec<u8>, GuestMemoryError> {
+    if code.is_null() {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    if code_length == 0 {
+        unsafe { atlas_mir_free_observed_code(code) };
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    let machine_code = unsafe { std::slice::from_raw_parts(code, code_length) }.to_vec();
+    unsafe { atlas_mir_free_observed_code(code) };
+    Ok(machine_code)
 }
 
 fn is_sorted_trace_event(code: u32) -> Result<IsSortedTraceEvent, GuestMemoryError> {
@@ -796,6 +863,15 @@ unsafe extern "C" {
         first_inversion: *mut u32,
         optimize_level: u32,
     ) -> i32;
+    fn atlas_mir_observe_jit_is_sorted_i64(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        first_inversion: *mut u32,
+        optimize_level: u32,
+        code: *mut *mut u8,
+        code_length: *mut usize,
+    ) -> i32;
 }
 
 #[cfg(test)]
@@ -808,7 +884,7 @@ mod tests {
         interpret_is_sorted_i64, interpret_maximum_i64, interpret_minimum_i64,
         interpret_minimum3_i64, interpret_partition_even_i64, jit_add_u64,
         jit_add_u64_with_optimization, jit_is_sorted_i64, jit_is_sorted_i64_with_optimization,
-        observe_jit_add_u64,
+        observe_jit_add_u64, observe_jit_is_sorted_i64,
     };
 
     #[test]
@@ -849,6 +925,26 @@ mod tests {
         let digest = Sha256::digest(&observation.machine_code);
         assert_eq!(digest.len(), 32);
         assert!(digest.iter().any(|byte| *byte != 0));
+    }
+
+    #[test]
+    fn mir_host_jit_observer_copies_guest_code_after_context_cleanup() {
+        let observation = observe_jit_is_sorted_i64(&[1, 5, 4, 6], JitOptimizationLevel::Default)
+            .expect("MIR guest JIT code observation");
+        assert_eq!(
+            observation.result,
+            JitIsSortedResult {
+                sorted: false,
+                first_inversion: Some(2),
+            }
+        );
+        assert_eq!(observation.optimization, JitOptimizationLevel::Default);
+        assert!(!observation.machine_code.is_empty());
+        assert!(
+            Sha256::digest(&observation.machine_code)
+                .iter()
+                .any(|byte| *byte != 0)
+        );
     }
 
     #[test]

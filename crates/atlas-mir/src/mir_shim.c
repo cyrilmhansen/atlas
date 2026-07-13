@@ -925,9 +925,10 @@ int atlas_mir_observe_jit_add_u64(uint64_t left, uint64_t right,
 
 void atlas_mir_free_observed_code(uint8_t *code) { free(code); }
 
-int atlas_mir_jit_is_sorted_i64_at_level(uint8_t *guest_bytes, uint32_t byte_length,
-                                         uint32_t element_count, uint32_t *first_inversion,
-                                         uint32_t optimize_level) {
+static int atlas_mir_jit_is_sorted_i64_impl(
+    uint8_t *guest_bytes, uint32_t byte_length, uint32_t element_count,
+    uint32_t *first_inversion, uint32_t optimize_level,
+    struct atlas_mir_code_observation *observation) {
   typedef int64_t (*atlas_mir_is_sorted_fn_t)(int64_t);
   MIR_context_t context;
   MIR_module_t module;
@@ -1006,6 +1007,8 @@ int atlas_mir_jit_is_sorted_i64_at_level(uint8_t *guest_bytes, uint32_t byte_len
   MIR_load_module(context, module);
   MIR_gen_init(context);
   MIR_gen_set_optimize_level(context, optimize_level);
+  if (observation != NULL)
+    MIR_gen_set_code_observer(context, atlas_mir_observe_code, observation);
   MIR_link(context, MIR_set_gen_interface, NULL);
   generated = (atlas_mir_is_sorted_fn_t)function->addr;
   result = generated(element_count);
@@ -1014,4 +1017,30 @@ int atlas_mir_jit_is_sorted_i64_at_level(uint8_t *guest_bytes, uint32_t byte_len
   MIR_finish(context);
   if (result < 0 || (result != 0 && (uint64_t)result >= element_count)) return 1;
   return atlas_mir_guest_memory_error;
+}
+
+int atlas_mir_jit_is_sorted_i64_at_level(uint8_t *guest_bytes, uint32_t byte_length,
+                                         uint32_t element_count, uint32_t *first_inversion,
+                                         uint32_t optimize_level) {
+  return atlas_mir_jit_is_sorted_i64_impl(guest_bytes, byte_length, element_count,
+                                          first_inversion, optimize_level, NULL);
+}
+
+int atlas_mir_observe_jit_is_sorted_i64(
+    uint8_t *guest_bytes, uint32_t byte_length, uint32_t element_count,
+    uint32_t *first_inversion, uint32_t optimize_level, uint8_t **code,
+    size_t *code_length) {
+  struct atlas_mir_code_observation observation = {0};
+  int status;
+  if (code == NULL || code_length == NULL) return 1;
+  status = atlas_mir_jit_is_sorted_i64_impl(
+      guest_bytes, byte_length, element_count, first_inversion, optimize_level, &observation);
+  if (status != 0 || observation.calls != 1 || observation.code == NULL ||
+      observation.code_length == 0) {
+    free(observation.code);
+    return 1;
+  }
+  *code = observation.code;
+  *code_length = observation.code_length;
+  return 0;
 }

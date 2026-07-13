@@ -25,6 +25,8 @@ submodule commit: clean clones and CI retain a retrievable original gitlink.
 
 - Atlas can copy exact relocated machine-code bytes without debug text, files,
   `gcc`, `objcopy` or `objdump` subprocesses.
+- Scalar addition and guest-memory `is_sorted` provide two materially different
+  consumers: the latter includes control flow and relocated import calls.
 - Machine-code length and executable allocation footprint remain distinct.
 - A digest of relocated bytes is a local diagnostic, not a portable identity;
   addresses and target-specific relocations may change it.

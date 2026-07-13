@@ -186,10 +186,11 @@ to parse that diagnostic as a persistent solution.
 
 DEC-047 prepares a local upstream-compatible correction to that limitation. A
 synchronous generator callback observes a complete function after publication
-and relocation. The scalar Atlas probe copies the bounded byte slice before the
-MIR context is destroyed, then verifies its length and digest without invoking
-debug IO or external tools. The callback does not cover separately generated
-lazy basic blocks.
+and relocation. Scalar addition and guest-memory `is_sorted` copy their bounded
+byte slices before the MIR context is destroyed, then verify length and digest
+without invoking debug IO or external tools. The guest case includes generated
+control flow and relocated calls to the checked load import. The callback does
+not cover separately generated lazy basic blocks.
 
 Atlas vendors the reviewable diff in `patches/mir/code-observer.patch` while the
 gitlink remains on the original MIR commit. `scripts/apply-mir-patches.sh`
@@ -204,4 +205,5 @@ cargo run -p atlas-mir --example observe_jit_code --locked --offline
 ```
 
 It reports the host target, explicit optimization level, correction result,
-exact byte length, local SHA-256 and copied bytes. It does not archive them.
+exact byte length, local SHA-256 and copied bytes for both programs. It does not
+archive them.

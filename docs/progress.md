@@ -1,5 +1,21 @@
 # Progress log
 
+## 2026-07-13 - Guest-workload machine-code observation
+
+### Result
+
+- Extended the vendored MIR observer path from scalar addition to guest-memory
+  `is_sorted` without changing the patch API.
+- Verified the generated result against the existing first-inversion contract.
+- Copied the complete relocated function after context destruction and exposed
+  both programs through the untimed `observe_jit_code` diagnostic.
+
+### Limits
+
+- Relocated import addresses make the guest-code digest process-local.
+- No instruction decoder, performance ranking or persistent code artifact has
+  been introduced.
+
 ## 2026-07-13 - Reviewable MIR machine-code observer
 
 ### Result

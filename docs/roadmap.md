@@ -59,9 +59,10 @@ Required decisions: SQLite dependency, projection schema, and digest format.
 - Create the initial Git commit when the responsible human approves the baseline.
   Complete locally.
 
-## Prepare MVP 2
+## MVP 2 empirical qualification
 
-Status: active under DEC-028.
+Status: closed locally under DEC-036. The work below records the delivered
+scope; it does not activate MVP 3.
 
 - Implement the accepted separate `DatasetSpec`, `DatasetCase`, and generated
   instance model. Experimental Rust model implemented for the first slice.
@@ -87,12 +88,15 @@ Status: the first release-only comparison harness records raw samples, robust
 dispersion, complete local context, and dataset identity under DEC-031. Results
 remain ephemeral and non-normative.
 
-MVP 2 review: `docs/mvp2-review.md` records demonstrated criteria and the
-remaining closure decisions. `scripts/check-mvp2.sh` validates the current
-non-timing acceptance slice.
+`docs/mvp2-review.md` records the closure criteria and explicit limits.
+`scripts/check-mvp2.sh` validates the non-timing acceptance slice.
 
 Generated comparison reports are implemented under DEC-035. They remain local,
 dataset- and context-bounded observations rather than a ranking service.
+
+DEC-036 defers numeric resource constraints, algorithm-only allocation and
+traversal measurements, and cross-evidence queries. Any later work in those
+areas must define its measurement boundary and provenance before implementation.
 
 ## Algorithm representation research
 

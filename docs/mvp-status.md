@@ -1,7 +1,7 @@
 # MVP status
 
-- Active MVP: **MVP 2 - empirical qualification**
-- Status: experimental first slice
+- Active MVP: **none; MVP 3 is not yet activated**
+- Status: MVP 2 closed locally under DEC-036
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2 activated: 2026-07-12
 
@@ -50,7 +50,7 @@ remain in the `std`-based `atlas` crate.
 
 See `docs/mvp1-review.md` for evidence and recommended closure order.
 
-## MVP 2 exit criteria
+## MVP 2 closure
 
 | Criterion | Status |
 |---|---|
@@ -61,7 +61,10 @@ See `docs/mvp1-review.md` for evidence and recommended closure order.
 | Replay from a locally retained execution identifier | Complete |
 | Process memory measurement | Complete for the sorting harness |
 | Allocation and traversal measurements | Explicitly unavailable |
-| Generated comparison report for one exact campaign | Capture procedure implemented; clean qualified campaign pending |
-| Broader observed dominance domains | Deferred |
+| Clean, exact comparison campaign | Procedure complete; retained report intentionally not required |
+| Allocation and traversal measurements | Explicitly unavailable; deferred by closure scope |
+| Numeric memory-limit and cross-evidence queries | Deferred by closure scope |
+| Broader observed dominance domains | Deferred to future MVP work |
 
-See `docs/mvp2-review.md` for evidence, limits, and closure order.
+See `docs/mvp2-review.md` and DEC-036 for evidence, limits, and impact on the
+next MVP.

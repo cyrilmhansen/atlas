@@ -1298,3 +1298,27 @@ scripts/check-mvp2.sh
 
 The dirty-worktree guard was also exercised without launching a benchmark.
 No timing campaign was run for this change.
+
+## 2026-07-13 - MVP 2 closure scope
+
+### Result
+
+- Closed MVP 2 locally under DEC-036 without activating MVP 3.
+- Retained deterministic datasets, regenerable execution recipes, bounded
+  qualification, process diagnostics, replay, and single-pass comparison as
+  the delivered empirical qualification scope.
+- Explicitly deferred numerical resource constraints, algorithm-only allocation
+  and traversal measurement, cross-evidence queries, and broad comparison
+  domains.
+
+### Impact
+
+Future work may not reinterpret process resident memory as algorithm memory or
+turn the declared `allocation: none` property into observed evidence. It must
+first establish a measurement boundary, provenance, and query semantics.
+
+### Verification
+
+```sh
+scripts/check-mvp2.sh
+```

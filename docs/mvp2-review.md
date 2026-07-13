@@ -1,7 +1,7 @@
 # MVP 2 review
 
-Review date: 2026-07-12. Active scope: empirical qualification without making
-generated executions part of the Git-authoritative registry.
+Review date: 2026-07-13. Closed scope: empirical qualification without making
+generated executions part of the Git-authoritative registry, under DEC-036.
 
 ## Demonstrated capabilities
 
@@ -21,12 +21,12 @@ generated executions part of the Git-authoritative registry.
 | Criterion | Status | Evidence or gap |
 |---|---|---|
 | Re-run an execution from its identifier | Complete while the local generated observation exists | `atlas replay EXECUTION_ID` validates and dispatches an allow-listed recipe; a repeated benchmark may legitimately fail its new quality gate. Deleted observations remain intentionally unreplayable by ID. |
-| Distinguish theory, declarations, tests, and observations | Partial | Registry claims preserve levels; generated observations are clearly separate, but no common query spans both. |
-| Query a stable sort under a memory limit | Partial | `qualify` supports stability, in-place, and `allocation: none`; it has no numeric memory-limit predicate. |
+| Distinguish theory, declarations, tests, and observations | Delivered at representation level | Registry claims preserve levels and generated observations remain separate; a common query is deferred. |
+| Query a stable sort under a memory limit | Bounded | `qualify` supports stability, in-place, and `allocation: none`; numeric memory limits are deferred. |
 | Signal aberrant or non-comparable measurements | Complete for the sorting harness | The quality gate rejects dispersion, drift, outliers, and position bias before serialization. |
 | Capture machine, system, compiler, options, commit, and seed | Complete for the sorting harness | Generated benchmark observations contain these values and diagnostics. |
-| Measure time, peak memory, allocations, and traversed volume | Partial | Time and process resident/peak memory are captured; allocation count and traversed volume are explicitly unavailable. |
-| Compare implementations and report observed domains | Partial | `scripts/record-sort-comparison-linux.sh CPU` captures one clean, single-pass campaign and invokes `atlas compare`; a clean qualified campaign remains to be captured. Broader domains remain deferred. |
+| Measure time, peak memory, allocations, and traversed volume | Bounded | Time and process resident/peak memory are captured; allocation count and traversed volume are explicitly unavailable. |
+| Compare implementations and report observed domains | Bounded | `scripts/record-sort-comparison-linux.sh CPU` captures one clean, single-pass campaign and invokes `atlas compare`; retaining a clean report is not required. Broader domains remain deferred. |
 
 ## Local gate
 
@@ -35,10 +35,13 @@ correction observations, and verifies the constrained qualification query. It
 does not run a benchmark because timing is an explicit human experiment with a
 selected CPU and a qualified environment.
 
-## Recommended closure order
+## Closure limits and next impact
 
-1. Decide whether numeric memory and allocation measurements are necessary for
-   MVP 2 exit, or whether explicit allocation classes are sufficient.
-2. Run the bounded clean sorting campaign only when a human has selected an
-   appropriate CPU; its single-pass runner avoids retry selection bias.
-3. Reassess the exit criteria, then ask for an explicit MVP 2 closure decision.
+DEC-036 closes MVP 2 without treating process metrics as algorithm metrics and
+without requiring a retained benchmark report. A future numerical resource
+query must define an algorithm measurement boundary and evidence policy before
+it can use allocations, traversal volume, or peak memory as constraints.
+
+A future cross-evidence query must also define how generated, non-authoritative
+observations are selected and compared with Git-authoritative registry claims.
+These are deliberately not solved by MVP 2.

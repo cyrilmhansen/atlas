@@ -31,9 +31,10 @@ so a later measurement protocol can vary the level without changing semantics.
   adds no persistent evidence, backend selection or registry implementation.
 - The guest JIT probe proves that generated code can call the same private
   bounds-checked host import as the interpreter.
-- Later approved extensions add guest-memory `reverse` and even `partition`
-  with the same lifecycle and levels, proving generated calls to both checked
-  load and store imports while the interpreter retains semantic traces.
+- Later approved extensions add guest-memory `reverse`, even `partition` and
+  stable insertion over the private DEC-045 pair with the same lifecycle and
+  levels. They prove generated calls to both checked load and store imports
+  while the interpreter retains semantic traces and correction observability.
 - Exact generated spans are now observable under DEC-047. Construction latency,
   executable allocation footprint and execution timing remain unmeasured. They
   require a separate local protocol and must not be mixed with native algorithm

@@ -239,7 +239,8 @@ the selected model and matches the native reference result.
 
 ### 4. Compare interpreter and optional JIT behavior
 
-Status: correction slice complete under DEC-046; measurement protocol pending.
+Status: correction slice complete under DEC-046 through stable insertion;
+measurement protocol pending.
 
 - Measure startup latency, code size and correction equivalence separately.
 - Keep JIT results local observations with environment and protocol provenance.
@@ -295,15 +296,18 @@ correction complete under DEC-046.
 The checkpoint demonstrates the interpreter and guest-offset boundary across
 read-only scans, selection, swaps and shifted writes. It also demonstrates
 exact AST trace links for two materially different control-flow shapes. It does
-not demonstrate a general AST compiler, measured JIT behavior, MIR-generated
-RISC-V, multi-region memory or a persistent backend artifact.
+not demonstrate a general AST compiler, timed JIT behavior, MIR-generated
+RISC-V, multi-region memory or a persistent backend artifact. Exact host-code
+spans and instruction shapes are observed locally, but no timed JIT or
+executable-allocation protocol has been introduced.
 
 Recommended order for the remaining MVP 4 work:
 
-1. Measure JIT construction latency and generated-code size under a separate,
-   local protocol; retain interpreter traces as the observability reference.
-2. Probe MIR RISC-V generation with a standalone artifact before connecting it
+1. Probe MIR RISC-V generation with a standalone artifact before connecting it
    to Atlas guest memory.
+2. Add a bounded construction/execution latency or executable-allocation probe
+   only if a concrete backend-retention question requires it; retain
+   interpreter traces as the observability reference.
 3. Introduce multiple regions only when an output/scratch algorithm is selected
    and region identity, lifetime and copy visibility have been accepted.
 
@@ -398,11 +402,12 @@ reconstruct arbitrary control flow. RV64 decoding remains disabled until Atlas
 observes actual RV64 code rather than host x86-64 JIT output.
 
 The untimed level matrix now covers scalar addition, read-only guest-memory
-`is_sorted`, mutating `reverse` and nested-scan `partition`. It verifies
-correction and repeated structural summaries at levels 0 through 3. On the
-pinned x86-64 stack, guest level 1 is smaller than levels 2 and 3 for
-`is_sorted` and partition, while reverse levels 1 through 3 share the same
-prefix length; level 0 is larger for every guest workload. Calls and branch
+`is_sorted`, mutating `reverse`, nested-scan `partition` and stable insertion
+over private pairs. It verifies correction and repeated structural summaries at
+levels 0 through 3. On the pinned x86-64 stack, guest level 1 is smaller than
+levels 2 and 3 for `is_sorted` and partition, while reverse levels 1 through 3
+share the same prefix length and insertion levels 2 and 3 are slightly smaller
+than level 1; level 0 is larger for every guest workload. Calls and branch
 classes remain invariant. This rules out using the numeric optimization level
 as a proxy for compactness. The remaining B1 work is to separate construction
 latency, execution latency and executable allocation footprint before selecting
@@ -458,10 +463,11 @@ surface even if the API remains private.
 
 Accepted: **A** under DEC-046. Scalar addition and guest `is_sorted` now
 reproduce interpreter and native results without timing. The later approved
-`reverse` and partition extensions add checked guest writes and nested scans
-without changing the model or lifecycle. The interpreter remains responsible
-for semantic trace events. The remaining measurement protocol is class B; MIR
-RISC-V generation remains outside this decision.
+`reverse`, partition and stable insertion extensions add checked guest writes,
+nested scans and shifted private pairs without changing the model or lifecycle.
+The interpreter remains responsible for semantic trace events. The remaining
+measurement protocol is class B; MIR RISC-V generation remains outside this
+decision.
 
 ### C7. Multi-region guest memory
 

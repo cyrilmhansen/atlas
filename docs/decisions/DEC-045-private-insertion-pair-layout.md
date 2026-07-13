@@ -26,3 +26,6 @@ equal keys. Native Rust insertion sort remains the correction oracle.
   little-endian aligned `i64` accessors. It does not change DEC-040.
 - This demonstrates shifted writes for one specialized value shape; it does not
   introduce generic MIR sorting or comparison callbacks.
+- The later host-JIT extension uses the exact same pair encoding and correction
+  oracle at MIR optimization levels 0 through 3; it does not promote the layout
+  to a stable format.

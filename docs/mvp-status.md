@@ -25,12 +25,13 @@ Rust. This completes the planned single-region interpreter capability ladder.
 These private experiments do not add registry implementations or change corpus
 counts.
 
-Host-JIT progress: generated scalar addition, guest-memory `is_sorted`, reverse
-and even partition match interpreter and native Rust results under DEC-046.
-Partition keeps semantic trace events in the interpreter while the JIT checks
-boundary and mutation only. Exact generated spans and x86-64 instruction shapes
-are observable. No timing, executable-allocation measurement or automatic
-backend choice has been introduced.
+Host-JIT progress: generated scalar addition, guest-memory `is_sorted`, reverse,
+even partition and stable insertion match interpreter and native Rust results
+under DEC-046. Partition and insertion keep semantic/correction observability in
+the interpreter while the JIT checks results and mutation only. Exact generated
+spans and x86-64 instruction shapes are observable. No timing,
+executable-allocation measurement or automatic backend choice has been
+introduced.
 
 ## MVP 1 closure
 

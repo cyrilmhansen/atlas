@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-07-13 - Stable private-pair insertion JIT
+
+### Result
+
+- Extended the private host generator to stable insertion over the accepted
+  16-byte `(i64 key, u64 original_index)` guest pair.
+- Compared generated output with both the MIR interpreter and native stable
+  insertion sort over empty, singleton, equal, duplicate, ordered, reverse and
+  signed-boundary cases at optimization levels 0 through 3.
+- Checked exact pair equality, sortedness, input permutation and original order
+  for equal keys, and rejected an inconsistent byte span before mutation.
+- Added stable insertion to the reproducible untimed machine-code shape matrix.
+
+### Limits
+
+- The pair layout remains private instrumentation, not a public value model or
+  guest ABI, and no comparator callback is introduced.
+- The JIT emits no semantic trace and the matrix measures neither construction
+  latency, execution latency nor executable allocation footprint.
+
 ## 2026-07-13 - Nested-scan guest partition JIT
 
 ### Result

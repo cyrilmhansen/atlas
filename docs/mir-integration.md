@@ -170,7 +170,10 @@ native Rust results, including a second reversal. Generated even `partition`
 adds nested bidirectional scans, returns the partition boundary and mutates the
 same region without emitting trace events. Its boundary, exact arrangement,
 permutation and predicate split are checked against both reference backends;
-the interpreter remains the only MIR trace backend.
+the interpreter remains the only MIR trace backend. Generated stable insertion
+then reuses the private 16-byte tagged pair from DEC-045. Exact pair output,
+sortedness, permutation and stable duplicate order are checked against both
+the interpreted program and native stable insertion sort.
 
 Every call initializes and finishes the generator inside a fresh MIR context,
 so its executable mappings are released with that context. This establishes
@@ -180,7 +183,7 @@ performance remain separate. Atlas does not select JIT over the interpreter.
 
 Atlas explicitly selects MIR optimization level 2 for the ordinary JIT probes;
 it does not rely on the upstream default remaining unchanged. Private
-correction variants also exercise levels 0, 1, 2 and 3 for all four probes. In
+correction variants also exercise levels 0, 1, 2 and 3 for all five probes. In
 the pinned MIR generator these mean fast generation, register allocation plus
 combining, the default SSA/GVN/CCP pipeline, and the full pipeline
 respectively. Correction at every level is not a performance comparison.
@@ -236,4 +239,7 @@ branch at every level; its prefix ranges from 146 bytes at levels 1 through 3
 to 188 bytes at level 0. Partition retains six calls, six conditional branches
 and three unconditional branches; level 1 has a 245-byte prefix, levels 2 and 3
 have 247 bytes, and level 0 has 354 bytes. These numbers are local structural
-observations, not timing results or a level selection.
+observations, not timing results or a level selection. Stable insertion retains
+eight calls, three conditional branches and two unconditional branches; its
+prefix is 381 bytes at level 0, 262 bytes at level 1 and 258 bytes at levels 2
+and 3.

@@ -1361,3 +1361,184 @@ int atlas_mir_observe_jit_partition_even_i64(
   *code_length = observation.code_length;
   return 0;
 }
+
+static int atlas_mir_jit_insertion_pairs_impl(
+    uint8_t *guest_bytes, uint32_t byte_length, uint32_t element_count,
+    uint32_t optimize_level, struct atlas_mir_code_observation *observation) {
+  typedef void (*atlas_mir_insertion_fn_t)(int64_t);
+  MIR_context_t context;
+  MIR_module_t module;
+  MIR_item_t function, load_import, load_proto, store_import, store_proto;
+  MIR_reg_t count, outer, current, previous, offset, tag_offset;
+  MIR_reg_t candidate_key, candidate_tag, previous_key, previous_tag;
+  MIR_label_t outer_loop, inner_loop, insert, finish;
+  atlas_mir_insertion_fn_t generated;
+
+  if ((uint64_t)element_count * 16 != byte_length || optimize_level > 3) return 1;
+  context = MIR_init();
+  module = MIR_new_module(context, "atlas_mir_jit_insertion_pairs");
+  function = MIR_new_func(context, "jit_insertion_pairs", 0, NULL, 1, MIR_T_I64,
+                          "element_count");
+  load_import = MIR_new_import(context, "atlas_mir_guest_load_i64");
+  load_proto = MIR_new_proto(context, "atlas_mir_guest_load_i64_proto", 1,
+                             (MIR_type_t[]){MIR_T_I64}, 1, MIR_T_I64, "offset");
+  store_import = MIR_new_import(context, "atlas_mir_guest_store_i64");
+  store_proto = MIR_new_proto(context, "atlas_mir_guest_store_i64_proto", 0, NULL, 2,
+                              MIR_T_I64, "offset", MIR_T_I64, "value");
+  count = MIR_reg(context, "element_count", function->u.func);
+  outer = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "outer");
+  current = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "current");
+  previous = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "previous");
+  offset = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "offset");
+  tag_offset = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "tag_offset");
+  candidate_key = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "candidate_key");
+  candidate_tag = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "candidate_tag");
+  previous_key = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "previous_key");
+  previous_tag = MIR_new_func_reg(context, function->u.func, MIR_T_I64, "previous_tag");
+  outer_loop = MIR_new_label(context);
+  inner_loop = MIR_new_label(context);
+  insert = MIR_new_label(context);
+  finish = MIR_new_label(context);
+  atlas_mir_guest_bytes = guest_bytes;
+  atlas_mir_guest_byte_length = byte_length;
+  atlas_mir_guest_memory_error = 0;
+
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MOV, MIR_new_reg_op(context, outer),
+                               MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function, outer_loop);
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_BGE, MIR_new_label_op(context, finish),
+                               MIR_new_reg_op(context, outer), MIR_new_reg_op(context, count)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MUL, MIR_new_reg_op(context, offset),
+                               MIR_new_reg_op(context, outer), MIR_new_int_op(context, 16)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, load_proto),
+                                    MIR_new_ref_op(context, load_import),
+                                    MIR_new_reg_op(context, candidate_key),
+                                    MIR_new_reg_op(context, offset)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_ADD, MIR_new_reg_op(context, tag_offset),
+                               MIR_new_reg_op(context, offset), MIR_new_int_op(context, 8)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, load_proto),
+                                    MIR_new_ref_op(context, load_import),
+                                    MIR_new_reg_op(context, candidate_tag),
+                                    MIR_new_reg_op(context, tag_offset)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MOV, MIR_new_reg_op(context, current),
+                               MIR_new_reg_op(context, outer)));
+  MIR_append_insn(context, function, inner_loop);
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_BEQ, MIR_new_label_op(context, insert),
+                               MIR_new_reg_op(context, current), MIR_new_int_op(context, 0)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_SUB, MIR_new_reg_op(context, previous),
+                               MIR_new_reg_op(context, current), MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MUL, MIR_new_reg_op(context, offset),
+                               MIR_new_reg_op(context, previous), MIR_new_int_op(context, 16)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, load_proto),
+                                    MIR_new_ref_op(context, load_import),
+                                    MIR_new_reg_op(context, previous_key),
+                                    MIR_new_reg_op(context, offset)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_BGE, MIR_new_label_op(context, insert),
+                               MIR_new_reg_op(context, candidate_key),
+                               MIR_new_reg_op(context, previous_key)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_ADD, MIR_new_reg_op(context, tag_offset),
+                               MIR_new_reg_op(context, offset), MIR_new_int_op(context, 8)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, load_proto),
+                                    MIR_new_ref_op(context, load_import),
+                                    MIR_new_reg_op(context, previous_tag),
+                                    MIR_new_reg_op(context, tag_offset)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_ADD, MIR_new_reg_op(context, offset),
+                               MIR_new_reg_op(context, offset), MIR_new_int_op(context, 16)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, store_proto),
+                                    MIR_new_ref_op(context, store_import),
+                                    MIR_new_reg_op(context, offset),
+                                    MIR_new_reg_op(context, previous_key)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_ADD, MIR_new_reg_op(context, tag_offset),
+                               MIR_new_reg_op(context, offset), MIR_new_int_op(context, 8)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, store_proto),
+                                    MIR_new_ref_op(context, store_import),
+                                    MIR_new_reg_op(context, tag_offset),
+                                    MIR_new_reg_op(context, previous_tag)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_SUB, MIR_new_reg_op(context, current),
+                               MIR_new_reg_op(context, current), MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_JMP, MIR_new_label_op(context, inner_loop)));
+  MIR_append_insn(context, function, insert);
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_MUL, MIR_new_reg_op(context, offset),
+                               MIR_new_reg_op(context, current), MIR_new_int_op(context, 16)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, store_proto),
+                                    MIR_new_ref_op(context, store_import),
+                                    MIR_new_reg_op(context, offset),
+                                    MIR_new_reg_op(context, candidate_key)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_ADD, MIR_new_reg_op(context, tag_offset),
+                               MIR_new_reg_op(context, offset), MIR_new_int_op(context, 8)));
+  MIR_append_insn(context, function,
+                  MIR_new_call_insn(context, 4, MIR_new_ref_op(context, store_proto),
+                                    MIR_new_ref_op(context, store_import),
+                                    MIR_new_reg_op(context, tag_offset),
+                                    MIR_new_reg_op(context, candidate_tag)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_ADD, MIR_new_reg_op(context, outer),
+                               MIR_new_reg_op(context, outer), MIR_new_int_op(context, 1)));
+  MIR_append_insn(context, function,
+                  MIR_new_insn(context, MIR_JMP, MIR_new_label_op(context, outer_loop)));
+  MIR_append_insn(context, function, finish);
+  MIR_append_insn(context, function, MIR_new_ret_insn(context, 0));
+  MIR_finish_func(context);
+  MIR_finish_module(context);
+  MIR_load_external(context, "atlas_mir_guest_load_i64", atlas_mir_guest_load_i64);
+  MIR_load_external(context, "atlas_mir_guest_store_i64", atlas_mir_guest_store_i64);
+  MIR_load_module(context, module);
+  MIR_gen_init(context);
+  MIR_gen_set_optimize_level(context, optimize_level);
+  if (observation != NULL)
+    MIR_gen_set_code_observer(context, atlas_mir_observe_code, observation);
+  MIR_link(context, MIR_set_gen_interface, NULL);
+  generated = (atlas_mir_insertion_fn_t)function->addr;
+  generated(element_count);
+  MIR_gen_finish(context);
+  MIR_finish(context);
+  return atlas_mir_guest_memory_error;
+}
+
+int atlas_mir_jit_insertion_pairs_at_level(uint8_t *guest_bytes, uint32_t byte_length,
+                                           uint32_t element_count,
+                                           uint32_t optimize_level) {
+  return atlas_mir_jit_insertion_pairs_impl(guest_bytes, byte_length, element_count,
+                                             optimize_level, NULL);
+}
+
+int atlas_mir_observe_jit_insertion_pairs(
+    uint8_t *guest_bytes, uint32_t byte_length, uint32_t element_count,
+    uint32_t optimize_level, uint8_t **code, size_t *code_length) {
+  struct atlas_mir_code_observation observation = {0};
+  int status;
+  if (code == NULL || code_length == NULL) return 1;
+  status = atlas_mir_jit_insertion_pairs_impl(guest_bytes, byte_length, element_count,
+                                               optimize_level, &observation);
+  if (status != 0 || observation.calls != 1 || observation.code == NULL ||
+      observation.code_length == 0) {
+    free(observation.code);
+    return 1;
+  }
+  *code = observation.code;
+  *code_length = observation.code_length;
+  return 0;
+}

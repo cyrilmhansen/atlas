@@ -156,6 +156,13 @@ pub struct JitPartitionCodeObservation {
     pub machine_code: Vec<u8>,
 }
 
+/// Process-local code copy for stable insertion over private guest pairs.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct JitInsertionCodeObservation {
+    pub optimization: JitOptimizationLevel,
+    pub machine_code: Vec<u8>,
+}
+
 const PARTITION_TRACE_CAPACITY: usize = 128;
 const IS_SORTED_TRACE_CAPACITY: usize = 128;
 
@@ -909,15 +916,87 @@ fn copy_i64_guest_memory(
 }
 
 pub fn interpret_insertion_pairs(values: &mut [InsertionPair]) -> Result<(), GuestMemoryError> {
+    let (mut memory, byte_length, count) = insertion_pair_guest_memory(values)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    if unsafe { atlas_mir_interpret_insertion_pairs(memory.bytes.as_mut_ptr(), byte_length, count) }
+        != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    copy_insertion_pair_guest_memory(&memory, values)
+}
+
+/// Stably sorts private guest pairs through MIR's host generator.
+pub fn jit_insertion_pairs(values: &mut [InsertionPair]) -> Result<(), GuestMemoryError> {
+    jit_insertion_pairs_with_optimization(values, JitOptimizationLevel::Default)
+}
+
+/// Stably sorts private guest pairs with an explicit MIR optimization level.
+pub fn jit_insertion_pairs_with_optimization(
+    values: &mut [InsertionPair],
+    optimization: JitOptimizationLevel,
+) -> Result<(), GuestMemoryError> {
+    let (mut memory, byte_length, count) = insertion_pair_guest_memory(values)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    if unsafe {
+        atlas_mir_jit_insertion_pairs_at_level(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            count,
+            optimization as u32,
+        )
+    } != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    copy_insertion_pair_guest_memory(&memory, values)
+}
+
+/// Stably sorts private guest pairs and copies the relocated host function code.
+pub fn observe_jit_insertion_pairs(
+    values: &mut [InsertionPair],
+    optimization: JitOptimizationLevel,
+) -> Result<JitInsertionCodeObservation, GuestMemoryError> {
+    let (mut memory, byte_length, count) = insertion_pair_guest_memory(values)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut code = std::ptr::null_mut();
+    let mut code_length = 0;
+    if unsafe {
+        atlas_mir_observe_jit_insertion_pairs(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            count,
+            optimization as u32,
+            &mut code,
+            &mut code_length,
+        )
+    } != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    let machine_code = copy_observed_code(code, code_length)?;
+    copy_insertion_pair_guest_memory(&memory, values)?;
+    Ok(JitInsertionCodeObservation {
+        optimization,
+        machine_code,
+    })
+}
+
+fn insertion_pair_guest_memory(
+    values: &[InsertionPair],
+) -> Result<(OffsetMemory, u32, u32), GuestMemoryError> {
     let byte_length = values
         .len()
         .checked_mul(16)
         .ok_or(GuestMemoryError::AddressOverflow)?;
     let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
     let count = u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?;
-    let _guard = MIR_ADAPTER_LOCK
-        .lock()
-        .expect("MIR adapter lock must not be poisoned");
     let mut memory = OffsetMemory::new(byte_length as usize);
     for (index, value) in values.iter().copied().enumerate() {
         let offset = u32::try_from(index)
@@ -927,11 +1006,13 @@ pub fn interpret_insertion_pairs(values: &mut [InsertionPair]) -> Result<(), Gue
         memory.write_i64_le(GuestOffset::new(offset), value.key)?;
         memory.write_i64_le(GuestOffset::new(offset + 8), value.original_index as i64)?;
     }
-    if unsafe { atlas_mir_interpret_insertion_pairs(memory.bytes.as_mut_ptr(), byte_length, count) }
-        != 0
-    {
-        return Err(GuestMemoryError::RuntimeFailure);
-    }
+    Ok((memory, byte_length, count))
+}
+
+fn copy_insertion_pair_guest_memory(
+    memory: &OffsetMemory,
+    values: &mut [InsertionPair],
+) -> Result<(), GuestMemoryError> {
     for (index, value) in values.iter_mut().enumerate() {
         let offset = u32::try_from(index)
             .ok()
@@ -1019,6 +1100,20 @@ unsafe extern "C" {
         guest_bytes: *mut u8,
         byte_length: u32,
         element_count: u32,
+    ) -> i32;
+    fn atlas_mir_jit_insertion_pairs_at_level(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        optimize_level: u32,
+    ) -> i32;
+    fn atlas_mir_observe_jit_insertion_pairs(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        optimize_level: u32,
+        code: *mut *mut u8,
+        code_length: *mut usize,
     ) -> i32;
     fn atlas_mir_jit_is_sorted_i64_at_level(
         guest_bytes: *mut u8,
@@ -1237,6 +1332,24 @@ mod tests {
                 summarize_host_code(&repeated_partition.machine_code)
                     .expect("repeated partition x86-64 shape summary"),
                 partition_shape
+            );
+
+            let insertion_input = [5, -1, 5, 3, -1, 0];
+            let mut insertion_values = insertion_pairs(&insertion_input);
+            let insertion = super::observe_jit_insertion_pairs(&mut insertion_values, optimization)
+                .expect("MIR insertion JIT code observation");
+            assert_stable_insertion_result(&insertion_input, &insertion_values);
+            let insertion_shape = summarize_host_code(&insertion.machine_code)
+                .expect("insertion x86-64 shape summary");
+            let mut repeated_insertion_values = insertion_pairs(&insertion_input);
+            let repeated_insertion =
+                super::observe_jit_insertion_pairs(&mut repeated_insertion_values, optimization)
+                    .expect("repeated MIR insertion JIT code observation");
+            assert_eq!(repeated_insertion_values, insertion_values);
+            assert_eq!(
+                summarize_host_code(&repeated_insertion.machine_code)
+                    .expect("repeated insertion x86-64 shape summary"),
+                insertion_shape
             );
         }
     }
@@ -1605,29 +1718,106 @@ mod tests {
     }
 
     #[test]
-    fn mir_insertion_pairs_match_native_stable_sort() {
-        for keys in [vec![], vec![42], vec![5, -1, 5, 3, -1, 0]] {
-            let original = keys
-                .into_iter()
-                .enumerate()
-                .map(|(original_index, key)| super::InsertionPair {
-                    key,
-                    original_index: original_index as u64,
-                })
-                .collect::<Vec<_>>();
-            let mut mir = original.clone();
-            super::interpret_insertion_pairs(&mut mir).expect("MIR insertion sort");
-            let mut native = original;
-            atlas_algorithms::insertion_sort::insertion_sort_by(&mut native, |left, right| {
-                left.key.cmp(&right.key)
-            });
+    fn mir_host_jit_insertion_matches_interpreter_and_native_at_every_level() {
+        let mut default_values = insertion_pairs(&[2, 1, 2]);
+        super::jit_insertion_pairs(&mut default_values).expect("default MIR generated insertion");
+        assert_stable_insertion_result(&[2, 1, 2], &default_values);
 
-            assert_eq!(mir, native);
-            assert!(mir.windows(2).all(|pair| pair[0].key <= pair[1].key));
-            assert!(mir.windows(2).all(|pair| {
-                pair[0].key != pair[1].key || pair[0].original_index < pair[1].original_index
-            }));
+        for optimization in [
+            JitOptimizationLevel::FastGeneration,
+            JitOptimizationLevel::RegisterAllocation,
+            JitOptimizationLevel::Default,
+            JitOptimizationLevel::Full,
+        ] {
+            for keys in [
+                vec![],
+                vec![42],
+                vec![7, 7, 7, 7],
+                vec![5, -1, 5, 3, -1, 0],
+                vec![-3, -1, 0, 4, 9],
+                vec![i64::MAX, 1, 0, -1, i64::MIN],
+            ] {
+                let original = insertion_pairs(&keys);
+                let mut interpreted = original.clone();
+                super::interpret_insertion_pairs(&mut interpreted)
+                    .expect("MIR interpreted insertion");
+                let mut native = original;
+                atlas_algorithms::insertion_sort::insertion_sort_by(&mut native, |left, right| {
+                    left.key.cmp(&right.key)
+                });
+                let mut generated = insertion_pairs(&keys);
+                super::jit_insertion_pairs_with_optimization(&mut generated, optimization)
+                    .expect("MIR generated insertion");
+
+                assert_eq!(generated, native);
+                assert_eq!(generated, interpreted);
+                assert_stable_insertion_result(&keys, &generated);
+            }
         }
+    }
+
+    #[test]
+    fn mir_host_jit_insertion_rejects_an_inconsistent_guest_span() {
+        let mut bytes = [0_u8; 16];
+        let status = unsafe {
+            super::atlas_mir_jit_insertion_pairs_at_level(
+                bytes.as_mut_ptr(),
+                15,
+                1,
+                JitOptimizationLevel::Default as u32,
+            )
+        };
+        assert_ne!(status, 0);
+        assert_eq!(bytes, [0; 16]);
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn mir_host_jit_insertion_observation_exposes_pair_moves_and_nested_loops() {
+        let keys = [5, -1, 5, 3, -1, 0];
+        let mut values = insertion_pairs(&keys);
+        let observation =
+            super::observe_jit_insertion_pairs(&mut values, JitOptimizationLevel::Default)
+                .expect("MIR generated insertion observation");
+        assert_stable_insertion_result(&keys, &values);
+        assert_eq!(observation.optimization, JitOptimizationLevel::Default);
+        let shape =
+            summarize_host_code(&observation.machine_code).expect("insertion x86-64 shape summary");
+        assert_eq!(shape.calls, 8);
+        assert!(shape.conditional_branches >= 3);
+        assert!(shape.unconditional_branches >= 2);
+        assert_eq!(shape.returns, 1);
+    }
+
+    fn insertion_pairs(keys: &[i64]) -> Vec<super::InsertionPair> {
+        keys.iter()
+            .copied()
+            .enumerate()
+            .map(|(original_index, key)| super::InsertionPair {
+                key,
+                original_index: original_index as u64,
+            })
+            .collect()
+    }
+
+    fn assert_stable_insertion_result(keys: &[i64], values: &[super::InsertionPair]) {
+        assert!(values.windows(2).all(|pair| pair[0].key <= pair[1].key));
+        assert!(values.windows(2).all(|pair| {
+            pair[0].key != pair[1].key || pair[0].original_index < pair[1].original_index
+        }));
+        let mut actual_permutation = values
+            .iter()
+            .map(|pair| (pair.key, pair.original_index))
+            .collect::<Vec<_>>();
+        actual_permutation.sort_unstable();
+        let mut expected_permutation = keys
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(index, key)| (key, index as u64))
+            .collect::<Vec<_>>();
+        expected_permutation.sort_unstable();
+        assert_eq!(actual_permutation, expected_permutation);
     }
 
     #[test]

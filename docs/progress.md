@@ -1,5 +1,21 @@
 # Progress log
 
+## 2026-07-13 - Private stable MIR insertion sort
+
+- Accepted DEC-045 (`insertion-B`) and added a private 16-byte guest pair
+  carrying a signed key and original position.
+- Added a MIR insertion program that shifts complete pairs while comparing only
+  keys, making stability directly observable.
+- Verified exact output equality with native Rust, sortedness, stable order of
+  duplicate keys and permutation preservation on empty, singleton and mixed
+  duplicate inputs.
+
+### Limits
+
+- The pair layout and entry point are private adapter instrumentation, not a
+  public guest element representation or ABI.
+- Only signed `i64` key ordering is supported.
+
 ## 2026-07-13 - Private MIR reverse
 
 - Added a private signed-`i64` reverse program using only guest loads, stores

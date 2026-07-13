@@ -136,3 +136,13 @@ is diagnostic; truncation is reported and cannot certify complete trace coverage
 Interpreter cost is measured separately from native algorithm benchmarks. A
 future JIT or RISC-V backend must first reproduce the same correction matrix;
 it must not be selected automatically from local timing results.
+
+## Stable insertion pair experiment
+
+DEC-045 uses a private 16-byte guest pair `(i64 key, u64 original_index)` to
+make insertion-sort stability observable. MIR compares only the key, retains
+the current pair in registers and shifts complete preceding pairs through the
+existing little-endian guest load/store imports. Tests compare the entire pair
+sequence with native stable insertion sort, so ordering, permutation and stable
+duplicate order are checked together. This pair is instrumentation, not a
+general guest value representation.

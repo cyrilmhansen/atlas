@@ -134,6 +134,13 @@ pub struct SelectionResult {
     pub index: usize,
 }
 
+/// Private 16-byte guest element used to observe insertion-sort stability.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct InsertionPair {
+    pub key: i64,
+    pub original_index: u64,
+}
+
 impl GuestOffset {
     pub fn new(offset: u32) -> Self {
         Self(offset)
@@ -577,6 +584,41 @@ pub fn interpret_reverse_i64(values: &mut [i64]) -> Result<(), GuestMemoryError>
     Ok(())
 }
 
+pub fn interpret_insertion_pairs(values: &mut [InsertionPair]) -> Result<(), GuestMemoryError> {
+    let byte_length = values
+        .len()
+        .checked_mul(16)
+        .ok_or(GuestMemoryError::AddressOverflow)?;
+    let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let count = u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut memory = OffsetMemory::new(byte_length as usize);
+    for (index, value) in values.iter().copied().enumerate() {
+        let offset = u32::try_from(index)
+            .ok()
+            .and_then(|index| index.checked_mul(16))
+            .ok_or(GuestMemoryError::AddressOverflow)?;
+        memory.write_i64_le(GuestOffset::new(offset), value.key)?;
+        memory.write_i64_le(GuestOffset::new(offset + 8), value.original_index as i64)?;
+    }
+    if unsafe { atlas_mir_interpret_insertion_pairs(memory.bytes.as_mut_ptr(), byte_length, count) }
+        != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    for (index, value) in values.iter_mut().enumerate() {
+        let offset = u32::try_from(index)
+            .ok()
+            .and_then(|index| index.checked_mul(16))
+            .ok_or(GuestMemoryError::AddressOverflow)?;
+        value.key = memory.read_i64_le(GuestOffset::new(offset))?;
+        value.original_index = memory.read_i64_le(GuestOffset::new(offset + 8))? as u64;
+    }
+    Ok(())
+}
+
 unsafe extern "C" {
     fn atlas_mir_interpret_add_u64(left: u64, right: u64) -> u64;
     fn atlas_mir_interpret_minimum3_i64(
@@ -605,6 +647,11 @@ unsafe extern "C" {
         selection: *mut RawSelectionResult,
     ) -> i32;
     fn atlas_mir_interpret_reverse_i64(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+    ) -> i32;
+    fn atlas_mir_interpret_insertion_pairs(
         guest_bytes: *mut u8,
         byte_length: u32,
         element_count: u32,
@@ -790,6 +837,32 @@ mod tests {
             assert_eq!(mir, native);
             super::interpret_reverse_i64(&mut mir).expect("second MIR reverse");
             assert_eq!(mir, original);
+        }
+    }
+
+    #[test]
+    fn mir_insertion_pairs_match_native_stable_sort() {
+        for keys in [vec![], vec![42], vec![5, -1, 5, 3, -1, 0]] {
+            let original = keys
+                .into_iter()
+                .enumerate()
+                .map(|(original_index, key)| super::InsertionPair {
+                    key,
+                    original_index: original_index as u64,
+                })
+                .collect::<Vec<_>>();
+            let mut mir = original.clone();
+            super::interpret_insertion_pairs(&mut mir).expect("MIR insertion sort");
+            let mut native = original;
+            atlas_algorithms::insertion_sort::insertion_sort_by(&mut native, |left, right| {
+                left.key.cmp(&right.key)
+            });
+
+            assert_eq!(mir, native);
+            assert!(mir.windows(2).all(|pair| pair[0].key <= pair[1].key));
+            assert!(mir.windows(2).all(|pair| {
+                pair[0].key != pair[1].key || pair[0].original_index < pair[1].original_index
+            }));
         }
     }
 

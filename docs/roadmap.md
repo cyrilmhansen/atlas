@@ -21,8 +21,8 @@ The demonstrated native/MIR pairs now cover partition, `is_sorted`,
 minimum/maximum, reverse and stable insertion, in addition to scalar probes.
 None changes the public registry schema, execution-record format or native
 reference backend. On x86-64, a narrowly configured embedded Capstone now
-decodes the observed scalar and guest-memory JIT functions without external
-tools; this remains a local diagnostic.
+decodes the observed scalar, read-only guest and mutating guest JIT functions
+without external tools; this remains a local diagnostic.
 
 The DOCX snapshot is preserved at `doc/Vision_Atlas_Executable_MVP1-4.docx`.
 `docs/vision.md` is its verified, diffable Markdown conversion and the
@@ -397,13 +397,15 @@ functions without defining a persistent instruction schema or pretending to
 reconstruct arbitrary control flow. RV64 decoding remains disabled until Atlas
 observes actual RV64 code rather than host x86-64 JIT output.
 
-The first untimed level matrix is complete for scalar addition and guest-memory
-`is_sorted`. It verifies correction and repeated structural summaries at levels
-0 through 3. On the pinned x86-64 stack, guest level 1 is smaller than levels 2
-and 3, while level 0 is larger; calls and branch classes remain invariant. This
-rules out using the numeric optimization level as a proxy for compactness. The
-remaining B1 work is to separate construction latency, execution latency and
-executable allocation footprint before selecting or ranking a level.
+The untimed level matrix now covers scalar addition, read-only guest-memory
+`is_sorted` and mutating guest-memory `reverse`. It verifies correction and
+repeated structural summaries at levels 0 through 3. On the pinned x86-64
+stack, guest level 1 is smaller than levels 2 and 3 for `is_sorted`, while
+reverse levels 1 through 3 share the same prefix length; level 0 is larger for
+both. Calls and branch classes remain invariant. This rules out using the
+numeric optimization level as a proxy for compactness. The remaining B1 work
+is to separate construction latency, execution latency and executable
+allocation footprint before selecting or ranking a level.
 
 ### C4. Rust toolchain support baseline
 
@@ -454,9 +456,10 @@ surface even if the API remains private.
 | C. Start directly with MIR RISC-V generation | Reaches the target sooner but mixes generator, target and emulator failures. |
 
 Accepted: **A** under DEC-046. Scalar addition and guest `is_sorted` now
-reproduce interpreter and native results without timing. The next work is the
-separate class B measurement protocol; MIR RISC-V generation remains outside
-this decision.
+reproduce interpreter and native results without timing. The later approved
+`reverse` extension adds checked guest writes without changing the model or
+lifecycle. The remaining measurement protocol is class B; MIR RISC-V
+generation remains outside this decision.
 
 ### C7. Multi-region guest memory
 

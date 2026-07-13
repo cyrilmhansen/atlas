@@ -1,5 +1,23 @@
 # Progress log
 
+## 2026-07-13 - Mutating guest-memory reverse JIT
+
+### Result
+
+- Extended the private host generator to `sequence.reverse` using two checked
+  guest loads and two checked guest stores per loop iteration.
+- Verified empty, singleton, even, odd and signed-boundary inputs against both
+  the MIR interpreter and native Rust at levels 0 through 3.
+- Verified JIT reversal as an involution and rejected an inconsistent guest
+  span before generation or mutation.
+- Added reverse code observation to the untimed structural matrix.
+
+### Limits
+
+- The program is still specialized to one bounded little-endian offset region.
+- Stores are validated for correction, not traced as persistent evidence.
+- No latency, executable-allocation footprint or backend selection is added.
+
 ## 2026-07-13 - Untimed MIR optimization shape matrix
 
 ### Result

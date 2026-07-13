@@ -141,6 +141,13 @@ pub struct JitIsSortedCodeObservation {
     pub machine_code: Vec<u8>,
 }
 
+/// Process-local code copy for the mutating guest-memory `reverse` probe.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct JitReverseCodeObservation {
+    pub optimization: JitOptimizationLevel,
+    pub machine_code: Vec<u8>,
+}
+
 const PARTITION_TRACE_CAPACITY: usize = 128;
 const IS_SORTED_TRACE_CAPACITY: usize = 128;
 
@@ -749,28 +756,82 @@ fn interpret_selection_i64(
 }
 
 pub fn interpret_reverse_i64(values: &mut [i64]) -> Result<(), GuestMemoryError> {
-    let byte_length = values
-        .len()
-        .checked_mul(8)
-        .ok_or(GuestMemoryError::AddressOverflow)?;
-    let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
-    let count = u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let (mut memory, byte_length, count) = i64_guest_memory(values)?;
     let _guard = MIR_ADAPTER_LOCK
         .lock()
         .expect("MIR adapter lock must not be poisoned");
-    let mut memory = OffsetMemory::new(byte_length as usize);
-    for (index, value) in values.iter().copied().enumerate() {
-        let offset = u32::try_from(index)
-            .ok()
-            .and_then(|index| index.checked_mul(8))
-            .ok_or(GuestMemoryError::AddressOverflow)?;
-        memory.write_i64_le(GuestOffset::new(offset), value)?;
-    }
     if unsafe { atlas_mir_interpret_reverse_i64(memory.bytes.as_mut_ptr(), byte_length, count) }
         != 0
     {
         return Err(GuestMemoryError::RuntimeFailure);
     }
+    copy_i64_guest_memory(&memory, values)
+}
+
+/// Reverses a bounded guest-memory slice through MIR's host generator.
+pub fn jit_reverse_i64(values: &mut [i64]) -> Result<(), GuestMemoryError> {
+    jit_reverse_i64_with_optimization(values, JitOptimizationLevel::Default)
+}
+
+/// Reverses guest memory with an explicit MIR optimization level.
+pub fn jit_reverse_i64_with_optimization(
+    values: &mut [i64],
+    optimization: JitOptimizationLevel,
+) -> Result<(), GuestMemoryError> {
+    let (mut memory, byte_length, count) = i64_guest_memory(values)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    if unsafe {
+        atlas_mir_jit_reverse_i64_at_level(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            count,
+            optimization as u32,
+        )
+    } != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    copy_i64_guest_memory(&memory, values)
+}
+
+/// Reverses guest memory and copies the relocated host function code.
+pub fn observe_jit_reverse_i64(
+    values: &mut [i64],
+    optimization: JitOptimizationLevel,
+) -> Result<JitReverseCodeObservation, GuestMemoryError> {
+    let (mut memory, byte_length, count) = i64_guest_memory(values)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut code = std::ptr::null_mut();
+    let mut code_length = 0;
+    if unsafe {
+        atlas_mir_observe_jit_reverse_i64(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            count,
+            optimization as u32,
+            &mut code,
+            &mut code_length,
+        )
+    } != 0
+    {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    let machine_code = copy_observed_code(code, code_length)?;
+    copy_i64_guest_memory(&memory, values)?;
+    Ok(JitReverseCodeObservation {
+        optimization,
+        machine_code,
+    })
+}
+
+fn copy_i64_guest_memory(
+    memory: &OffsetMemory,
+    values: &mut [i64],
+) -> Result<(), GuestMemoryError> {
     for (index, value) in values.iter_mut().enumerate() {
         let offset = u32::try_from(index)
             .ok()
@@ -857,6 +918,20 @@ unsafe extern "C" {
         guest_bytes: *mut u8,
         byte_length: u32,
         element_count: u32,
+    ) -> i32;
+    fn atlas_mir_jit_reverse_i64_at_level(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        optimize_level: u32,
+    ) -> i32;
+    fn atlas_mir_observe_jit_reverse_i64(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        optimize_level: u32,
+        code: *mut *mut u8,
+        code_length: *mut usize,
     ) -> i32;
     fn atlas_mir_interpret_insertion_pairs(
         guest_bytes: *mut u8,
@@ -1245,6 +1320,74 @@ mod tests {
             super::interpret_reverse_i64(&mut mir).expect("second MIR reverse");
             assert_eq!(mir, original);
         }
+    }
+
+    #[test]
+    fn mir_host_jit_reverse_matches_interpreter_and_native_at_every_level() {
+        let mut default_values = [1, 2, 3];
+        super::jit_reverse_i64(&mut default_values).expect("default MIR generated reverse");
+        assert_eq!(default_values, [3, 2, 1]);
+
+        for optimization in [
+            JitOptimizationLevel::FastGeneration,
+            JitOptimizationLevel::RegisterAllocation,
+            JitOptimizationLevel::Default,
+            JitOptimizationLevel::Full,
+        ] {
+            for original in [
+                vec![],
+                vec![42],
+                vec![1, 2],
+                vec![1, 2, 3, 4, 5],
+                vec![i64::MIN, 0, i64::MAX, -1, 1, 7],
+            ] {
+                let mut interpreted = original.clone();
+                super::interpret_reverse_i64(&mut interpreted).expect("MIR interpreted reverse");
+                let mut native = original.clone();
+                atlas_algorithms::reverse::reverse_in_place(&mut native);
+                let mut generated = original.clone();
+                super::jit_reverse_i64_with_optimization(&mut generated, optimization)
+                    .expect("MIR generated reverse");
+                assert_eq!(generated, native);
+                assert_eq!(generated, interpreted);
+
+                super::jit_reverse_i64_with_optimization(&mut generated, optimization)
+                    .expect("second MIR generated reverse");
+                assert_eq!(generated, original);
+            }
+        }
+    }
+
+    #[test]
+    fn mir_host_jit_reverse_rejects_an_inconsistent_guest_span() {
+        let mut bytes = [0_u8; 8];
+        let status = unsafe {
+            super::atlas_mir_jit_reverse_i64_at_level(
+                bytes.as_mut_ptr(),
+                7,
+                1,
+                JitOptimizationLevel::Default as u32,
+            )
+        };
+        assert_ne!(status, 0);
+        assert_eq!(bytes, [0; 8]);
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn mir_host_jit_reverse_observation_exposes_loads_stores_and_loop() {
+        let mut values = vec![1, 2, 3, 4, 5];
+        let observation =
+            super::observe_jit_reverse_i64(&mut values, JitOptimizationLevel::Default)
+                .expect("MIR generated reverse observation");
+        assert_eq!(values, [5, 4, 3, 2, 1]);
+        assert_eq!(observation.optimization, JitOptimizationLevel::Default);
+        let shape =
+            summarize_host_code(&observation.machine_code).expect("reverse x86-64 shape summary");
+        assert_eq!(shape.calls, 4);
+        assert!(shape.conditional_branches >= 1);
+        assert!(shape.unconditional_branches >= 1);
+        assert_eq!(shape.returns, 1);
     }
 
     #[test]

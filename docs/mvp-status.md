@@ -1,7 +1,7 @@
 # MVP status
 
 - Active MVP: **MVP 4 - LP64 MIR adapter probe**
-- Status: single-region interpreter checkpoint and narrow host-JIT correction complete
+- Status: single-region interpreter checkpoint and mutating host-JIT correction active
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
@@ -25,9 +25,11 @@ Rust. This completes the planned single-region interpreter capability ladder.
 These private experiments do not add registry implementations or change corpus
 counts.
 
-Host-JIT progress: generated scalar addition and guest-memory `is_sorted`
-match interpreter and native Rust results under DEC-046. No timing, generated
-code-size observation or automatic backend choice has been introduced.
+Host-JIT progress: generated scalar addition, guest-memory `is_sorted` and
+mutating guest-memory `reverse` match interpreter and native Rust results under
+DEC-046. Exact generated spans and x86-64 instruction shapes are observable.
+No timing, executable-allocation measurement or automatic backend choice has
+been introduced.
 
 ## MVP 1 closure
 
@@ -135,8 +137,9 @@ handle, and region-plus-offset. DEC-040 selects bounded `u32` byte offsets in
 one fixed-capacity region for the first guest-memory experiment.
 `scripts/check-rv64-lp64-abi.sh` proves the local RV64 LP64 compiler/QEMU-user
 path. It is not a MIR RISC-V or RV64ILP32 test. The narrow host-JIT correction
-probe is complete; JIT measurement, MIR-generated RISC-V, multi-region memory,
-guest allocation and persistent MIR traces remain open.
+path now covers read-only and mutating guest memory; latency and executable
+allocation measurement, MIR-generated RISC-V, multi-region memory, guest
+allocation and persistent MIR traces remain open.
 
 See `docs/mvp4-review.md`, `docs/mir-integration.md`, and DEC-039 for the
 accepted scope, checks and limits.

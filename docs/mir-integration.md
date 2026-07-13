@@ -160,21 +160,23 @@ general guest value representation.
 
 ## Host-JIT correction slice
 
-DEC-046 adds two private host-JIT probes. `add_u64` verifies a generated scalar
-function without imports. JIT `is_sorted` verifies control flow and calls the
-same checked guest-load import used by the interpreter. Empty, singleton,
-sorted, duplicate and inverted inputs compare the generated boolean and first
-inversion with both interpreter and native Rust results.
+DEC-046 initially added two private host-JIT probes. `add_u64` verifies a
+generated scalar function without imports. JIT `is_sorted` verifies control
+flow and calls the same checked guest-load import used by the interpreter. The
+later `reverse` extension is the first generated mutating workload: it calls
+both checked load and store imports over the same bounded offset region. Empty,
+singleton, even and odd inputs compare final memory with both interpreter and
+native Rust results, including a second reversal.
 
 Every call initializes and finishes the generator inside a fresh MIR context,
 so its executable mappings are released with that context. This establishes
-correction and lifecycle only. It does not yet record construction latency,
-machine-code size or execution performance, and it does not select JIT over the
-interpreter.
+correction and lifecycle only. Exact generated spans are now observable, but
+construction latency, executable allocation footprint and execution
+performance remain separate. Atlas does not select JIT over the interpreter.
 
 Atlas explicitly selects MIR optimization level 2 for the ordinary JIT probes;
 it does not rely on the upstream default remaining unchanged. Private
-correction variants also exercise levels 0, 1, 2 and 3 for both probes. In the
+correction variants also exercise levels 0, 1, 2 and 3 for all three probes. In the
 pinned MIR generator these mean fast generation, register allocation plus
 combining, the default SSA/GVN/CCP pipeline, and the full pipeline respectively.
 Correction at every level is not a performance comparison.
@@ -224,5 +226,8 @@ instruction count, calls and branch classes. On the current pinned x86-64
 stack, level 1 produces the smallest `is_sorted` prefix (112 bytes and 27
 instructions), levels 2 and 3 both produce 119 bytes and 31 instructions, and
 level 0 produces 144 bytes and 35 instructions. All retain two checked-load
-calls, two conditional branches and two unconditional branches. These numbers
-are local structural observations, not timing results or a level selection.
+calls, two conditional branches and two unconditional branches. Generated
+`reverse` retains four calls, one conditional branch and one unconditional
+branch at every level; its prefix ranges from 146 bytes at levels 1 through 3
+to 188 bytes at level 0. These numbers are local structural observations, not
+timing results or a level selection.

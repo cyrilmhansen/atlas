@@ -1,5 +1,14 @@
 # Progress log
 
+## 2026-07-13 - Private MIR minimum and maximum selection
+
+- Added a private guest-region selection program for signed `i64` minimum and
+  maximum, returning value and index without creating a registry backend.
+- Verified empty input, scalar input, ordinary selections and first-occurrence
+  tie behavior against native Rust.
+- The private result is diagnostic only; no AST link or persistent trace was
+  introduced because these algorithms have no corresponding experimental AST.
+
 ## 2026-07-13 - Private textual pseudocode experiment
 
 ### Result

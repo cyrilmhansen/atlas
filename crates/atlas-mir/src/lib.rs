@@ -121,6 +121,19 @@ struct RawIsSortedTrace {
     events: [u32; IS_SORTED_TRACE_CAPACITY],
 }
 
+#[repr(C)]
+struct RawSelectionResult {
+    found: u32,
+    index: u32,
+    value: i64,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SelectionResult {
+    pub value: i64,
+    pub index: usize,
+}
+
 impl GuestOffset {
     pub fn new(offset: u32) -> Self {
         Self(offset)
@@ -475,6 +488,62 @@ fn is_sorted_trace_event(code: u32) -> Result<IsSortedTraceEvent, GuestMemoryErr
     })
 }
 
+pub fn interpret_minimum_i64(values: &[i64]) -> Result<Option<SelectionResult>, GuestMemoryError> {
+    interpret_selection_i64(values, false)
+}
+
+pub fn interpret_maximum_i64(values: &[i64]) -> Result<Option<SelectionResult>, GuestMemoryError> {
+    interpret_selection_i64(values, true)
+}
+
+fn interpret_selection_i64(
+    values: &[i64],
+    select_max: bool,
+) -> Result<Option<SelectionResult>, GuestMemoryError> {
+    let byte_length = values
+        .len()
+        .checked_mul(8)
+        .ok_or(GuestMemoryError::AddressOverflow)?;
+    let byte_length = u32::try_from(byte_length).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let count = u32::try_from(values.len()).map_err(|_| GuestMemoryError::AddressOverflow)?;
+    let _guard = MIR_ADAPTER_LOCK
+        .lock()
+        .expect("MIR adapter lock must not be poisoned");
+    let mut memory = OffsetMemory::new(byte_length as usize);
+    for (index, value) in values.iter().copied().enumerate() {
+        let offset = u32::try_from(index)
+            .ok()
+            .and_then(|index| index.checked_mul(8))
+            .ok_or(GuestMemoryError::AddressOverflow)?;
+        memory.write_i64_le(GuestOffset::new(offset), value)?;
+    }
+    let mut raw = RawSelectionResult {
+        found: 0,
+        index: 0,
+        value: 0,
+    };
+    let status = unsafe {
+        atlas_mir_interpret_select_i64(
+            memory.bytes.as_mut_ptr(),
+            byte_length,
+            count,
+            u32::from(select_max),
+            &mut raw,
+        )
+    };
+    if status != 0 {
+        return Err(GuestMemoryError::RuntimeFailure);
+    }
+    match raw.found {
+        0 if values.is_empty() => Ok(None),
+        1 if (raw.index as usize) < values.len() => Ok(Some(SelectionResult {
+            value: raw.value,
+            index: raw.index as usize,
+        })),
+        _ => Err(GuestMemoryError::InvalidTraceEvent),
+    }
+}
+
 unsafe extern "C" {
     fn atlas_mir_interpret_add_u64(left: u64, right: u64) -> u64;
     fn atlas_mir_interpret_minimum3_i64(
@@ -495,14 +564,21 @@ unsafe extern "C" {
         element_count: u32,
         trace: *mut RawIsSortedTrace,
     ) -> i32;
+    fn atlas_mir_interpret_select_i64(
+        guest_bytes: *mut u8,
+        byte_length: u32,
+        element_count: u32,
+        select_max: u32,
+        selection: *mut RawSelectionResult,
+    ) -> i32;
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
         CompareEvent, GuestMemoryError, GuestOffset, GuestRegionOffset, HandleMemory, OffsetMemory,
-        RegionMemory, interpret_add_u64, interpret_is_sorted_i64, interpret_minimum3_i64,
-        interpret_partition_even_i64,
+        RegionMemory, interpret_add_u64, interpret_is_sorted_i64, interpret_maximum_i64,
+        interpret_minimum_i64, interpret_minimum3_i64, interpret_partition_even_i64,
     };
 
     #[test]
@@ -634,6 +710,35 @@ mod tests {
                 "is-sorted.right.read",
                 "is-sorted.adjacent.compare",
             ]
+        );
+    }
+
+    #[test]
+    fn mir_selection_matches_native_values_and_first_ties() {
+        for values in [vec![], vec![42], vec![7, -2, 4, -2], vec![3, 9, 9, 2]] {
+            let minimum = interpret_minimum_i64(&values).expect("MIR minimum");
+            let maximum = interpret_maximum_i64(&values).expect("MIR maximum");
+            let native_minimum = atlas_algorithms::minimum::minimum_by(&values, i64::cmp);
+            let native_maximum = atlas_algorithms::maximum::maximum_by(&values, i64::cmp);
+            assert_eq!(minimum.map(|result| result.value), native_minimum.copied());
+            assert_eq!(maximum.map(|result| result.value), native_maximum.copied());
+            if let Some(result) = minimum {
+                assert_eq!(values[result.index], result.value);
+            }
+            if let Some(result) = maximum {
+                assert_eq!(values[result.index], result.value);
+            }
+        }
+        assert_eq!(
+            interpret_minimum_i64(&[7, -2, 4, -2])
+                .unwrap()
+                .unwrap()
+                .index,
+            1
+        );
+        assert_eq!(
+            interpret_maximum_i64(&[3, 9, 9, 2]).unwrap().unwrap().index,
+            1
         );
     }
 

@@ -1,11 +1,12 @@
 # Atlas executable
 
 Atlas executable is an executable registry of problems, algorithms,
-implementations, and execution observations. MVP 4 is active as a narrow LP64
-MIR adapter under DEC-039. Its interpreter-only, single-region capability
-checkpoint is complete through DEC-045. DEC-046 adds a narrow host-JIT
-correction path, now including mutating reverse, partition and stable insertion
-probes. Exact generated spans and x86-64 instruction shapes are observable.
+implementations, and execution observations. MVP 4 is closed under DEC-052 as a
+narrow LP64 MIR adapter experiment. Its interpreter-only, single-region
+capability checkpoint is complete through DEC-045. DEC-046 adds a narrow
+host-JIT correction path, now including mutating reverse, partition and stable
+insertion probes. Exact generated spans and x86-64 instruction shapes are
+observable.
 DEC-049 validates a standalone scalar MIR-generated RV64 function under QEMU;
 DEC-050 adds a private read-only `is_sorted` guest import and DEC-051 adds
 checked `reverse` mutation. Latency, executable allocation footprint and

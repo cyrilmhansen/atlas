@@ -1,16 +1,19 @@
 # MVP status
 
-- Active MVP: **MVP 4 - LP64 MIR adapter probe**
-- Status: single-region interpreter/JIT and mutating RV64 checkpoint
+- Active MVP: **none**
+- Status: MVP 1 through MVP 4 closed locally; next scope not activated
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
+- MVP 4: closed locally under DEC-052
 
 ## Current slice
 
-MVP 1, MVP 2, and MVP 3 are closed locally. MVP 4 tests the MIR adapter
-boundary with a standard RV64 LP64 ABI probe and independent compact-reference
-comparison; it does not activate RV64ILP32 or a fantasy computer.
+MVP 1 through MVP 4 are closed locally. MVP 4 tested the MIR adapter boundary
+with a standard RV64 LP64 ABI probe and independent compact-reference
+comparison; it did not activate RV64ILP32 or a fantasy computer. No subsequent
+MVP is active. The public interactive artifact described in the roadmap remains
+a candidate scope, not an implemented distribution contract.
 
 Current corpus progress:
 

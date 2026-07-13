@@ -5,15 +5,15 @@ remain authoritative when this document and a decision record differ.
 
 ## Current position
 
-MVP 1, MVP 2 and MVP 3 are closed locally. GitHub CI runs the reproducible MVP
-2 acceptance gate, all workspace targets and the RV64 LP64 probe on pushes and
-pull requests. The project has a Git-authoritative
+MVP 1 through MVP 4 are closed locally. GitHub CI runs the reproducible MVP 2
+acceptance gate, all workspace targets, the RV64 LP64 probe and the MIR RV64
+generator probe on pushes and pull requests. The project has a Git-authoritative
 YAML registry (10 problems, 15 algorithms and 20 Rust implementations), a
 rebuildable SQLite projection, deterministic datasets and reproducible local
 observations, plus five bounded composition scenarios with compiled Rust
 orchestration.
 
-MVP 4 is active under DEC-039. It has established a pinned upstream MIR
+MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a
 complete interpreter-only capability ladder over one bounded offset region.
@@ -22,7 +22,9 @@ minimum/maximum, reverse and stable insertion, in addition to scalar probes.
 None changes the public registry schema, execution-record format or native
 reference backend. On x86-64, a narrowly configured embedded Capstone now
 decodes the observed scalar, read-only guest and mutating guest JIT functions
-without external tools; this remains a local diagnostic.
+without external tools. Generated RV64 scalar, read-only and mutating probes run
+under QEMU user mode. These remain diagnostics, not persistent backend
+artifacts.
 
 The DOCX snapshot is preserved at `doc/Vision_Atlas_Executable_MVP1-4.docx`.
 `docs/vision.md` is its verified, diffable Markdown conversion and the
@@ -182,7 +184,7 @@ The first explicit override surface is also implemented: `--force` and
 reason or rejecting an empty candidate set. This satisfies the forcing/forbid
 experiment without turning MVP 3 into general search or mutable registry state.
 
-MVP 4 is active under DEC-039 as a narrow LP64 MIR interpreter, host-JIT and
+MVP 4 closed under DEC-052 as a narrow LP64 MIR interpreter, host-JIT and
 QEMU-user probe. DEC-049 validates a scalar MIR RV64 generator artifact,
 DEC-050 adds a read-only checked guest import and DEC-051 adds mutation.
 The `atlas-algorithms` core APIs remain the native reference backend; MIR
@@ -192,7 +194,7 @@ a fantasy computer remain separate experiments.
 
 ## MVP 4 execution path
 
-The active work should progress through the following gates. A failed or
+The closed work progressed through the following gates. A failed or
 inconclusive gate records a limit; it does not silently widen the runtime.
 
 ### 1. Select and specify compact guest references
@@ -241,8 +243,8 @@ the selected model and matches the native reference result.
 
 ### 4. Compare interpreter and optional JIT behavior
 
-Status: correction slice complete under DEC-046 through stable insertion;
-measurement protocol pending.
+Status: correction and structural inspection complete under DEC-046 through
+stable insertion; performance measurement excluded from MVP 4 by DEC-052.
 
 - Measure startup latency, code size and correction equivalence separately.
 - Keep JIT results local observations with environment and protocol provenance.
@@ -297,8 +299,8 @@ observation protocols. No backend is chosen automatically from those results.
 
 ## MVP 4 single-region checkpoint
 
-Status: interpreter capability complete locally through DEC-045; host-JIT
-correction complete under DEC-046.
+Status: closed under DEC-052 after interpreter, host-JIT and RV64 read/write
+correction checkpoints.
 
 The checkpoint demonstrates the interpreter and guest-offset boundary across
 read-only scans, selection, swaps and shifted writes. It also demonstrates
@@ -308,18 +310,98 @@ or a persistent backend artifact. Exact host-code spans and instruction shapes
 plus scalar and read/write guest RV64 generation are observed locally, but no
 timed JIT or executable-allocation protocol has been introduced.
 
-Recommended order for the remaining MVP 4 work:
+Deferred work after MVP 4 closure:
 
-1. Reassess whether the complete single-region ladder is sufficient to close
-   the MVP 4 target checkpoint before changing the memory model.
-2. Add a bounded construction/execution latency or executable-allocation probe
+1. Add a bounded construction/execution latency or executable-allocation probe
    only if a concrete backend-retention question requires it; retain
    interpreter traces as the observability reference.
-3. Introduce multiple regions only when an output/scratch algorithm is selected
+2. Introduce multiple regions only when an output/scratch algorithm is selected
    and region identity, lifetime and copy visibility have been accepted.
 
-This ordering tests the remaining claims in the vision before widening the
-memory model or algorithm corpus.
+Neither item is active. A new MVP must define its exit criteria before widening
+the memory model or measurement surface.
+
+## Candidate public interactive artifact
+
+Status: strategic candidate only. No web MVP, public projection format,
+deployment target or browser runtime is activated by DEC-052.
+
+The recommended distribution is a static, reproducible website that can be
+hosted on GitHub Pages or opened from a release bundle. It would combine a
+read-only projection of the Atlas registry with a small Rust/WebAssembly
+runtime for curated local executions. It would require no application server,
+account, database service or remote code execution.
+
+The authority chain should remain explicit:
+
+```text
+registry YAML + sources + decisions
+  -> atlas validate
+  -> derived web projection + WASM + build metadata
+  -> static public site
+```
+
+The derived projection must carry the source commit and logical registry
+digest. It is disposable build output, never registry authority. If its shape
+becomes a supported public interface, it needs an independently versioned schema
+decision before publication.
+
+### Proposed public experience
+
+1. Browse and search problems, algorithms and implementations with provenance,
+   requirements, effects and known limitations.
+2. Show theoretical time and auxiliary-space complexity as sourced Atlas
+   claims. Never infer `O(...)` from a short interactive run.
+3. Select a versioned `DatasetSpec` case or enter a bounded custom sequence,
+   then run one of a deliberately curated set of native Rust algorithms locally
+   through WebAssembly.
+4. Display input, output, checked invariants and deterministic operation counts
+   such as comparisons, reads, writes, swaps, copies and requested auxiliary
+   storage.
+5. Offer step/run/reset controls only where a semantic trace already exists or
+   a separately tested trace adapter is added. Trace events must identify their
+   exact algorithm or AST operation rather than UI animation frames.
+6. Optionally display wall-clock duration as a local browser observation with
+   dataset, repetitions, browser, target, timer resolution and warnings. It
+   must remain visually and semantically separate from complexity claims and
+   native benchmark evidence.
+
+The first executable slice should cover three materially different cases from
+the existing corpus: read-only `is_sorted`, mutating stable insertion sort, and
+in-place `reverse` or partition. This is enough to test results, mutation,
+stability and operation counters without exposing a general plugin system.
+
+### Proposed implementation stages
+
+| Stage | Deliverable | Acceptance boundary |
+|---|---|---|
+| 0. Distribution contract | accepted scope, audience, derived-data policy and browser support | no code before class C decisions below |
+| 1. Static catalog | generated entity pages/search data from the validated registry | exact entity counts, links, provenance and commit digest |
+| 2. Local execution | one small `wasm32` crate exposing curated typed functions | browser results equal native correction fixtures and dataset digests |
+| 3. Characteristics | sourced `O(...)` claims plus deterministic operation counters | theoretical, counted and timed properties remain distinct |
+| 4. Semantic dynamics | bounded trace player for algorithms with validated events | replay is deterministic and every event maps to a declared operation |
+| 5. Distribution | reproducible static bundle and optional GitHub Pages workflow | clean checkout rebuilds the same logical content; deployment is explicit |
+
+Resource limits must be part of the local execution boundary: maximum input
+length, trace-event cap, step budget, cancellation and no network access from
+algorithm execution. Custom input is ephemeral and must not be presented as
+registry evidence. Accessibility, keyboard operation and small-screen layout
+are acceptance requirements for a public artifact, not deferred decoration.
+
+MIR should initially be shown as documented backend evidence: supported probes,
+instruction shapes and target limits. Running MIR or an RV64 emulator inside
+the browser is not required for the first artifact and would need a separate
+cost/benefit decision. Native Rust/WASM remains the correction path.
+
+Candidate exit evidence for a future public-artifact MVP:
+
+- a static bundle builds from a clean checkout without a server;
+- every displayed registry fact resolves to source provenance;
+- three curated algorithms execute locally and match native fixtures;
+- complexity claims, operation counts and local timings cannot be confused;
+- the bundle exposes commit, registry digest and build/runtime environment;
+- CI validates the bundle, but publication occurs only through an explicitly
+  accepted deployment decision.
 
 ## Strategic decisions to prepare
 
@@ -547,3 +629,66 @@ Accepted: **A** under DEC-051. Empty, singleton, even and odd fixtures pass
 through the generated 176-byte RV64 function. Valid runs perform 12 checked
 loads and 12 checked stores, double reversal restores the input, and an invalid
 span causes no import or mutation. Multi-region memory remains class **C**.
+
+### C11. MVP 4 closure boundary
+
+Context: interpreter, host-JIT and RV64 probes cover the complete selected
+single-region read/write ladder. Additional mono-region algorithms add coverage
+but do not resolve a new architectural uncertainty.
+
+| Option | Consequence |
+|---|---|
+| A. Close MVP 4 at the demonstrated checkpoint | Preserves the narrow result and makes deferred runtime work explicit. |
+| B. Activate multi-region memory inside MVP 4 | Reaches output/scratch algorithms but changes identity and lifetime semantics. |
+| C. Add another mono-region RV64 algorithm | Increases coverage with limited strategic information. |
+
+Accepted: **A** under DEC-052. No subsequent MVP is active.
+
+### C12. Public distribution architecture
+
+Context: Atlas can be shown publicly as searchable knowledge plus local
+algorithm execution. Distribution changes the audience and build surface, and
+publication is outside the closed MVPs.
+
+| Option | Consequence |
+|---|---|
+| A. Static site plus curated Rust/WASM execution | No server or remote execution; supports a real interactive artifact and reproducible hosting. |
+| B. Static read-only catalog | Lowest runtime risk but does not demonstrate the executable-atlas claim. |
+| C. Application server executing algorithms | Enables centralized measurements but adds operations, security and reproducibility costs. |
+
+Recommendation: **A**, with GitHub Pages or a release bundle considered only
+after the build is reproducible locally. Activation and external publication
+are class **C/D** respectively.
+
+### C13. Browser data and runtime boundary
+
+Context: the browser needs compact structured data and callable algorithms, but
+neither the registry YAML nor all internal Rust APIs should accidentally become
+public Web contracts.
+
+| Option | Consequence |
+|---|---|
+| A. Disposable derived projection plus a curated WASM facade | Keeps Git/YAML authoritative and exposes only tested use cases; projection can evolve before stabilization. |
+| B. Parse authoritative YAML directly in the browser | Avoids a projection step but couples UI, validation and schema evolution. |
+| C. Publish a stable JSON API and broad algorithm ABI now | Maximizes reuse but prematurely freezes two public contracts. |
+
+Recommendation: **A**. The projection must include commit and logical digest;
+stabilizing it later requires a separate schema decision. Decision class:
+**C** before implementation because this defines the distribution boundary.
+
+### C14. Interactive characteristics and measurement semantics
+
+Context: users should see both theoretical complexity and behavior on working
+data. Browser timing alone cannot establish asymptotic complexity or portable
+performance.
+
+| Option | Consequence |
+|---|---|
+| A. Sourced complexity plus deterministic counters and optional local timing | Separates theory, algorithm dynamics and machine-dependent observation. |
+| B. Browser wall-clock charts as the primary characteristic | Visually simple but noisy and easy to overinterpret. |
+| C. Publish server-produced benchmark rankings | More controlled, but creates infrastructure and evidence-governance work. |
+
+Recommendation: **A**. Count comparisons, reads, writes, swaps, copies and
+auxiliary storage where meaningful; label wall time with dataset and browser
+environment. Decision class: **C** if these fields become a public or persisted
+observation format, otherwise **B** for an explicitly temporary UI projection.

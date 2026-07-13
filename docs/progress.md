@@ -1,5 +1,27 @@
 # Progress log
 
+## 2026-07-13 - MVP 4 closure
+
+### Result
+
+- Accepted DEC-052 (`close-mvp4-A`) and closed MVP 4 at the demonstrated
+  single-region MIR interpreter, host-JIT and RV64 generation boundary.
+- Recorded native Rust as the continuing correction authority and MIR as an
+  additive private adapter with no registry or composition dependency.
+- Audited the exit evidence for compact offsets, AST-linked traces, host code
+  inspection, RV64 scalar generation, checked reads and checked writes.
+- Moved multi-region memory, guest allocation, RV64ILP32, system emulation,
+  performance ranking and persistent backend artifacts outside the closed MVP.
+- Added a non-activated public-artifact roadmap: static derived catalog,
+  curated Rust/WASM execution, sourced complexity, deterministic operation
+  counters, bounded traces and optional clearly local browser timing.
+
+### Limits
+
+- No subsequent MVP is activated by this closure.
+- Future memory-model or machine-profile work requires a new explicit class C
+  scope decision.
+
 ## 2026-07-13 - Mutating RV64 guest-memory imports
 
 ### Result

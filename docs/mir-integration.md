@@ -1,7 +1,7 @@
 # MIR integration boundary
 
-This document describes the actual MVP 4 integration. MIR is an execution
-adapter, never the source of Atlas semantics.
+This document describes the MVP 4 integration closed under DEC-052. MIR is an
+execution adapter, never the source of Atlas semantics.
 
 ## Source and build
 

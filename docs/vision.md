@@ -2,7 +2,8 @@
 
 > Source de vision maintenue et authoritative. Conversion initiale du snapshot
 > `doc/Vision_Atlas_Executable_MVP1-4.docx`, conservé comme archive de la version
-> 0.1. Toute évolution de la vision doit modifier ce fichier Markdown.
+> 0.1. Vérifiée par conversion Pandoc le 2026-07-13, sans divergence sémantique.
+> Toute évolution de la vision doit modifier ce fichier Markdown.
 
 Document de vision — MVP 1 à 4
 

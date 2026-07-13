@@ -1,5 +1,39 @@
 # Progress log
 
+## 2026-07-13 - MVP 4 MIR trace import
+
+### Result
+
+- Added a private MIR import recording the two semantic comparisons in a
+  three-value minimum program.
+- Verified final result, event order and first-value-on-tie behavior against
+  the native `sequence.minimum` implementation.
+- Serialized Rust access to the shim's bounded static trace storage; the trace
+  remains non-reentrant C instrumentation, not registry evidence.
+- Verified that the DOCX vision snapshot has no semantic divergence from its
+  maintained Markdown conversion.
+
+### Verification
+
+```sh
+cargo fmt --all --check
+cargo test --workspace --all-targets --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+scripts/check-rv64-lp64-abi.sh
+```
+
+### Limits
+
+- No algorithm AST is lowered to MIR yet.
+- No compact guest-reference model has been selected.
+- `MinimumTrace` is private, in-memory and non-persistent.
+
+### Next decision
+
+DEC-039 leaves the first compact guest-reference model and the AST-to-MIR
+translation boundary open. `docs/roadmap.md` now records the options,
+recommendations and minimal experiments for both class C decisions.
+
 ## 2026-07-11 - MVP 1 activated
 
 - Accepted the aggregate YAML schema direction.

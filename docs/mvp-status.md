@@ -12,9 +12,9 @@
 
 MVP 1 through MVP 4 are closed locally. MVP 5 is active under DEC-056 as a
 locally openable static catalog with three curated Rust/WASM algorithms and
-separated theoretical, counted and locally timed characteristics. Its first
-gate is native/WASM `is_sorted` equivalence. Publication, a stable Web format,
-advanced trace playback and MIR-in-browser execution remain outside scope.
+separated theoretical, counted and locally timed characteristics. Publication,
+a stable Web format, advanced trace playback and MIR-in-browser execution remain
+outside scope.
 
 First gate status: complete under DEC-057. The private projection reproduces 10
 problems, 15 algorithms and 20 implementations with the logical registry
@@ -22,8 +22,10 @@ digest. The browser and Node.js bindings execute adjacent `is_sorted`, report
 exact comparisons and the first inversion, and reject inputs longer than 4096
 elements. The second gate adds stable insertion over tagged values, exact
 comparison/swap counts and visible original indices while distinguishing Web
-transport copies from the algorithm's `O(1)` auxiliary-space claim. `reverse`
-remains pending.
+transport copies from the algorithm's `O(1)` auxiliary-space claim. The third
+gate adds symmetric reverse, exact source-level read/write/swap counts and an
+involution check. All three curated execution workloads are complete;
+DatasetSpec-derived choices and the complete reproducible bundle gate remain.
 
 Current corpus progress:
 

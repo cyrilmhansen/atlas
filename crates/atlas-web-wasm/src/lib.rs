@@ -2,6 +2,7 @@ use core::cmp::Ordering;
 
 use atlas_algorithms::insertion_sort::insertion_sort_by;
 use atlas_algorithms::is_sorted::is_sorted_by;
+use atlas_algorithms::reverse::reverse_in_place;
 use wasm_bindgen::prelude::*;
 
 pub const MAX_INPUT_LENGTH: usize = 4_096;
@@ -144,11 +145,69 @@ pub fn observe_insertion_sort(values: &[i32]) -> Result<InsertionSortObservation
     })
 }
 
+#[wasm_bindgen]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReverseObservation {
+    values: Vec<i32>,
+    reads: u32,
+    writes: u32,
+    swaps: u32,
+}
+
+#[wasm_bindgen]
+impl ReverseObservation {
+    #[wasm_bindgen(getter)]
+    pub fn values(&self) -> Box<[i32]> {
+        self.values.clone().into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn reads(&self) -> u32 {
+        self.reads
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn writes(&self) -> u32 {
+        self.writes
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn swaps(&self) -> u32 {
+        self.swaps
+    }
+}
+
+#[wasm_bindgen]
+pub fn observe_reverse_i32(values: &[i32]) -> Result<ReverseObservation, JsError> {
+    observe_reverse(values).map_err(|length| {
+        JsError::new(&format!(
+            "input length {length} exceeds the Atlas browser limit of {MAX_INPUT_LENGTH}"
+        ))
+    })
+}
+
+pub fn observe_reverse(values: &[i32]) -> Result<ReverseObservation, usize> {
+    if values.len() > MAX_INPUT_LENGTH {
+        return Err(values.len());
+    }
+
+    let mut output = values.to_vec();
+    reverse_in_place(&mut output);
+    let swaps = (values.len() / 2) as u32;
+
+    Ok(ReverseObservation {
+        values: output,
+        reads: swaps * 2,
+        writes: swaps * 2,
+        swaps,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        InsertionSortObservation, IsSortedObservation, MAX_INPUT_LENGTH, observe_insertion_sort,
-        observe_is_sorted,
+        InsertionSortObservation, IsSortedObservation, MAX_INPUT_LENGTH, ReverseObservation,
+        observe_insertion_sort, observe_is_sorted, observe_reverse,
     };
 
     #[test]
@@ -198,6 +257,7 @@ mod tests {
         let values = vec![0; MAX_INPUT_LENGTH + 1];
         assert_eq!(observe_is_sorted(&values), Err(MAX_INPUT_LENGTH + 1));
         assert_eq!(observe_insertion_sort(&values), Err(MAX_INPUT_LENGTH + 1));
+        assert_eq!(observe_reverse(&values), Err(MAX_INPUT_LENGTH + 1));
     }
 
     #[test]
@@ -229,5 +289,37 @@ mod tests {
                 swaps: 0,
             })
         );
+    }
+
+    #[test]
+    fn reverse_matches_native_result_and_exact_structural_counts() {
+        let fixtures: &[(&[i32], &[i32], u32)] = &[
+            (&[], &[], 0),
+            (&[7], &[7], 0),
+            (&[1, 2], &[2, 1], 1),
+            (&[1, 2, 3, 4, 5], &[5, 4, 3, 2, 1], 2),
+            (&[1, 2, 3, 4, 5, 6], &[6, 5, 4, 3, 2, 1], 3),
+        ];
+
+        for (input, expected, swaps) in fixtures {
+            assert_eq!(
+                observe_reverse(input),
+                Ok(ReverseObservation {
+                    values: expected.to_vec(),
+                    reads: swaps * 2,
+                    writes: swaps * 2,
+                    swaps: *swaps,
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn observed_reverse_is_an_involution() {
+        let input = [4, -1, 7, 7, 2];
+        let first = observe_reverse(&input).unwrap();
+        let second = observe_reverse(&first.values).unwrap();
+
+        assert_eq!(second.values, input);
     }
 }

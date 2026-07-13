@@ -1,5 +1,30 @@
 # Progress log
 
+## 2026-07-14 - Symmetric reverse in the Web artifact
+
+### Result
+
+- Added the third curated WASM operation by calling the native symmetric
+  in-place reverse over signed 32-bit sequences.
+- Verified exact output and the involution property across native Rust and
+  generated JavaScript bindings for empty, singleton, even and odd inputs.
+- Reported `floor(n/2)` swaps and the corresponding exact source-level element
+  reads/writes while explicitly excluding compiled WASM memory accesses.
+- Displayed reversed output with original indices and kept observation transport
+  copies separate from the algorithm's sourced `O(1)` auxiliary-space claim.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm --locked --offline`
+- `scripts/check-web.sh`
+- Headless Chrome desktop/mobile reverse rendering and DOM inspection
+
+### Limits
+
+- UI fixtures remain local constants rather than generated DatasetSpec cases.
+- Local timing includes observation construction and the JS/WASM boundary.
+- The complete clean-checkout static bundle gate remains to be recorded.
+
 ## 2026-07-14 - Stable insertion in the Web artifact
 
 ### Result

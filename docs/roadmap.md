@@ -387,12 +387,13 @@ Current status:
 - Stage 0 is complete under DEC-053 through DEC-057.
 - Stage 1 has a private deterministic full-corpus projection and searchable
   catalog carrying the source commit and logical registry digest.
-- Stages 2 and 3 have passed read-only `is_sorted` and mutating stable-insertion
-  gates with native/WASM equivalence, exact comparisons, inversion/swap counts,
-  visible original indices, sourced complexity and qualified local timing.
-- Mutating `reverse`, DatasetSpec-derived choices and the complete bundle gate
-  are pending. Stage 4 and external publication are excluded; the local
-  reproducible portion of stage 5 remains an exit gate.
+- Stages 2 and 3 have passed read-only `is_sorted`, mutating stable-insertion
+  and symmetric-reverse gates with native/WASM equivalence, exact semantic
+  operation counts, visible original indices, sourced complexity and qualified
+  local timing. Reverse also checks that a second application restores input.
+- DatasetSpec-derived choices and the complete bundle gate are pending. Stage 4
+  and external publication are excluded; the local reproducible portion of
+  stage 5 remains an exit gate.
 
 Resource limits must be part of the local execution boundary: maximum input
 length, trace-event cap, step budget, cancellation and no network access from

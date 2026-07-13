@@ -1,11 +1,52 @@
-import init, { observe_insertion_sort_i32, observe_is_sorted_i32 } from "./pkg/atlas_web.js";
+import init, {
+  observe_insertion_sort_i32,
+  observe_is_sorted_i32,
+  observe_reverse_i32,
+} from "./pkg/atlas_web.js";
 
 const datasets = {
   sorted: [1, 2, 3, 5, 8, 13],
   duplicates: [-2, 0, 0, 4, 4, 9],
   mixed_duplicates: [2, 1, 2, 1, 3, 1],
   inversion: [1, 2, 5, 4, 6],
+  odd: [4, -1, 7, 7, 2],
   descending: [8, 6, 4, 2, 0, -2],
+};
+
+const algorithmUi = {
+  is_sorted: {
+    id: "order.is_sorted.adjacent",
+    dataset: "inversion",
+    boundary: "Read-only input; no output transport copy.",
+    resultLabel: "Result",
+    comparisonLabel: "Comparisons",
+    secondaryLabel: "First inversion",
+    sequenceHeading: "Sequence state",
+    legend: "first decreasing pair",
+    moved: false,
+  },
+  insertion: {
+    id: "sort.insertion",
+    dataset: "mixed_duplicates",
+    boundary: "Algorithm is in-place; the Web observation copies tagged output for display.",
+    resultLabel: "Correction + stability",
+    comparisonLabel: "Comparisons",
+    secondaryLabel: "Adjacent swaps",
+    sequenceHeading: "Stable sorted output",
+    legend: "moved from original index",
+    moved: true,
+  },
+  reverse: {
+    id: "reverse.symmetric.in_place",
+    dataset: "odd",
+    boundary: "Algorithm is in-place; the Web observation copies output for display.",
+    resultLabel: "Correction + involution",
+    comparisonLabel: "Semantic reads / writes",
+    secondaryLabel: "Symmetric swaps",
+    sequenceHeading: "Reversed output",
+    legend: "moved from original index",
+    moved: true,
+  },
 };
 
 const elements = Object.fromEntries(
@@ -165,13 +206,39 @@ function runInsertionSort(values) {
   observation.free();
 }
 
+function runReverse(values) {
+  const input = new Int32Array(values);
+  const observation = observe_reverse_i32(input);
+  const output = Array.from(observation.values);
+  const expected = [...values].reverse();
+  const restored = observe_reverse_i32(observation.values);
+  const correct = output.every((value, index) => value === expected[index])
+    && output.length === expected.length
+    && Array.from(restored.values).every((value, index) => value === values[index]);
+  const expectedBit = observation.swaps & 1;
+  const timing = measureLocalCall(
+    () => observe_reverse_i32(input),
+    (sample) => sample.swaps & 1,
+    expectedBit,
+  );
+  elements["sorted-result"].textContent = correct ? "Reversed + restored" : "Correction failed";
+  elements["sorted-result"].className = correct ? "is-true" : "is-false";
+  elements["comparison-count"].textContent = `${observation.reads} / ${observation.writes}`;
+  elements["inversion-index"].textContent = String(observation.swaps);
+  renderSequence(output, { originalIndices: values.map((_, index) => values.length - 1 - index) });
+  displayTiming(timing, "JS/WASM reverse observation");
+  restored.free();
+  observation.free();
+}
+
 function runObservation() {
   try {
     const values = parseSequence();
     elements["input-count"].textContent = `${values.length} value${values.length === 1 ? "" : "s"}`;
     if (!wasmReady) throw new Error("WebAssembly runtime is not ready");
     if (activeAlgorithm === "is_sorted") runIsSorted(values);
-    else runInsertionSort(values);
+    else if (activeAlgorithm === "insertion") runInsertionSort(values);
+    else runReverse(values);
     setRuntimeStatus("WASM ready", "ready");
   } catch (error) {
     elements["sorted-result"].textContent = "Invalid input";
@@ -222,24 +289,22 @@ function applyProjection() {
   elements["registry-digest"].textContent = projection.registry_digest;
   elements["source-commit"].textContent = `source ${projection.source_commit}`;
 
-  const algorithmId = activeAlgorithm === "is_sorted" ? "order.is_sorted.adjacent" : "sort.insertion";
-  const algorithm = projection.algorithms.find((item) => item.id === algorithmId);
-  if (!algorithm) throw new Error(`derived projection is missing ${algorithmId}`);
+  const ui = algorithmUi[activeAlgorithm];
+  const algorithm = projection.algorithms.find((item) => item.id === ui.id);
+  if (!algorithm) throw new Error(`derived projection is missing ${ui.id}`);
   elements["algorithm-id"].textContent = algorithm.id;
   elements["algorithm-name"].textContent = algorithm.name.value;
   elements["time-complexity"].textContent = algorithm.time_worst.value;
   elements["time-provenance"].textContent = `${algorithm.time_worst.level}: ${algorithm.time_worst.source}`;
   elements["space-complexity"].textContent = algorithm.auxiliary_memory.value;
   elements["space-provenance"].textContent = `${algorithm.auxiliary_memory.level}: ${algorithm.auxiliary_memory.source}`;
-  const insertion = activeAlgorithm === "insertion";
-  elements["execution-boundary"].textContent = insertion
-    ? "Algorithm is in-place; the Web observation copies tagged output for display."
-    : "Read-only input; no output transport copy.";
-  elements["result-label"].textContent = insertion ? "Correction + stability" : "Result";
-  elements["secondary-label"].textContent = insertion ? "Adjacent swaps" : "First inversion";
-  elements["sequence-heading"].textContent = insertion ? "Stable sorted output" : "Sequence state";
-  elements["legend-text"].textContent = insertion ? "moved from original index" : "first decreasing pair";
-  elements["legend-text"].parentElement.classList.toggle("is-moved", insertion);
+  elements["execution-boundary"].textContent = ui.boundary;
+  elements["result-label"].textContent = ui.resultLabel;
+  elements["comparison-label"].textContent = ui.comparisonLabel;
+  elements["secondary-label"].textContent = ui.secondaryLabel;
+  elements["sequence-heading"].textContent = ui.sequenceHeading;
+  elements["legend-text"].textContent = ui.legend;
+  elements["legend-text"].parentElement.classList.toggle("is-moved", ui.moved);
   renderCatalog();
 }
 
@@ -250,7 +315,7 @@ document.querySelectorAll("[data-algorithm]").forEach((option) => {
       item.classList.toggle("is-active", item === option);
       item.setAttribute("aria-pressed", String(item === option));
     });
-    const dataset = activeAlgorithm === "insertion" ? "mixed_duplicates" : "inversion";
+    const dataset = algorithmUi[activeAlgorithm].dataset;
     elements["dataset-select"].value = dataset;
     elements["sequence-input"].value = datasets[dataset].join(", ");
     applyProjection();
@@ -286,15 +351,17 @@ elements["sequence-input"].addEventListener("input", () => {
 elements["run-button"].addEventListener("click", runObservation);
 elements["catalog-search"].addEventListener("input", renderCatalog);
 
-if (new URLSearchParams(window.location.search).get("algorithm") === "insertion") {
-  activeAlgorithm = "insertion";
+const requestedAlgorithm = new URLSearchParams(window.location.search).get("algorithm");
+if (requestedAlgorithm && algorithmUi[requestedAlgorithm]) {
+  activeAlgorithm = requestedAlgorithm;
   document.querySelectorAll("[data-algorithm]").forEach((item) => {
     const selected = item.dataset.algorithm === activeAlgorithm;
     item.classList.toggle("is-active", selected);
     item.setAttribute("aria-pressed", String(selected));
   });
-  elements["dataset-select"].value = "mixed_duplicates";
-  elements["sequence-input"].value = datasets.mixed_duplicates.join(", ");
+  const dataset = algorithmUi[activeAlgorithm].dataset;
+  elements["dataset-select"].value = dataset;
+  elements["sequence-input"].value = datasets[dataset].join(", ");
 }
 
 try {
@@ -311,5 +378,5 @@ try {
 } catch (error) {
   setRuntimeStatus("Runtime unavailable", "error");
   elements["runtime-context"].textContent = error instanceof Error ? error.message : String(error);
-  renderSequence(datasets.inversion);
+  renderSequence(datasets[algorithmUi[activeAlgorithm].dataset]);
 }

@@ -32,11 +32,13 @@ projection. Its `atlas-web-private-v0` shape is disposable and unversioned as a
 public contract.
 
 `atlas-web-wasm` depends on the `no_std` native algorithm crate. The current
-facade exports adjacent `is_sorted` and stable insertion sort over signed 32-bit
-integers. The read-only observation reports the native result, exact adjacent
-comparisons and first decreasing right-hand index. The insertion observation
-reports sorted values, original indices, comparisons and adjacent swaps.
-Inputs longer than 4096 elements are rejected before execution.
+facade exports adjacent `is_sorted`, stable insertion sort and symmetric reverse
+over signed 32-bit integers. The read-only observation reports the native
+result, exact adjacent comparisons and first decreasing right-hand index. The
+insertion observation reports sorted values, original indices, comparisons and
+adjacent swaps. The reverse observation reports reversed values and exact
+semantic reads, writes and symmetric swaps. Inputs longer than 4096 elements
+are rejected before execution.
 
 Insertion tags each value with its original index before calling the native
 generic in-place algorithm. A comparison returning `Less` corresponds exactly
@@ -45,6 +47,14 @@ retain increasing original indices, which makes stability directly testable.
 The algorithm itself retains its sourced `O(1)` auxiliary-space claim; tagged
 input and returned arrays are explicit Web observation/transport copies.
 
+Reverse calls the native in-place implementation, then derives its semantic
+counts from that implementation's fixed loop: `floor(n/2)` swaps, with two
+element reads and two element writes per swap. These are source-level algorithm
+operations, not measured WebAssembly memory instructions. Exact output and a
+second reversal restoring the input are checked independently in the browser
+and binding tests. The returned array is an explicit Web transport copy and
+does not alter the algorithm's sourced `O(1)` auxiliary-space claim.
+
 The browser timing is calibrated over a bounded repeated batch and includes the
 JavaScript/WebAssembly call boundary and observation allocation. The display
 records repetitions, elapsed batch duration and browser identity. It is neither
@@ -52,7 +62,6 @@ algorithm-only timing nor portable benchmark evidence.
 
 ## Current limits
 
-- `reverse` is not exported yet.
 - Dataset choices are local UI fixtures, not yet generated from `DatasetSpec`.
 - The static bundle is built and tested locally but not published.
 - Projection JSON and generated bindings are ignored build products.

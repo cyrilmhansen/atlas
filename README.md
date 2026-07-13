@@ -17,9 +17,9 @@ implementations. Schema hardening, local evidence integrity, deterministic
 indexing, the acceptance gate, and the local Git baseline are complete.
 
 MVP 5 is active under DEC-056. Its static Web slice projects the complete
-registry and executes adjacent `is_sorted` plus stable insertion sort locally
-through a private `wasm-bindgen` facade. See `docs/mvp5-web.md` for its exact
-authority and timing boundaries.
+registry and executes adjacent `is_sorted`, stable insertion sort and symmetric
+in-place reverse locally through a private `wasm-bindgen` facade. See
+`docs/mvp5-web.md` for its exact authority, counter and timing boundaries.
 
 ## Project map
 

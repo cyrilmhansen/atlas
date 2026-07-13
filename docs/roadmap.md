@@ -313,7 +313,24 @@ latency, generated-code size and execution separately on the same deterministic
 dataset. Decision class: **B** until enabling the MIR generator itself, which
 becomes class C.
 
-### C4. Post-MVP4 representation for imported algorithms
+### C4. Rust toolchain support baseline
+
+Context: the workspace declares Rust 1.85, but the currently locked
+`rusqlite 0.40.1` does not compile on that compiler. The GitHub workflow uses
+current stable Rust so it validates the actual dependency graph rather than an
+unsupported minimum-version claim.
+
+| Option | Consequence |
+|---|---|
+| A. Raise the declared minimum after a reproducible probe | Honest support contract; may exclude older local toolchains. |
+| B. Pin or replace dependencies to retain Rust 1.85 | Preserves the stated floor; adds maintenance and compatibility constraints. |
+| C. Keep an unverified 1.85 declaration | Misleading; CI success would not establish the claimed support. |
+
+Recommendation: **A**, after recording the oldest Rust release that compiles
+the locked workspace and its feature profiles. This is a public toolchain
+support decision, so changing `workspace.package.rust-version` is class **C**.
+
+### C5. Post-MVP4 representation for imported algorithms
 
 Context: industrial import from TAOCP, open-source repositories and papers
 needs a source-faithful representation before it can become executable. Rust

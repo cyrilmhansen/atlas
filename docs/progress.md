@@ -7,12 +7,15 @@
 - Added a GitHub Actions workflow for pushes to `main` and pull requests.
 - The workflow checks out the pinned MIR submodule, installs the RV64 LP64
   cross-compiler and QEMU user emulator, fetches the locked Rust dependency
-  graph, then runs the MVP 2 gate, all workspace targets and the ABI probe.
+  graph with stable Rust, then runs the MVP 2 gate, all workspace targets and
+  the ABI probe.
 
 ### Limits
 
 - Benchmarks and timing comparisons remain intentionally excluded.
 - The workflow does not exercise a MIR JIT or RISC-V code generator.
+- Rust 1.85 is declared as the workspace minimum but does not currently build
+  the locked `rusqlite 0.40.1`; the CI validates the current stable toolchain.
 
 ## 2026-07-13 - MVP 4 MIR trace import
 

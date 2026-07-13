@@ -20,7 +20,8 @@ The compact-reference comparison is independent of MIR: `GuestOffset(u32)`,
 modes for arithmetic overflow, bounds, object identity and region identity.
 DEC-040 selects `GuestOffset(u32)` for one fixed-capacity guest region. It is a
 byte offset, zero is valid, and it is never a host pointer. No guest offset is
-passed into MIR yet.
+passed as a host pointer into MIR. The partition experiment now passes offsets
+as integer values and accesses the backing region only through private imports.
 
 `scripts/check-rv64-lp64-abi.sh` cross-compiles a static RV64 LP64 probe and
 runs it with `qemu-riscv64`. It confirms the local toolchain/emulator path and
@@ -39,7 +40,9 @@ JIT limits.
 - No MIR JIT, MIR RISC-V backend, or QEMU system machine is exercised.
 - RV64ILP32 is deferred; the standard LP64 ABI does not define guest-reference
   representation.
-- No guest-memory load or store has been imported into MIR yet.
+- Guest memory currently supports only one little-endian `i64` region and the
+  private partition imports; it has no guest allocation, output region or
+  multi-region model.
 
 ## Acceptance checks
 

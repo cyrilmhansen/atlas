@@ -1,5 +1,12 @@
 # Progress log
 
+## 2026-07-13 - Dual native/MIR backend policy
+
+- Accepted DEC-042: Rust native and MIR remain coexisting backends indefinitely.
+- Added a capability-driven MIR rollout matrix and cross-backend correction
+  rules to the roadmap and MIR integration documentation.
+- Kept interpreter measurements separate from native algorithm benchmarks.
+
 ## 2026-07-13 - Private partition AST-to-MIR lowering
 
 ### Result

@@ -94,3 +94,31 @@ MIR generator interfaces are not compiled by this crate. Enabling them requires
 a separate decision, host-JIT smoke test, and size/latency measurement protocol.
 MIR RISC-V generation is a later experiment and cannot be inferred from the
 LP64 QEMU probe.
+
+## Dual-backend progression
+
+DEC-042 keeps native Rust and MIR indefinitely. Rust remains the qualified
+reference implementation and MIR is an additional experimental backend. A MIR
+counterpart is added only after the native contract, deterministic cases and,
+where applicable, AST operations are already available. No MIR result can
+replace native correction evidence.
+
+The rollout order is capability-driven:
+
+| Capability | Candidate algorithms | Required comparison |
+|---|---|---|
+| Scalar register arithmetic | minimum, maximum | result and tie policy |
+| Guest reads and comparisons | is-sorted, minimum, maximum | result and first failing index or tie policy where applicable |
+| Guest swap | reverse, partition | mutation, permutation, AST trace for partition |
+| Guest writes and shifts | insertion sort | sortedness, stability and permutation |
+| Additional regions and explicit allocation | merge sort, filter, merge-sorted, deduplicate | output, allocation/copy effects, region safety |
+
+Each slice runs the same deterministic correction cases through native Rust and
+MIR. It checks the returned value, mutated or output data and declared
+invariants. Trace-to-AST correspondence is required only when the existing
+experimental AST expresses the lowered operations. The bounded interpreter trace
+is diagnostic; truncation is reported and cannot certify complete trace coverage.
+
+Interpreter cost is measured separately from native algorithm benchmarks. A
+future JIT or RISC-V backend must first reproduce the same correction matrix;
+it must not be selected automatically from local timing results.

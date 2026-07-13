@@ -246,6 +246,33 @@ Status: explicitly deferred.
 Exit evidence: a target-specific probe independent of registry semantics and
 the compact-reference model.
 
+## Dual-backend rollout
+
+Status: native Rust and MIR are retained indefinitely under DEC-042. Native
+Rust remains the correction and qualification authority; MIR support is
+additive, bounded and never required for registry or composition operation.
+
+| Step | MIR capability | First candidates | Acceptance evidence |
+|---|---|---|---|
+| Complete | scalar operations and private trace imports | addition, minimum | result and exact trace checks |
+| Complete | one guest offset region, reads, writes and swaps | even partition | native output/boundary equality and typed AST trace links |
+| Next | adjacent reads and comparisons | `sequence.is_sorted` | boolean result and first inversion behavior |
+| Next | scalar selection scan | `sequence.minimum`, `sequence.maximum` | value/index tie policy |
+| Later | swap-only sequence mutation | `sequence.reverse` | exact reversal and double-reversal property |
+| Later | shifted writes | insertion sort | sortedness, stability and permutation |
+| Deferred | additional regions and outputs | merge sort, filter, merge-sorted, deduplicate | explicit allocation/copy/region semantics |
+
+For every row, preserve the native implementation and its tests. Execute native
+and MIR on the same deterministic cases; compare return values, mutated/output
+data and applicable invariants. Require trace-to-AST links only where the
+existing experimental AST represents the lowered operations. A missing MIR
+counterpart means only that the experimental adapter does not support the
+algorithm.
+
+Do not compare interpreter timings with native benchmark results. Interpreter
+cost, JIT startup, generated-code size and target execution remain different
+observation protocols. No backend is chosen automatically from those results.
+
 ## Strategic decisions to prepare
 
 These are intentionally visible before implementation. They are not accepted

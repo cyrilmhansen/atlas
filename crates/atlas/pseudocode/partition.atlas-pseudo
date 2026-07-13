@@ -1,0 +1,43 @@
+# Private experiment: structured pseudocode, not a public Atlas format.
+ast-version experimental-0
+ast-id ast.partition.two_pointer.in_place.v0
+algorithm partition.two_pointer.in_place
+parameter values | MutableSequence<T> | Sequence | ReadWrite
+parameter predicate | Predicate<T> | Predicate | Read
+parameter boundary | Index<values> | Index | Output
+effects mutates values
+effects allocations -
+effects copies -
+begin
+let left | 0
+let right | length(values)
+while left < right
+  while left < right
+    operation partition.left.read | Read | values[left]
+    operation partition.left.predicate | Predicate | predicate(values[left])
+    if predicate result is true
+      let left | left + 1
+    else
+      break
+    end
+  end
+  while left < right
+    operation partition.right.read | Read | values[right - 1]
+    operation partition.right.predicate | Predicate | predicate(values[right - 1])
+    if predicate result is false
+      let right | right - 1
+    else
+      break
+    end
+  end
+  if left < right
+    operation partition.swap | Swap | values[left] <-> values[right - 1]
+    let left | left + 1
+    let right | right - 1
+  end
+end
+operation partition.boundary | Partition | boundary = left
+operation partition.left.assert | Assert | all values before boundary match
+operation partition.right.assert | Assert | all values after boundary are rejected
+operation partition.permutation.assert | Assert | result is a permutation of input
+return boundary

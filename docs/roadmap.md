@@ -131,6 +131,11 @@ ASTs are implemented for merge sort and in-place partition under DEC-029. Every
 trace step is validated against its exact AST operation node. Structural
 expressions and parameter access modes are typed under DEC-030.
 
+DEC-044 adds a separate test-only textual editing experiment for adjacent
+`is_sorted` and two-pointer partition. Each private source must parse to an AST
+structurally equal to its Rust builder; it is not yet a schema or source of
+truth.
+
 The AST, dataset, and trace schemas remain non-public until this experiment
 shows one representation fits both cases without backend coupling.
 

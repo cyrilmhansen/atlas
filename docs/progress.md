@@ -1,5 +1,27 @@
 # Progress log
 
+## 2026-07-13 - Private textual pseudocode experiment
+
+### Result
+
+- Accepted DEC-044 (`pseudo-A`) and added readable, source-controlled fixtures
+  for adjacent `is_sorted` and two-pointer partition.
+- Added a deliberately small test-only parser for explicit declarations,
+  effects, blocks, operations and the expressions exercised by those fixtures.
+- Verified structural equality between each parsed source and its existing Rust
+  AST builder; unsupported expressions retain their source line in the error.
+- Observed that the first parser still needs a duplicated expression catalog and
+  a dedicated adjacent-inversion condition, so the experiment does not yet
+  justify a stable textual format.
+
+### Limits
+
+- This is a two-algorithm research input, not a public format, registry schema,
+  execution language or normative source.
+- Readability and parser complexity are observed qualitatively; a later decision
+  requires evidence from more algorithm families before a stable format is
+  considered.
+
 ## 2026-07-13 - Private is-sorted AST-to-MIR lowering
 
 ### Result

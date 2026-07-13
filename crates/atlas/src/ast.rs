@@ -430,6 +430,15 @@ fn operation(
     }
 }
 
+#[cfg(test)]
+pub(crate) fn experimental_operation(
+    id: &'static str,
+    kind: SemanticOperation,
+    description: &'static str,
+) -> Statement {
+    operation(id, kind, description)
+}
+
 fn e(source: &'static str) -> Expression {
     let values = || variable("values", ValueType::Sequence);
     let index = |name| variable(name, ValueType::Index);
@@ -474,6 +483,11 @@ fn e(source: &'static str) -> Expression {
         },
         _ => panic!("unmodeled experimental expression {source:?}"),
     }
+}
+
+#[cfg(test)]
+pub(crate) fn experimental_expression(source: &'static str) -> Expression {
+    e(source)
 }
 
 fn operation_operands(id: &str) -> Vec<Expression> {

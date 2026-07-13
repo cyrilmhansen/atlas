@@ -1,0 +1,21 @@
+# Private experiment: structured pseudocode, not a public Atlas format.
+ast-version experimental-0
+ast-id ast.order.is_sorted.adjacent.v0
+algorithm order.is_sorted.adjacent
+parameter values | Sequence<T> | Sequence | Read
+parameter order | TotalOrder<T> | Comparator | Read
+effects mutates -
+effects allocations -
+effects copies -
+begin
+let index | 1
+while index < length(values)
+  operation is-sorted.left.read | Read | values[index - 1]
+  operation is-sorted.right.read | Read | values[index]
+  operation is-sorted.adjacent.compare | Compare | order(values[index - 1], values[index])
+  if adjacent inversion
+    return false
+  end
+  let index | index + 1
+end
+return true

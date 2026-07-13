@@ -16,6 +16,8 @@
 - The workflow does not exercise a MIR JIT or RISC-V code generator.
 - Rust 1.85 is declared as the workspace minimum but does not currently build
   the locked `rusqlite 0.40.1`; the CI validates the current stable toolchain.
+- The replay integration test accepts both documented absence states: an empty
+  execution directory and a missing record in an existing directory.
 
 ## 2026-07-13 - MVP 4 MIR trace import
 

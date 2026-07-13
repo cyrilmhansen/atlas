@@ -697,7 +697,11 @@ fn cli_replay_reports_a_missing_local_execution() {
         .expect("atlas binary must run");
 
     assert_eq!(output.status.code(), Some(1));
-    assert!(String::from_utf8_lossy(&output.stderr).contains("was not found"));
+    let error = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        error.contains("was not found") || error.contains("generate an execution before replaying"),
+        "unexpected replay error: {error}"
+    );
 }
 
 #[test]

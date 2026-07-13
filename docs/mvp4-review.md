@@ -1,52 +1,64 @@
-# MVP 4 review
+# MVP 4 single-region checkpoint review
 
-Review date: 2026-07-13. Active scope: the LP64 MIR probe authorized by
-DEC-039.
+Review date: 2026-07-13. Active scope: the interpreter-only, single-region MVP
+4 checkpoint authorized by DEC-039 through DEC-045. This is a checkpoint, not
+MVP 4 closure.
 
 ## Demonstrated boundary
 
 `atlas-mir` links a private C shim to the pinned upstream MIR interpreter core.
-The shim creates and executes a scalar `i64` addition, then a three-value
-minimum whose two semantic comparisons call a private trace import. Rust checks
-the final minimum and ordered comparison values against the native algorithm.
-This now includes a private lowering of the read, predicate, swap and boundary
-subset of `partition_ast()` to the interpreter. It partitions little-endian
-guest `i64` values by evenness, compares the result to native Rust, and checks
-each trace node and operation type against the AST. It is not a public backend
-API or an Atlas evidence format.
+It now exercises scalar arithmetic, bounded trace imports, guest reads,
+comparisons, stores, swaps and shifted writes. Native Rust remains the oracle
+for every algorithm-level experiment.
 
-The compact-reference comparison is independent of MIR: `GuestOffset(u32)`,
-`GuestHandle(u32)`, and `GuestRegionOffset` have separate testable failure
-modes for arithmetic overflow, bounds, object identity and region identity.
-DEC-040 selects `GuestOffset(u32)` for one fixed-capacity guest region. It is a
-byte offset, zero is valid, and it is never a host pointer. No guest offset is
-passed as a host pointer into MIR. The partition experiment now passes offsets
-as integer values and accesses the backing region only through private imports.
+| Capability | MIR experiment | Cross-backend evidence |
+|---|---|---|
+| Scalar arithmetic and trace import | addition, three-value minimum | exact result, event order and first-on-tie behavior |
+| AST-backed reads, predicates and swaps | even partition | output, boundary and exact typed AST trace links |
+| AST-backed read-only scan | adjacent `is_sorted` | boolean, first inversion, early stop and typed AST trace links |
+| Selection scan | minimum and maximum | value, index and first-occurrence tie policy |
+| Symmetric swaps | reverse | exact output and double-reversal property |
+| Shifted writes over private 16-byte pairs | stable insertion sort | exact native output, sortedness, permutation and duplicate stability |
+
+These entry points are private adapter experiments. They are not registry
+implementations, a generic AST compiler, a backend API or Atlas evidence.
+
+The compact-reference comparison remains independent of MIR:
+`GuestOffset(u32)`, `GuestHandle(u32)`, and `GuestRegionOffset` have separate
+testable failure modes for overflow, bounds, object identity and region
+identity. DEC-040 selects `GuestOffset(u32)` for one fixed-capacity region.
+Offset zero is valid and is never a host pointer. MIR computes scalar byte
+offsets; private host imports alone access the backing buffer.
+
+Signed `i64` elements occupy 8 bytes. DEC-045's stability probe uses a private
+16-byte `(i64 key, u64 original_index)` pair without promoting that layout to a
+guest ABI.
 
 `scripts/check-rv64-lp64-abi.sh` cross-compiles a static RV64 LP64 probe and
-runs it with `qemu-riscv64`. It confirms the local toolchain/emulator path and
+runs it with `qemu-riscv64`. It confirms the Linux toolchain/emulator path and
 64-bit pointer width. It does not validate RV64ILP32, bare metal/Newlib, or a
 MIR RISC-V generator.
 
-`docs/mir-integration.md` details the pinned source, build, interpreter
-lifecycle, FFI boundary, reference candidates, QEMU probe, instrumentation and
-JIT limits.
-
 ## Deliberate limits
 
-- No public plan or backend schema exists.
-- Only a private, specialized `partition_ast()` subset is lowered to MIR; no
-  generic plan or backend API exists.
+- No public plan, backend schema or persistent MIR artifact exists.
+- Only private specialized programs exist. Partition and `is_sorted` link
+  traces to exact AST nodes; the other experiments are not AST lowerings.
 - No MIR JIT, MIR RISC-V backend, or QEMU system machine is exercised.
 - RV64ILP32 is deferred; the standard LP64 ABI does not define guest-reference
   representation.
-- Guest memory currently supports only one little-endian `i64` region and the
-  private partition imports; it has no guest allocation, output region or
-  multi-region model.
+- Guest memory has one fixed-capacity little-endian region with private 8-byte
+  accesses. It has no guest allocation, separate output/scratch region, region
+  lifecycle or multi-region model.
+- Textual pseudocode remains a two-file, test-only parser experiment and is not
+  the source consumed by the MIR adapter.
 
 ## Acceptance checks
 
 ```sh
 cargo test -p atlas-mir --locked --offline
-sh scripts/check-rv64-lp64-abi.sh
+cargo test --workspace --all-targets --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+scripts/check-mvp2.sh
+scripts/check-rv64-lp64-abi.sh
 ```

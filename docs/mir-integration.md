@@ -20,23 +20,26 @@ cargo test -p atlas-mir --locked --offline
 
 ## Current execution path
 
-The only executed MIR function is `add_u64`, recreated by `mir_shim.c` on each
-call:
+Every private entry point recreates its MIR module in `mir_shim.c` for one call:
 
 1. `MIR_init` creates a context.
-2. The shim creates one module and one `i64` function with two `i64` arguments.
-3. It appends `MIR_ADD` and `ret`, then loads and links it with
+2. The shim constructs one specialized function and its private imports.
+3. It appends instructions, then loads and links the module with
    `MIR_set_interp_interface`.
 4. `MIR_interp_arr` executes the function.
-5. The shim copies the result out and calls `MIR_finish` before returning.
+5. The shim copies results or guest mutations out and calls `MIR_finish`.
 
-Rust exposes one private `extern "C"` function returning `u64`. MIR local
-registers are `i64`, as required by the upstream API used in this probe. No host
-pointer is accepted, stored, or returned by this boundary.
+The executed set now covers scalar addition and minimum tracing, partition,
+adjacent `is_sorted`, minimum/maximum selection, reverse and stable insertion
+over tagged pairs. MIR locals and guest scalar values are `i64`. Rust passes a
+host backing-buffer pointer only to the private C adapter; MIR programs receive
+element counts and compute scalar guest byte offsets. Private imports mediate
+all buffer access. No host pointer is stored in a MIR register or exposed as a
+guest reference.
 
 ## Guest references
 
-The first slice compares values independently of MIR:
+The first slice compared three representations independently of MIR:
 
 | Candidate | Checked now | Deferred |
 |---|---|---|
@@ -44,9 +47,11 @@ The first slice compares values independently of MIR:
 | `GuestHandle(u32)` | invalid handle and object-relative bounds | reuse and reclamation |
 | `GuestRegionOffset` | region identity, overflow and bounds | encoding and lifetime |
 
-They are neither host pointers nor MIR pointer operands. One representation and
-its lifetime rules must be selected before a guest reference crosses a MIR call
-boundary.
+They are neither host pointers nor MIR pointer operands. DEC-040 selected
+`GuestOffset(u32)` for one fixed-capacity region. Current programs compute these
+offsets as MIR scalar integers and use private checked imports for 8-byte loads
+and stores. Handles, region IDs, allocation and lifecycle remain unselected for
+the executable runtime.
 
 ## RV64 LP64 probe
 
@@ -126,6 +131,11 @@ The rollout order is capability-driven:
 | Guest swap | reverse, partition | mutation, permutation, AST trace for partition |
 | Guest writes and shifts | insertion sort | sortedness, stability and permutation |
 | Additional regions and explicit allocation | merge sort, filter, merge-sorted, deduplicate | output, allocation/copy effects, region safety |
+
+The single-region rows through guest writes and shifts are complete. Additional
+regions are not a routine continuation: they require a new memory-model
+decision covering identity, bounds, lifetime and visible allocation/copy
+effects.
 
 Each slice runs the same deterministic correction cases through native Rust and
 MIR. It checks the returned value, mutated or output data and declared

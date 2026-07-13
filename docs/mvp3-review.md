@@ -134,5 +134,6 @@ visible. CLI tests require the rejected alternative and its reason to render.
 DEC-038 closes MVP 3 without promoting the internal composition model to a
 public contract. A later phase must make a new decision before serializing
 plans, expanding candidate search, or compiling generated source at runtime.
-MVP 4 remains inactive; MIR work requires separate scope, ABI, and memory-model
-validation.
+At MVP 3 closure, MVP 4 remained inactive and required separate scope, ABI and
+memory-model validation. It was subsequently activated under DEC-039; see the
+current MVP status and MVP 4 checkpoint review.

@@ -1,5 +1,30 @@
 # Progress log
 
+## 2026-07-13 - MVP 4 single-region documentation checkpoint
+
+### Result
+
+- Reconciled the current status, MVP 4 review, MIR integration boundary,
+  roadmap, README and historical MVP 3 closure note with DEC-039 through
+  DEC-045.
+- Recorded the completed interpreter capability ladder: scalar probes,
+  partition, `is_sorted`, minimum/maximum, reverse and stable insertion.
+- Marked the checkpoint explicitly as non-closing: no JIT, MIR-generated
+  RISC-V, multi-region runtime, guest allocator or persistent MIR artifact has
+  been demonstrated.
+- Prioritized a narrow host-JIT experiment before RISC-V generation and
+  multi-region expansion, with the required class C decisions visible in the
+  roadmap.
+
+### Verification
+
+```sh
+cargo test --workspace --all-targets --locked --offline
+cargo clippy --workspace --all-features --all-targets --locked --offline -- -D warnings
+scripts/check-mvp2.sh
+scripts/check-rv64-lp64-abi.sh
+```
+
 ## 2026-07-13 - Private stable MIR insertion sort
 
 - Accepted DEC-045 (`insertion-B`) and added a private 16-byte guest pair

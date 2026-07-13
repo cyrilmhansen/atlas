@@ -1,9 +1,10 @@
 # MVP status
 
 - Active MVP: **MVP 4 - LP64 MIR adapter probe**
-- Status: narrow experimental first slice under DEC-039
+- Status: interpreter-only single-region checkpoint complete; MVP 4 remains active
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
+- MVP 3: closed locally under DEC-038
 
 ## Current slice
 
@@ -17,10 +18,12 @@ Current corpus progress:
 - Algorithms: 15 / 15
 - Implementations: 20 / 20
 
-Current MIR adapter progress: scalar arithmetic and comparison traces, mutable
-even partition, and read-only adjacent `is_sorted` are independently checked
-against their native Rust counterparts. These private interpreter experiments
-do not add registry implementations or change the MVP corpus counts.
+Current MIR adapter progress: scalar arithmetic and trace imports, mutable even
+partition, adjacent `is_sorted`, minimum/maximum selection, reverse, and stable
+insertion over private tagged pairs are independently checked against native
+Rust. This completes the planned single-region interpreter capability ladder.
+These private experiments do not add registry implementations or change corpus
+counts.
 
 ## MVP 1 closure
 
@@ -108,7 +111,7 @@ with an override is deferred until its exact source is verified.
 
 See `docs/mvp3-review.md` for the acceptance checks and deliberate limits.
 
-## MVP 4 first slice
+## MVP 4 single-region checkpoint
 
 `atlas-mir` pins the original MIR upstream and executes scalar MIR interpreter
 programs through a private C shim. The first semantic trace records the two
@@ -117,16 +120,18 @@ reference implementation. It is private, bounded, in-memory instrumentation,
 not an execution record or evidence format. The registry, composition model and
 native backend do not depend on MIR.
 
-The adapter now also lowers the explicit read, predicate, swap and boundary
-subset of the experimental partition AST. It operates on little-endian `i64`
-values in the selected bounded offset region and checks result and typed AST
-trace links against the native partition implementation.
+The adapter lowers specialized partition and adjacent `is_sorted` subsets and
+checks exact trace links against their experimental AST nodes. Additional
+specialized programs validate first-on-tie minimum/maximum selection, reverse,
+and stable insertion using shifted 16-byte tagged pairs. All operate through
+private imports over the selected bounded little-endian offset region.
 
 The three compact guest-reference candidates were tested independently: offset,
 handle, and region-plus-offset. DEC-040 selects bounded `u32` byte offsets in
 one fixed-capacity region for the first guest-memory experiment.
 `scripts/check-rv64-lp64-abi.sh` proves the local RV64 LP64 compiler/QEMU-user
-path. It is not a MIR RISC-V or RV64ILP32 test.
+path. It is not a MIR RISC-V or RV64ILP32 test. JIT, MIR-generated RISC-V,
+multi-region memory, guest allocation and persistent MIR traces remain open.
 
 See `docs/mvp4-review.md`, `docs/mir-integration.md`, and DEC-039 for the
 accepted scope, checks and limits.

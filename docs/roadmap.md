@@ -16,9 +16,11 @@ orchestration.
 MVP 4 is active under DEC-039. It has established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a
-private deterministic trace import for a three-value minimum. None of these
-experiments changes the public registry schema, execution-record format or
-native reference backend.
+complete interpreter-only capability ladder over one bounded offset region.
+The demonstrated native/MIR pairs now cover partition, `is_sorted`,
+minimum/maximum, reverse and stable insertion, in addition to scalar probes.
+None changes the public registry schema, execution-record format or native
+reference backend.
 
 The DOCX snapshot is preserved at `doc/Vision_Atlas_Executable_MVP1-4.docx`.
 `docs/vision.md` is its verified, diffable Markdown conversion and the
@@ -136,8 +138,10 @@ DEC-044 adds a separate test-only textual editing experiment for adjacent
 structurally equal to its Rust builder; it is not yet a schema or source of
 truth.
 
-The AST, dataset, and trace schemas remain non-public until this experiment
-shows one representation fits both cases without backend coupling.
+The AST, dataset, trace and textual pseudocode shapes remain non-public. The
+current experiments show useful common structure, but the test-only parser also
+shows algorithm-specific expression costs. Promotion requires a separate
+decision informed by real imported sources, not only the local sequence corpus.
 
 ## MVP 3 and MVP 4
 
@@ -189,21 +193,21 @@ inconclusive gate records a limit; it does not silently widen the runtime.
 
 ### 1. Select and specify compact guest references
 
-Status: model selected under DEC-040; guest-memory operation pending.
+Status: complete for the single-region checkpoint under DEC-040 and DEC-041.
 
 - `GuestOffset(u32)` is the byte offset in one fixed-capacity guest region.
 - Offset zero is valid; MVP 4 has no null reference or guest-visible growth.
 - Typed accesses must declare alignment and reject overflow and out-of-bounds
   offsets before reaching the host buffer.
-- Implement one small memory operation using only that representation, with
-  overflow and bounds rejection tests.
+- Bounds-checked little-endian 8-byte loads and stores are exercised by several
+  interpreter programs; overflow, alignment and bounds failures are tested.
 
 Exit evidence: a documented memory model and a reproducible test that never
 passes a host pointer as a guest reference.
 
 ### 2. Lower one existing algorithm AST to private MIR
 
-Status: first private partition subset accepted and implemented under DEC-041.
+Status: complete for two AST-backed subsets under DEC-041 and DEC-043.
 
 - Keep the native algorithm as the correction oracle.
 - Reuse an existing typed AST rather than inventing a second semantic model.
@@ -211,6 +215,8 @@ Status: first private partition subset accepted and implemented under DEC-041.
   MIR over the selected offset region.
 - Result and typed semantic trace links are checked against native Rust and the
   existing AST on deterministic boundary and mixed cases.
+- Adjacent `is_sorted` adds a read-only lowering with first-inversion and early
+  stop checks.
 
 Exit evidence: one AST-backed algorithm runs through native Rust and MIR with
 the same declared semantics. No public backend trait or persistent plan format
@@ -218,19 +224,20 @@ is introduced by this gate.
 
 ### 3. Exercise guest references in that lowered algorithm
 
-Status: blocked on gate 1.
+Status: complete for one fixed-capacity region.
 
 - Pass compact references as MIR scalar values, never as host pointers.
 - Make every load, store, bounds check and imported runtime operation visible
   in the lowered program and trace.
-- Test ordinary, boundary, invalid and overflow cases.
+- Ordinary and boundary algorithm cases match native Rust. Invalid, unaligned
+  and overflowing references are rejected by the memory-model tests.
 
 Exit evidence: a minimal sequence operation reads or writes guest memory through
 the selected model and matches the native reference result.
 
 ### 4. Compare interpreter and optional JIT behavior
 
-Status: deferred until gates 2 and 3 produce a meaningful same-plan workload.
+Status: ready for a decision; gates 2 and 3 now provide meaningful workloads.
 
 - Measure startup latency, code size and correction equivalence separately.
 - Keep JIT results local observations with environment and protocol provenance.
@@ -278,6 +285,30 @@ Do not compare interpreter timings with native benchmark results. Interpreter
 cost, JIT startup, generated-code size and target execution remain different
 observation protocols. No backend is chosen automatically from those results.
 
+## MVP 4 single-region checkpoint
+
+Status: complete locally through DEC-045.
+
+The checkpoint demonstrates the interpreter and guest-offset boundary across
+read-only scans, selection, swaps and shifted writes. It also demonstrates
+exact AST trace links for two materially different control-flow shapes. It does
+not demonstrate a general AST compiler, JIT execution, MIR-generated RISC-V,
+multi-region memory or a persistent backend artifact.
+
+Recommended order for the remaining MVP 4 work:
+
+1. Enable the smallest host JIT build and reproduce correction for one scalar
+   function and one guest-memory workload.
+2. Measure JIT construction latency and generated-code size under a separate,
+   local protocol; retain interpreter traces as the observability reference.
+3. Probe MIR RISC-V generation with a standalone artifact before connecting it
+   to Atlas guest memory.
+4. Introduce multiple regions only when an output/scratch algorithm is selected
+   and region identity, lifetime and copy visibility have been accepted.
+
+This ordering tests the remaining claims in the vision before widening the
+memory model or algorithm corpus.
+
 ## Strategic decisions to prepare
 
 These are intentionally visible before implementation. They are not accepted
@@ -285,9 +316,8 @@ decisions and must not be implemented until validated.
 
 ### C1. First compact-reference model
 
-Context: all three candidates now have distinct overflow, bounds and identity
-tests, but no guest runtime exists. The choice fixes object identity and memory
-semantics for the first executable guest experiment.
+Context: all three candidates have distinct overflow, bounds and identity tests.
+The first executable guest runtime now uses one fixed-capacity offset region.
 
 | Option | Consequence |
 |---|---|
@@ -295,15 +325,16 @@ semantics for the first executable guest experiment.
 | B. `u32` handle through an object table | Explicit identity and lifetime checks; adds table indirection and allocator policy. |
 | C. region ID plus offset | Clear separation between regions; uses more representation and requires region lifecycle rules. |
 
-Accepted: **A** under DEC-040. The next acceptance test is one bounds-checked
-array operation lowered to MIR. Any later replacement before a public format
-still requires a new decision because it changes private runtime semantics.
+Accepted and demonstrated: **A** under DEC-040 through partition, `is_sorted`,
+selection, reverse and insertion experiments. Any replacement or extension to
+multiple addressable regions still requires a new decision because it changes
+private runtime semantics.
 
 ### C2. Boundary between existing AST and MIR lowering
 
-Context: the current trace proves MIR imports but not that an Atlas algorithm
-can use the adapter. A second semantic representation would duplicate authority
-and make trace validation weaker.
+Context: partition and `is_sorted` now prove that exact existing AST node IDs
+can constrain and validate private MIR experiments. A second semantic authority
+would still make trace validation weaker.
 
 | Option | Consequence |
 |---|---|
@@ -311,9 +342,10 @@ and make trace validation weaker.
 | B. Private lowering of one existing typed AST | Tests the intended adapter direction while retaining a narrow, reversible implementation. |
 | C. Public generic backend trait and plan format | Reusable on paper, but premature and schema-shaping. |
 
-Accepted: **B** under DEC-041, beginning with the explicit partition subset.
-The minimum experiment remains a trace/import probe; no generic lowering or
-public backend trait is implied.
+Accepted and demonstrated: **B** under DEC-041 and DEC-043 for partition and
+`is_sorted`. Minimum/maximum, reverse and insertion remain specialized MIR
+programs rather than AST lowerings. No generic lowering or public backend trait
+is implied.
 
 ### C3. Status of MIR semantic traces
 
@@ -327,22 +359,22 @@ a stable semantic event vocabulary and provenance policy.
 | B. Define a versioned internal trace artifact | Enables replay tooling, but requires identifiers, provenance and retention rules. |
 | C. Add traces to public execution evidence | Makes traces queryable, but changes schema and archival policy. |
 
-Recommendation: **A** until one AST-backed algorithm has matching native and
-MIR traces. The smallest discriminating experiment is a one-algorithm trace
-comparison with no serialization. Decision class: **C** for B or C; **A**
-requires no schema work.
+Current policy: **A**. Partition and `is_sorted` now have matching typed AST
+links without serialization, and that has been sufficient for correction and
+diagnosis. Revisit B only if replay across processes becomes a concrete need.
+B or C remains class **C** because either introduces a durable format.
 
 ### B1. Interpreter versus JIT evaluation protocol
 
 Context: the interpreter is valuable for observability; MIR generation may be
-valuable for startup latency and compact native code. Measuring either before a
-same-plan workload would be noise.
+valuable for startup latency and compact native code. The completed
+single-region matrix now provides workloads suitable for a controlled probe.
 
-Recommendation: retain the interpreter as the correction and trace backend;
-prepare a local protocol only after gate 3. The protocol should compare build
-latency, generated-code size and execution separately on the same deterministic
-dataset. Decision class: **B** until enabling the MIR generator itself, which
-becomes class C.
+Recommendation: retain the interpreter as the correction and trace backend and
+define a local protocol comparing JIT construction latency, generated-code size
+and execution separately on the same deterministic inputs. Protocol details are
+class **B**; compiling and enabling MIR generator sources is class **C** and is
+captured by C6 below.
 
 ### C4. Rust toolchain support baseline
 
@@ -379,3 +411,37 @@ source material and separate dataset specifications. Add B only after two
 imports expose common extraction needs. Do not start C without evidence from
 multiple source families. Decision class: **C** when an import format becomes
 persisted or public.
+
+### C6. First MIR generator and host-JIT slice
+
+Context: the interpreter path is now broad enough for correction, but the MIR
+generator is not compiled. Enabling it changes the native build and execution
+surface even if the API remains private.
+
+| Option | Consequence |
+|---|---|
+| A. Host JIT for one scalar and one guest workload | Tests latency, size and correction with the smallest new build surface. |
+| B. Continue interpreter-only through MVP 4 | Preserves simplicity but leaves a central vision claim unevaluated. |
+| C. Start directly with MIR RISC-V generation | Reaches the target sooner but mixes generator, target and emulator failures. |
+
+Recommendation: **A**. First reproduce interpreter results without timing, then
+run a separate local measurement protocol. The change is reversible but class
+**C** because it adds MIR generator sources and executable-code allocation to
+the adapter.
+
+### C7. Multi-region guest memory
+
+Context: merge sort, copying filter, merge-sorted and deduplication require
+separate input, output or scratch identities. A second region changes reference
+identity and lifetime rules; a larger undifferentiated arena would hide those
+effects.
+
+| Option | Consequence |
+|---|---|
+| A. Fixed host-owned region table plus `(region_id, u32 offset)` | Makes input/output/scratch identity and bounds explicit without guest allocation. |
+| B. Multiple slices inside one `GuestOffset(u32)` arena | Reuses the current scalar reference but makes object identity conventional. |
+| C. `u32` handles through an object table | Supports object lifetime naturally but adds indirection and allocation policy. |
+
+Recommendation: **A**, beginning with exactly two or three fixed regions for
+one real algorithm and no guest-visible allocator. This is class **C** and must
+be accepted before implementation.

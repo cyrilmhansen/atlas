@@ -33,6 +33,8 @@ cargo run -p atlas -- search "merge sort"
 cargo run -p atlas -- explain search.binary.rust.slice.v1
 cargo run -p atlas -- qualify sequence.sort --stable --in-place --allocation none
 cargo run -p atlas -- compose cleanup
+cargo run -p atlas -- compose cleanup --rust
+cargo run -p atlas --example cleanup_generated
 cargo run -p atlas -- index
 cargo test --workspace
 scripts/check-mvp1.sh
@@ -108,7 +110,9 @@ their evidence; it does not rank implementations or infer missing metadata.
 `compose cleanup` is the first MVP 3 experiment. It renders one internal,
 non-persistent `filter -> sort -> deduplicate` plan with a selected candidate,
 a rejected alternative, and all visible mutations, copies, and allocations.
-It is not a general planner or an executable program generator.
+`compose cleanup --rust` renders the corresponding Rust orchestration; the
+identical `cleanup_generated` example is compiled and runnable. This remains a
+single-scenario generator, not a general planner or a persistent plan format.
 
 ## Runtime boundary
 

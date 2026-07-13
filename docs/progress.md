@@ -1249,6 +1249,30 @@ cargo test -p atlas --locked --offline
 cargo run -q -p atlas --locked --offline -- compose cleanup
 ```
 
+## 2026-07-13 - Verified Rust orchestration for cleanup
+
+### Result
+
+- Added `atlas compose cleanup --rust`, which emits the selected pipeline's Rust
+  orchestration without writing a plan or source artifact.
+- Added `cleanup_generated`, a Cargo example containing the exact emitted
+  source. It compiles and runs the in-place filter, in-place insertion sort, and
+  explicit quadratic deduplicated output sequence.
+
+### Limits
+
+- Generation is limited to the reviewed `cleanup` scenario.
+- Atlas does not compile or execute emitted source; Cargo example execution is
+  the explicit verification boundary.
+
+### Verification
+
+```sh
+cargo test -p atlas --all-targets --locked --offline
+cargo run -q -p atlas --locked --offline -- compose cleanup --rust
+cargo run -q -p atlas --locked --offline --example cleanup_generated
+```
+
 The gate creates only ignored generated observations under `build/executions/`.
 
 ## 2026-07-12 - Replayable observations and baseline resource metrics

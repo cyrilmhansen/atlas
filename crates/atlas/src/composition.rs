@@ -103,6 +103,14 @@ pub fn render(composition: &CleanupComposition) -> String {
     output
 }
 
+/// Returns the verified Rust orchestration source for the selected candidate.
+///
+/// The source is compiled as the `cleanup_generated` Cargo example. It remains
+/// a generated display product, not a stored plan format.
+pub fn render_rust_orchestration() -> &'static str {
+    include_str!("../examples/cleanup_generated.rs")
+}
+
 fn render_candidate(output: &mut String, candidate: &CandidatePlan) {
     output.push_str(&format!("  id: {}\n", candidate.id));
     for (index, step) in candidate.steps.iter().enumerate() {
@@ -122,7 +130,7 @@ fn render_candidate(output: &mut String, candidate: &CandidatePlan) {
 
 #[cfg(test)]
 mod tests {
-    use super::{cleanup_minimize_declared_allocations, render};
+    use super::{cleanup_minimize_declared_allocations, render, render_rust_orchestration};
 
     #[test]
     fn selected_cleanup_plan_makes_mutations_copies_and_allocations_visible() {
@@ -158,5 +166,14 @@ mod tests {
         assert!(output.contains("allocation: auxiliary Vec<T>"));
         assert!(output.contains("internal HashSet<T>"));
         assert!(output.contains("rejected: it introduces a copied filter result"));
+    }
+
+    #[test]
+    fn generated_rust_orchestration_matches_the_selected_operations() {
+        let source = render_rust_orchestration();
+
+        assert!(source.contains("filter_in_place(values, predicate)"));
+        assert!(source.contains("insertion_sort_by(values, i32::cmp)"));
+        assert!(source.contains("deduplicate_quadratic(values)"));
     }
 }

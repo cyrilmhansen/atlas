@@ -23,13 +23,20 @@ an explicitly rejected compatible alternative. Its copied filter output, merge
 scratch storage, hash-set storage, and output allocation explain the rejection
 for this one objective.
 
+`atlas compose cleanup --rust` renders the Rust orchestration for the selected
+candidate. The source is also `crates/atlas/examples/cleanup_generated.rs`, so
+Cargo compiles and runs the exact emitted program. It filters a caller-owned
+vector in place, sorts that vector in place, then returns a separately allocated
+deduplicated vector.
+
 ## Deliberate limits
 
 - The types are internal Rust values for this scenario, not schema 0.1 fields
   or a persistent plan format.
 - The plan is selected from a fixed, reviewed pair of candidates; it is not a
   general planner or search engine.
-- It renders orchestration intent but does not execute a generated program.
+- Atlas renders source but does not compile or execute it as part of the CLI.
+  The separately runnable Cargo example is the verification boundary.
 - The objective interprets declared effects only. It does not turn them into
   empirical allocation measurements.
 
@@ -38,6 +45,8 @@ for this one objective.
 ```sh
 cargo test -p atlas --locked --offline
 cargo run -q -p atlas --locked --offline -- compose cleanup
+cargo run -q -p atlas --locked --offline -- compose cleanup --rust
+cargo run -q -p atlas --locked --offline --example cleanup_generated
 ```
 
 The unit tests require every selected mutation, copy, and allocation to remain

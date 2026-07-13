@@ -129,6 +129,10 @@ quadratic deduplication for declared intermediate allocation minimization; it
 also explains a copying merge/hash alternative rejection. The structured AST may
 support readable orchestration but must not expand MVP 3 into a general compiler.
 
+The selected scenario can render verified Rust source under `--rust`; the source
+is compiled as the `cleanup_generated` example. It remains an internal
+single-scenario generation experiment, not a plan format or compiler service.
+
 MVP 4 remains the first phase allowed to introduce MIR. The `atlas-algorithms`
 core APIs provide the native reference backend; MIR remains an adapter and never
 defines registry semantics, compact references, or evidence formats.

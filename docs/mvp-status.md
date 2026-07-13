@@ -77,4 +77,8 @@ exposes compatibility, preconditions, mutations, allocations, copies, and a
 rejected alternative. It is experimental and does not change schema 0.1 or
 define a persistent plan format.
 
+`atlas compose cleanup --rust` renders the selected orchestration, which is
+compiled and run as `cleanup_generated`. Atlas itself does not execute generated
+source.
+
 See `docs/mvp3-review.md` for the acceptance checks and deliberate limits.

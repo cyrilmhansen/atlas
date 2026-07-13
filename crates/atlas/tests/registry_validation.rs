@@ -744,6 +744,35 @@ fn cli_rejects_unknown_composition_scenarios() {
 }
 
 #[test]
+fn cli_renders_a_compilable_cleanup_orchestration() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "cleanup", "--rust"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("pub fn cleanup<F>"));
+    assert!(stdout.contains("filter_in_place(values, predicate)"));
+    assert!(stdout.contains("deduplicate_quadratic(values)"));
+}
+
+#[test]
+fn cli_rejects_unknown_composition_options() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "cleanup", "--yaml"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown compose option"));
+}
+
+#[test]
 fn cli_explains_binary_search_chain_with_requirements_and_effects() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))

@@ -5,7 +5,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
 use atlas::comparisons::ComparisonReport;
-use atlas::composition::{cleanup_minimize_declared_allocations, render as render_composition};
+use atlas::composition::{
+    cleanup_minimize_declared_allocations, render as render_composition, render_rust_orchestration,
+};
 use atlas::executions::{ExecutionMode, ExecutionRecord};
 use atlas::index::rebuild_database;
 use atlas::registry::{
@@ -49,11 +51,6 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
         print_usage();
         return ExitCode::from(2);
     };
-    if arguments.next().is_some() {
-        eprintln!("compose accepts exactly one scenario");
-        print_usage();
-        return ExitCode::from(2);
-    }
     if scenario != "cleanup" {
         eprintln!(
             "unknown composition scenario {:?}; expected cleanup",
@@ -61,11 +58,28 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
         );
         return ExitCode::from(2);
     }
+    let render_rust = match arguments.next() {
+        None => false,
+        Some(option) if option == "--rust" => true,
+        Some(option) => {
+            eprintln!("unknown compose option {:?}; expected --rust", option);
+            return ExitCode::from(2);
+        }
+    };
+    if arguments.next().is_some() {
+        eprintln!("compose accepts cleanup and optional --rust");
+        print_usage();
+        return ExitCode::from(2);
+    }
 
-    print!(
-        "{}",
-        render_composition(&cleanup_minimize_declared_allocations())
-    );
+    if render_rust {
+        print!("{}", render_rust_orchestration());
+    } else {
+        print!(
+            "{}",
+            render_composition(&cleanup_minimize_declared_allocations())
+        );
+    }
     ExitCode::SUCCESS
 }
 
@@ -814,6 +828,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--rust]\n  atlas index [DB_PATH]"
     );
 }

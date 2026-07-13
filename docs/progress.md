@@ -1240,6 +1240,18 @@ cargo run -q -p atlas --locked --offline --example find_generated
 - Added a matching compiled Rust example. The schema remains unchanged; the
   structural values are internal to this experiment.
 
+## 2026-07-13 - Bounded unique-sort composition
+
+- Added `atlas compose unique-sort`, the fourth internal MVP 3 scenario:
+  `sort.insertion -> deduplicate.quadratic` is selected for the declared
+  intermediate-allocation objective, while `sort.merge -> deduplicate.hash` is
+  rendered as a compatible rejected alternative.
+- Added `unique_sort_generated`, the compiled Rust orchestration matching the
+  selected plan. Its required output allocation is explicit and distinct from
+  rejected merge scratch and hash-set storage.
+- Added CLI and unit coverage for `unique-sort`, and completed equivalent CLI
+  coverage for the preceding structured `partition-sort` scenario.
+
 ## 2026-07-13 - Explicit composition overrides
 
 ### Result

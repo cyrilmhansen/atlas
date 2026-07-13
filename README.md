@@ -42,7 +42,11 @@ cargo run -p atlas -- compose find
 cargo run -p atlas -- compose find --rust
 cargo run -p atlas --example find_generated
 cargo run -p atlas -- compose partition-sort
+cargo run -p atlas -- compose partition-sort --rust
 cargo run -p atlas --example partition_sort_generated
+cargo run -p atlas -- compose unique-sort
+cargo run -p atlas -- compose unique-sort --rust
+cargo run -p atlas --example unique_sort_generated
 cargo run -p atlas -- compose cleanup --forbid filter.in_place.rust.vec.v1
 cargo run -p atlas -- index
 cargo test --workspace
@@ -130,8 +134,12 @@ search, makes that dependency visible, and renders a verified Rust example under
 `--rust`.
 `compose partition-sort` keeps both partition branches, projects and sorts only
 `matching`, then reassembles the structured result without a hidden copy.
+`compose unique-sort` makes the required unique output allocation distinct from
+intermediate storage: insertion sort mutates the supplied sequence, then
+quadratic deduplication produces the output. The merge/hash alternative is
+rendered as rejected for its declared scratch and hash-set storage.
 
-Both scenarios accept `--force IMPLEMENTATION_ID` or `--forbid
+All composition scenarios accept `--force IMPLEMENTATION_ID` or `--forbid
 IMPLEMENTATION_ID`. These constraints select only between the reviewed
 candidates and never modify the registry. Generated Rust is intentionally
 unavailable with an override until that exact constrained source is verified.

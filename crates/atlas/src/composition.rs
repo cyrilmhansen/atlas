@@ -236,6 +236,60 @@ pub fn find_minimize_declared_allocations() -> Composition {
     }
 }
 
+/// Composes sorting with deduplication while making the required output
+/// allocation distinct from intermediate storage.
+pub fn unique_sort_minimize_declared_allocations() -> Composition {
+    Composition {
+        id: "sequence.unique_sort.experimental.v1",
+        goal: "minimize declared intermediate allocations while producing sorted unique output",
+        input: "mutable Sequence<i32>; order: ascending",
+        output: "StableUniqueSequence<i32>",
+        preconditions: &[],
+        selected: CandidatePlan {
+            id: "unique_sort.insertion_quadratic",
+            steps: vec![
+                PlanStep {
+                    implementation_id: "sort.insertion.rust.slice.v1",
+                    input: "input mutable Sequence<i32>",
+                    output: "the same sorted Sequence<i32>",
+                    effects: &["mutates input.sequence", "allocation: none"],
+                },
+                PlanStep {
+                    implementation_id: "deduplicate.quadratic.rust.vec.v1",
+                    input: "the sorted Sequence<i32>",
+                    output: "new StableUniqueSequence<i32>",
+                    effects: &[
+                        "copies first occurrences into output",
+                        "allocation: output Vec<T>",
+                    ],
+                },
+            ],
+            decision: "selected: sorting adds no declared allocation; the required unique output is the only declared allocation",
+        },
+        rejected: CandidatePlan {
+            id: "unique_sort.merge_hash",
+            steps: vec![
+                PlanStep {
+                    implementation_id: "sort.merge.rust.slice.v1",
+                    input: "input mutable Sequence<i32>",
+                    output: "the same sorted Sequence<i32>",
+                    effects: &["mutates input.sequence", "allocation: auxiliary Vec<T>"],
+                },
+                PlanStep {
+                    implementation_id: "deduplicate.hash.rust.vec.v1",
+                    input: "the sorted Sequence<i32>",
+                    output: "new StableUniqueSequence<i32>",
+                    effects: &[
+                        "copies first occurrences into output",
+                        "allocation: output Vec<T> and internal HashSet<T>",
+                    ],
+                },
+            ],
+            decision: "rejected: merge scratch storage and hash-set storage are additional declared allocations before the required output",
+        },
+    }
+}
+
 /// Composes a stable partition with sorting of its matching branch.
 pub fn partition_sort_minimize_declared_allocations() -> Composition {
     Composition {
@@ -351,6 +405,11 @@ pub fn render_find_rust_orchestration() -> &'static str {
     include_str!("../examples/find_generated.rs")
 }
 
+/// Returns the verified Rust source for the sorted-unique candidate.
+pub fn render_unique_sort_rust_orchestration() -> &'static str {
+    include_str!("../examples/unique_sort_generated.rs")
+}
+
 pub fn render_partition_sort_rust_orchestration() -> &'static str {
     include_str!("../examples/partition_sort_generated.rs")
 }
@@ -377,8 +436,10 @@ mod tests {
     use super::{
         ImplementationConstraint, apply_implementation_constraint,
         cleanup_minimize_declared_allocations, cleanup_minimize_declared_expected_time,
-        find_minimize_declared_allocations, render, render_expected_time_rust_orchestration,
-        render_find_rust_orchestration, render_rust_orchestration,
+        find_minimize_declared_allocations, partition_sort_minimize_declared_allocations, render,
+        render_expected_time_rust_orchestration, render_find_rust_orchestration,
+        render_rust_orchestration, render_unique_sort_rust_orchestration,
+        unique_sort_minimize_declared_allocations,
     };
 
     #[test]
@@ -464,6 +525,46 @@ mod tests {
 
         assert!(source.contains("insertion_sort_by(values, i32::cmp)"));
         assert!(source.contains("binary_search_by(values, needle, i32::cmp)"));
+    }
+
+    #[test]
+    fn unique_sort_plan_separates_required_output_from_intermediate_allocations() {
+        let composition = unique_sort_minimize_declared_allocations();
+        let output = render(&composition);
+
+        assert_eq!(composition.selected.id, "unique_sort.insertion_quadratic");
+        assert_eq!(composition.selected.steps.len(), 2);
+        assert!(
+            composition.selected.steps[0]
+                .effects
+                .contains(&"allocation: none")
+        );
+        assert!(
+            composition.selected.steps[1]
+                .effects
+                .contains(&"allocation: output Vec<T>")
+        );
+        assert!(output.contains("rejected:\n  id: unique_sort.merge_hash"));
+        assert!(output.contains("internal HashSet<T>"));
+    }
+
+    #[test]
+    fn generated_unique_sort_rust_orchestration_matches_the_selected_operations() {
+        let source = render_unique_sort_rust_orchestration();
+
+        assert!(source.contains("insertion_sort_by(values, i32::cmp)"));
+        assert!(source.contains("deduplicate_quadratic(values)"));
+    }
+
+    #[test]
+    fn partition_sort_plan_keeps_the_non_matching_branch_visible() {
+        let composition = partition_sort_minimize_declared_allocations();
+        let output = render(&composition);
+
+        assert_eq!(composition.selected.id, "partition_sort.copy_insertion");
+        assert!(output.contains("projection.partition.matching"));
+        assert!(output.contains("retains partition.rejected"));
+        assert!(output.contains("reassemble.partition"));
     }
 
     #[test]

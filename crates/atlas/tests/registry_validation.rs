@@ -840,6 +840,64 @@ fn cli_renders_a_compilable_find_orchestration() {
 }
 
 #[test]
+fn cli_renders_the_structured_partition_sort_composition() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "partition-sort"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("plan: sequence.partition_sort.experimental.v1"));
+    assert!(stdout.contains("projection.partition.matching"));
+    assert!(stdout.contains("reassemble.partition"));
+}
+
+#[test]
+fn cli_renders_a_compilable_partition_sort_orchestration() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "partition-sort", "--rust"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("pub fn partition_then_sort_matching"));
+    assert!(stdout.contains("partition_copy(values, predicate)"));
+    assert!(stdout.contains("insertion_sort_by(&mut matching, i32::cmp)"));
+}
+
+#[test]
+fn cli_renders_the_unique_sort_composition_and_orchestration() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let plan = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "unique-sort"])
+        .current_dir(&workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(plan.status.success());
+    let stdout = String::from_utf8(plan.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("plan: sequence.unique_sort.experimental.v1"));
+    assert!(stdout.contains("selected:\n  id: unique_sort.insertion_quadratic"));
+    assert!(stdout.contains("rejected:\n  id: unique_sort.merge_hash"));
+
+    let source = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["compose", "unique-sort", "--rust"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+    assert!(source.status.success());
+    let stdout = String::from_utf8(source.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("pub fn unique_sort(values: &mut [i32]) -> Vec<i32>"));
+    assert!(stdout.contains("deduplicate_quadratic(values)"));
+}
+
+#[test]
 fn cli_forces_or_forbids_implementations_without_changing_the_registry() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     for arguments in [

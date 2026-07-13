@@ -89,7 +89,13 @@ and runnable Rust orchestration examples; Atlas itself does not execute them.
 input required by binary search, the step that establishes it, and a rejected
 merge-sort alternative before rendering a compiled Rust orchestration.
 
-Both scenarios accept explicit force/forbid implementation constraints without
+`atlas compose partition-sort` makes a structured partition intermediate
+explicit, including projection, retention of the other branch, and reassembly.
+`atlas compose unique-sort` isolates sorting and deduplication, distinguishing
+the required output allocation from rejected intermediate merge/hash storage.
+Both render independently compiled Rust examples.
+
+All composition scenarios accept explicit force/forbid implementation constraints without
 modifying the registry. They remain bounded to reviewed candidates; generation
 with an override is deferred until its exact source is verified.
 

@@ -56,7 +56,14 @@ stable partition produces `matching` and `rejected` vectors, the plan projects
 only `matching` for in-place sorting, then reassembles both branches. Both
 partition-output allocations, the projection, and reassembly are explicit.
 
-Both scenarios accept an explicit `--force IMPLEMENTATION_ID` or `--forbid
+`atlas compose unique-sort` isolates the `sort -> deduplicate` shape. It
+selects `sort.insertion -> deduplicate.quadratic`: sorting mutates the supplied
+sequence without declared allocation, then deduplication allocates the required
+unique output. `sort.merge -> deduplicate.hash` remains a compatible rejected
+candidate because it adds declared merge scratch and hash-set storage. Its
+`--rust` output is the compiled `unique_sort_generated` example.
+
+All composition scenarios accept an explicit `--force IMPLEMENTATION_ID` or `--forbid
 IMPLEMENTATION_ID`. The constraint is evaluated only against their reviewed
 candidates: it either retains, swaps, or rejects the candidate set with a
 rendered reason. Forbidding binary search from `find`, for example, rejects the
@@ -90,7 +97,11 @@ cargo run -q -p atlas --locked --offline -- compose find
 cargo run -q -p atlas --locked --offline -- compose find --rust
 cargo run -q -p atlas --locked --offline --example find_generated
 cargo run -q -p atlas --locked --offline -- compose partition-sort
+cargo run -q -p atlas --locked --offline -- compose partition-sort --rust
 cargo run -q -p atlas --locked --offline --example partition_sort_generated
+cargo run -q -p atlas --locked --offline -- compose unique-sort
+cargo run -q -p atlas --locked --offline -- compose unique-sort --rust
+cargo run -q -p atlas --locked --offline --example unique_sort_generated
 cargo run -q -p atlas --locked --offline -- compose cleanup --forbid filter.in_place.rust.vec.v1
 ```
 

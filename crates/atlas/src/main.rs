@@ -11,7 +11,8 @@ use atlas::composition::{
     find_minimize_declared_allocations, partition_sort_minimize_declared_allocations,
     render as render_composition, render_expected_time_rust_orchestration,
     render_find_rust_orchestration, render_partition_sort_rust_orchestration,
-    render_rust_orchestration,
+    render_rust_orchestration, render_unique_sort_rust_orchestration,
+    unique_sort_minimize_declared_allocations,
 };
 use atlas::executions::{ExecutionMode, ExecutionRecord};
 use atlas::index::rebuild_database;
@@ -52,7 +53,7 @@ fn main() -> ExitCode {
 
 fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
     let Some(scenario) = arguments.next() else {
-        eprintln!("compose requires cleanup, find, or partition-sort");
+        eprintln!("compose requires cleanup, find, partition-sort, or unique-sort");
         print_usage();
         return ExitCode::from(2);
     };
@@ -60,9 +61,12 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
         eprintln!("composition scenario must be valid UTF-8");
         return ExitCode::from(2);
     };
-    if !matches!(scenario, "cleanup" | "find" | "partition-sort") {
+    if !matches!(
+        scenario,
+        "cleanup" | "find" | "partition-sort" | "unique-sort"
+    ) {
         eprintln!(
-            "unknown composition scenario {scenario:?}; expected cleanup, find, or partition-sort"
+            "unknown composition scenario {scenario:?}; expected cleanup, find, partition-sort, or unique-sort"
         );
         return ExitCode::from(2);
     }
@@ -134,6 +138,7 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             ("cleanup", false) => print!("{}", render_rust_orchestration()),
             ("find", false) => print!("{}", render_find_rust_orchestration()),
             ("partition-sort", false) => print!("{}", render_partition_sort_rust_orchestration()),
+            ("unique-sort", false) => print!("{}", render_unique_sort_rust_orchestration()),
             ("find", true) => unreachable!("expected-time is rejected for find"),
             _ => unreachable!("scenario is validated before rendering"),
         }
@@ -143,6 +148,7 @@ fn compose_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             ("cleanup", false) => cleanup_minimize_declared_allocations(),
             ("find", false) => find_minimize_declared_allocations(),
             ("partition-sort", false) => partition_sort_minimize_declared_allocations(),
+            ("unique-sort", false) => unique_sort_minimize_declared_allocations(),
             ("find", true) => unreachable!("expected-time is rejected for find"),
             _ => unreachable!("scenario is validated before rendering"),
         };
@@ -906,6 +912,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--force ID|--forbid ID] [--rust]\n  atlas compose find [--force ID|--forbid ID] [--rust]\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--force ID|--forbid ID] [--rust]\n  atlas compose find [--force ID|--forbid ID] [--rust]\n  atlas compose partition-sort [--force ID|--forbid ID] [--rust]\n  atlas compose unique-sort [--force ID|--forbid ID] [--rust]\n  atlas index [DB_PATH]"
     );
 }

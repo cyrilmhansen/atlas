@@ -184,14 +184,14 @@ inconclusive gate records a limit; it does not silently widen the runtime.
 
 ### 1. Select and specify compact guest references
 
-Status: pending class C decision after the completed comparison experiment.
+Status: model selected under DEC-040; guest-memory operation pending.
 
-- Choose one representation for the first guest runtime: `u32` offset,
-  `u32` handle, or region-plus-offset.
-- Define the guest address-space bound, alignment, null/invalid value,
-  allocation, lifetime, bounds-checking and error semantics.
+- `GuestOffset(u32)` is the byte offset in one fixed-capacity guest region.
+- Offset zero is valid; MVP 4 has no null reference or guest-visible growth.
+- Typed accesses must declare alignment and reject overflow and out-of-bounds
+  offsets before reaching the host buffer.
 - Implement one small memory operation using only that representation, with
-  overflow and cross-object or cross-region rejection tests.
+  overflow and bounds rejection tests.
 
 Exit evidence: a documented memory model and a reproducible test that never
 passes a host pointer as a guest reference.
@@ -262,10 +262,9 @@ semantics for the first executable guest experiment.
 | B. `u32` handle through an object table | Explicit identity and lifetime checks; adds table indirection and allocator policy. |
 | C. region ID plus offset | Clear separation between regions; uses more representation and requires region lifecycle rules. |
 
-Recommendation: **A** for one contiguous, fixed-capacity MVP4 memory region.
-It is the narrowest path to prove pointer separation and can be replaced before
-any public format exists. The experiment to validate it is one bounds-checked
-array operation lowered to MIR. Decision class: **C**.
+Accepted: **A** under DEC-040. The next acceptance test is one bounds-checked
+array operation lowered to MIR. Any later replacement before a public format
+still requires a new decision because it changes private runtime semantics.
 
 ### C2. Boundary between existing AST and MIR lowering
 

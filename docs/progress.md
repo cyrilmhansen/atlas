@@ -1,5 +1,20 @@
 # Progress log
 
+## 2026-07-13 - MVP 4 bounded guest offsets
+
+### Result
+
+- Accepted `GuestOffset(u32)` for a single fixed-capacity guest region under
+  DEC-040.
+- Defined byte-offset, zero-offset, lifetime, bounds and host-pointer
+  separation semantics without creating a public ABI or persistent format.
+
+### Next decision
+
+The first AST-to-MIR lowering boundary remains class C. The partition AST is
+the narrowest existing candidate because it has explicit reads, predicates,
+swaps and control flow without allocation or recursion.
+
 ## 2026-07-13 - GitHub CI
 
 ### Result

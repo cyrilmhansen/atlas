@@ -112,10 +112,11 @@ reference implementation. It is private, bounded, in-memory instrumentation,
 not an execution record or evidence format. The registry, composition model and
 native backend do not depend on MIR.
 
-The three compact guest-reference candidates are tested independently:
-offset, handle, and region-plus-offset. `scripts/check-rv64-lp64-abi.sh` proves
-the local RV64 LP64 compiler/QEMU-user path. It is not a MIR RISC-V or
-RV64ILP32 test.
+The three compact guest-reference candidates were tested independently: offset,
+handle, and region-plus-offset. DEC-040 selects bounded `u32` byte offsets in
+one fixed-capacity region for the first guest-memory experiment.
+`scripts/check-rv64-lp64-abi.sh` proves the local RV64 LP64 compiler/QEMU-user
+path. It is not a MIR RISC-V or RV64ILP32 test.
 
 See `docs/mvp4-review.md`, `docs/mir-integration.md`, and DEC-039 for the
 accepted scope, checks and limits.

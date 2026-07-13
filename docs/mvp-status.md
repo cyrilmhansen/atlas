@@ -1,7 +1,7 @@
 # MVP status
 
 - Active MVP: **MVP 4 - LP64 MIR adapter probe**
-- Status: single-region interpreter checkpoint and mutating host-JIT correction active
+- Status: single-region interpreter/JIT checkpoint plus standalone RV64 generation
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
@@ -32,6 +32,11 @@ the interpreter while the JIT checks results and mutation only. Exact generated
 spans and x86-64 instruction shapes are observable. No timing,
 executable-allocation measurement or automatic backend choice has been
 introduced.
+
+RV64 generator progress: DEC-049 cross-compiles MIR's generator itself for
+RV64GC LP64D, runs it under QEMU user mode, and verifies a generated 16-byte
+scalar addition by result and disassembly. This remains independent of Atlas
+guest memory and compact-reference semantics.
 
 ## MVP 1 closure
 
@@ -138,10 +143,11 @@ The three compact guest-reference candidates were tested independently: offset,
 handle, and region-plus-offset. DEC-040 selects bounded `u32` byte offsets in
 one fixed-capacity region for the first guest-memory experiment.
 `scripts/check-rv64-lp64-abi.sh` proves the local RV64 LP64 compiler/QEMU-user
-path. It is not a MIR RISC-V or RV64ILP32 test. The narrow host-JIT correction
-path now covers read-only and mutating guest memory; latency and executable
-allocation measurement, MIR-generated RISC-V, multi-region memory, guest
-allocation and persistent MIR traces remain open.
+path. DEC-049 separately proves scalar MIR-generated RV64 code under that
+emulator; neither probe tests RV64ILP32. The narrow host-JIT correction path now
+covers read-only and mutating guest memory; latency, executable-allocation
+measurement, RV64 guest-memory imports, multi-region memory, guest allocation
+and persistent MIR traces remain open.
 
 See `docs/mvp4-review.md`, `docs/mir-integration.md`, and DEC-039 for the
 accepted scope, checks and limits.

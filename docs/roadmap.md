@@ -183,10 +183,11 @@ reason or rejecting an empty candidate set. This satisfies the forcing/forbid
 experiment without turning MVP 3 into general search or mutable registry state.
 
 MVP 4 is active under DEC-039 as a narrow LP64 MIR interpreter, host-JIT and
-QEMU-user probe. The `atlas-algorithms` core APIs remain the native reference
-backend; MIR remains an adapter and never defines registry semantics, compact
-references, or evidence formats. JIT measurement, MIR RISC-V code generation,
-RV64ILP32 and a fantasy computer remain separate experiments.
+QEMU-user probe. DEC-049 now validates a scalar MIR RV64 generator artifact.
+The `atlas-algorithms` core APIs remain the native reference backend; MIR
+remains an adapter and never defines registry semantics, compact references, or
+evidence formats. Timed JIT measurement, RV64 guest-memory imports, RV64ILP32
+and a fantasy computer remain separate experiments.
 
 ## MVP 4 execution path
 
@@ -251,9 +252,11 @@ rejecting the MIR generator for this project.
 
 ### 5. Reassess RISC-V code generation and the fantasy-computer profile
 
-Status: explicitly deferred.
+Status: standalone scalar generator probe complete under DEC-049; runtime and
+machine profile deferred.
 
-- First verify MIR's RISC-V generator with a standalone, documented artifact.
+- Keep the scalar generator probe independent of registry and guest-memory
+  semantics.
 - Keep QEMU user mode as the LP64 Linux ABI probe; do not imply a machine model.
 - Define memory, imports, console and clock only if a separate MVP decision
   activates a system-emulation experiment.
@@ -296,15 +299,15 @@ correction complete under DEC-046.
 The checkpoint demonstrates the interpreter and guest-offset boundary across
 read-only scans, selection, swaps and shifted writes. It also demonstrates
 exact AST trace links for two materially different control-flow shapes. It does
-not demonstrate a general AST compiler, timed JIT behavior, MIR-generated
-RISC-V, multi-region memory or a persistent backend artifact. Exact host-code
-spans and instruction shapes are observed locally, but no timed JIT or
-executable-allocation protocol has been introduced.
+not demonstrate a general AST compiler, timed JIT behavior, RV64 guest-memory
+imports, multi-region memory or a persistent backend artifact. Exact host-code
+spans and instruction shapes plus scalar RV64 generation are observed locally,
+but no timed JIT or executable-allocation protocol has been introduced.
 
 Recommended order for the remaining MVP 4 work:
 
-1. Probe MIR RISC-V generation with a standalone artifact before connecting it
-   to Atlas guest memory.
+1. Decide whether the next RV64 probe should call a checked guest-memory import;
+   this introduces a target ABI/runtime boundary and remains class C.
 2. Add a bounded construction/execution latency or executable-allocation probe
    only if a concrete backend-retention question requires it; retain
    interpreter traces as the observability reference.
@@ -467,7 +470,8 @@ reproduce interpreter and native results without timing. The later approved
 nested scans and shifted private pairs without changing the model or lifecycle.
 The interpreter remains responsible for semantic trace events. The remaining
 measurement protocol is class B; MIR RISC-V generation remains outside this
-decision.
+decision. DEC-049 later accepts only the independent scalar RV64 generator
+probe.
 
 ### C7. Multi-region guest memory
 
@@ -485,3 +489,21 @@ effects.
 Recommendation: **A**, beginning with exactly two or three fixed regions for
 one real algorithm and no guest-visible allocator. This is class **C** and must
 be accepted before implementation.
+
+### C8. First standalone MIR RV64 generator probe
+
+Context: host JIT correction established MIR generation on x86-64, while the
+existing RV64 probe established only GCC, ELF and QEMU user-mode availability.
+MIR selects its backend when `mir-gen.c` is compiled, so a target probe must run
+the RV64-compiled generator itself.
+
+| Option | Consequence |
+|---|---|
+| A. Scalar RV64 generator artifact | Isolates generator, allocator, emulator and instruction inspection before runtime imports. |
+| B. Start with guest-memory `is_sorted` | More representative, but mixes generator validation with target ABI and import failures. |
+| C. Defer RISC-V generation | Avoids target tooling but leaves the central MVP 4 target claim untested. |
+
+Accepted: **A** under DEC-049. The temporary LP64D probe generates a 16-byte
+addition, executes it under QEMU with result 42, and verifies `add` plus `ret`
+through the cross-toolchain disassembler. Extending RV64 code to Atlas guest
+imports remains class **C**.

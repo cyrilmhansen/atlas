@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-07-13 - Standalone MIR RV64 generator probe
+
+### Result
+
+- Accepted DEC-049 (`riscv-gen-A`) and cross-compiled the pinned MIR core and
+  generator for standard RV64GC LP64D.
+- Ran the generator itself under QEMU user mode, generated and executed a
+  scalar `u64` addition, and verified the result `40 + 2 = 42`.
+- Copied the generated 16-byte function through the existing observer and used
+  the cross-toolchain `objdump` to identify `add a0,a0,a1` and `ret`.
+- Added the standalone generator probe to CI after the independent ABI smoke
+  test.
+
+### Limits
+
+- The artifact is temporary and Linux/QEMU-user specific; it is not a
+  persistent MIR format or fantasy-computer image.
+- No guest-memory import, compact reference, device, clock, RV64ILP32 or
+  multi-region behavior is exercised.
+
 ## 2026-07-13 - Stable private-pair insertion JIT
 
 ### Result

@@ -47,3 +47,6 @@ jobs:
 
       - name: Run RV64 LP64 ABI probe
         run: ./scripts/check-rv64-lp64-abi.sh
+
+      - name: Run MIR RV64 generator probe
+        run: ./scripts/check-mir-rv64-generator.sh

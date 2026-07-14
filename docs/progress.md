@@ -1,5 +1,30 @@
 # Progress log
 
+## 2026-07-14 - MVP 6 closure-candidate audit
+
+### Result
+
+- Audited all DEC-061 exit criteria at commit `75c4cea` and recorded the
+  demonstrated five-program boundary in `docs/mvp6-review.md`.
+- Rebuilt the ten-file static bundle from both the repository and a clean Git
+  archive with no metadata or prior products; recursive comparison was exact.
+- Inspected a 32-value generated partition at 390, 768, 1440 and 1920 pixel
+  widths, covering mobile scrolling and responsive multi-row state.
+- Isolated one governance mismatch: Stage 5 says no specialized export while
+  accepted consolidation A deliberately retains test-only oracle exports.
+
+### Verification
+
+- `scripts/check-web.sh` passed in both source trees.
+- `diff -qr` reported no difference between the two generated bundles.
+- Sorted SHA-256 hashes for all ten outputs are recorded in the review.
+
+### Limits
+
+- This audit does not close MVP 6 or change its exit boundary.
+- Closure needs an explicit decision on whether test-only WASM oracle exports
+  are compatible with the accepted consolidation A.
+
 ## 2026-07-14 - Generated browser consolidation
 
 ### Result

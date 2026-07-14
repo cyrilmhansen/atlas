@@ -1,7 +1,7 @@
 # MVP status
 
 - Active MVP: **MVP 5**
-- Status: MVP 1 through MVP 4 closed; MVP 5 extended under DEC-058
+- Status: MVP 1 through MVP 4 closed; MVP 5 closure-ready under DEC-058/DEC-059
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
@@ -38,7 +38,8 @@ complete. Insertion has equivalent typed AST/pseudocode and a stateful WASM
 stepper under DEC-059. Reverse now adds typed AST/pseudocode and a symmetric-pair
 stepper checked directly against native mutation, counters and involution. All
 three browser paths retain current state rather than a presentation trace. The
-extended bundle reproducibility gate must be rerun before closure.
+extended ten-file bundle is byte-identical from a clean Git archive. Formal MVP
+5 closure remains a human decision.
 
 Current corpus progress:
 

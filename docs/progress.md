@@ -11,17 +11,19 @@
   directory; a prior local build had masked this defect.
 - Updated every projection and bundle existence check to use the effective
   configured output directory.
+- Recommitted the correction, rebuilt normal and Git-archive trees at
+  `75ceb69`, and obtained no recursive difference across all ten output files.
 
 ### Verification
 
 - Normal custom-output Web gate passed.
-- First clean-archive gate failed at the correctly diagnosed hard-coded path;
-  the final archive/hash comparison is rerun after committing this correction.
+- First clean-archive gate failed at the correctly diagnosed hard-coded path.
+- Post-fix normal and clean-archive `scripts/check-web.sh` gates both passed.
+- `diff -r` reported no difference; a ten-file SHA-256 manifest was recorded.
 
 ### Limits
 
-- No reproducibility claim is recorded until the post-fix archive produces an
-  identical ten-file manifest.
+- Formal MVP 5 closure remains a human decision; publication remains excluded.
 
 ## 2026-07-14 - Incremental WASM reverse dynamics
 

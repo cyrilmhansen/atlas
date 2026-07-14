@@ -160,10 +160,11 @@ algorithm-only timing nor portable benchmark evidence.
 
 ## Reproducible bundle gate
 
-The DEC-057 checkpoint bundle was rebuilt from a Git archive containing no `.git`,
-`target` or ignored build products. With the source commit supplied explicitly,
-`scripts/check-web.sh` reproduced identical SHA-256 hashes for all eight output
-files: HTML, CSS, JavaScript, projection JSON, WASM, JavaScript bindings and both
-TypeScript declarations. DEC-058 adds another source module and changes the
-bundle; its final clean-archive manifest must be recorded again before closure.
-See `docs/mvp5-review.md` for the earlier checkpoint audit.
+The extended bundle was rebuilt at commit `75ceb69` from a Git archive containing
+no `.git`, `target` or ignored build products. With the source commit supplied
+explicitly, `scripts/check-web.sh` passed in both trees and recursive comparison
+found no difference across all ten outputs: HTML, CSS, application/generator/
+playback JavaScript, projection JSON, WASM, JavaScript bindings and both
+TypeScript declarations. The archive first exposed and caused correction of a
+hard-coded acceptance output path that an existing local build had masked. See
+`docs/mvp5-review.md` for the closure-candidate audit.

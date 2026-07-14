@@ -1,9 +1,9 @@
 # MVP 5 review
 
-Review date: 2026-07-14. This records the reproducible local-artifact checkpoint
-authorized by DEC-053 through DEC-057. DEC-058 subsequently keeps MVP 5 open for
-editable generation, operation-growth views and bounded semantic dynamics; this
-document is therefore a checkpoint audit rather than a closure candidate.
+Review date: 2026-07-14. This records the extended reproducible local-artifact
+audit authorized by DEC-053 through DEC-059. Editable generation,
+operation-growth views and bounded incremental semantic dynamics are complete;
+this document is now a closure candidate, not a closure decision.
 
 ## Demonstrated boundary
 
@@ -18,6 +18,11 @@ not a public or persistent schema.
 | Adjacent `is_sorted` | exact boolean, first inversion and early-stop comparisons | read-only input; JS/WASM call timing |
 | Stable insertion | sorted permutation, duplicate stability, comparisons and adjacent swaps | algorithm `O(1)` space separated from tagged transport copies |
 | Symmetric reverse | exact output, involution, semantic reads/writes and swaps | algorithm `O(1)` space separated from returned output copy |
+
+All three workloads expose parser-equivalent pseudocode and incremental WASM
+state through 64-element Explore inputs. Current operations link to exact typed
+AST nodes. The browser stores no execution trace or snapshot sequence;
+analytical traces remain private test oracles where they already exist.
 
 The catalog projects all 10 problems, 15 algorithms and 20 implementations with
 their claims and provenance. It carries the logical registry digest and source
@@ -40,12 +45,27 @@ all three workloads. CI runs this gate after installing the pinned
 
 The same gate passes from a Git archive containing no repository metadata,
 Cargo target directory or ignored Web output when `ATLAS_SOURCE_COMMIT` is
-supplied explicitly. A sorted SHA-256 manifest matches for all eight files:
+supplied explicitly. At source commit
+`75ceb69f2eca70a957955059143bbbaa3048383e`, a recursive byte comparison and
+sorted SHA-256 manifest match for all ten files:
 
-- `app.js`, `index.html` and `styles.css`;
+- `app.js`, `generator.mjs`, `playback.mjs`, `index.html` and `styles.css`;
 - `data/atlas.json`;
 - `pkg/atlas_web.js` and `pkg/atlas_web.d.ts`;
 - `pkg/atlas_web_bg.wasm` and `pkg/atlas_web_bg.wasm.d.ts`.
+
+```text
+5646683ce4a7549504a64ac79dbd1895e3c6c362a169771d918b6a68086d0f14  app.js
+e76485b67733bfaf3f4a7216f67a2fc2680fd2d3cae043c1b5709607215961d6  data/atlas.json
+aac3819ad6b13242cc47bce558b70a6d5011149433e2a094ff7697bb0e262590  generator.mjs
+35938e4360ec1992713b2ee2d7a9bf49e3d23519b30235e29574ca62969c5881  index.html
+a6c0b2bfce9ef0dc09660efbd562150b1e15e1f039b96777ac9ef5926292de38  pkg/atlas_web.d.ts
+a93e4689e8ab6e52b70c72cad0c776ad3c729a6097c8b0448cc7d8f4bad5a5a0  pkg/atlas_web.js
+544832f49c6ccea5ea1c3ba532a344cd590766d2e98c3bb9f57ea2dba736e0bc  pkg/atlas_web_bg.wasm
+c4691ff81b22508fb3cac0285fe64018a29356a2c36c80bf66d64a46f802f05a  pkg/atlas_web_bg.wasm.d.ts
+723c6dbc335df5a06bc982b749d61a0caebd075e7710511ca867df2b02af1764  playback.mjs
+79bed1f53f39896c423e2dc9f0a201f49f1b6e18f408af160e372835bb227064  styles.css
+```
 
 ## Deliberate limits
 
@@ -58,7 +78,8 @@ supplied explicitly. A sorted SHA-256 manifest matches for all eight files:
 - The local timer includes observation construction and the JavaScript/WASM
   boundary. It is not algorithm-only or portable benchmark evidence.
 - Semantic trace playback, MIR execution, RV64 emulation, cancellation and a
-  general algorithm runtime are excluded.
+  general algorithm runtime are excluded. Bounded incremental semantic
+  execution is included; traces remain analysis/test instruments.
 
 ## Exit criteria
 
@@ -76,6 +97,6 @@ supplied explicitly. A sorted SHA-256 manifest matches for all eight files:
 
 Closing MVP 5 would preserve the current artifact as a reproducible local
 demonstration, without promoting its private projection or WASM facade to stable
-contracts. Publication, semantic dynamics, problem-specific datasets for all
-workloads and any broader browser runtime should be selected in a separately
-activated scope.
+contracts. Publication, problem-specific datasets for all workloads, explicit
+control-flow AST identity and any broader browser runtime should be selected in
+a separately activated scope.

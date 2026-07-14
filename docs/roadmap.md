@@ -412,7 +412,8 @@ Current status:
   against native stable insertion. Reverse adds a typed symmetric-pair AST,
   parser-equivalent pseudocode and a stepper checked against native mutation,
   exact structural counts and involution. The three curated dynamics adapters
-  are complete; the extended clean-archive bundle manifest must now be recorded.
+  are complete. The extended clean-archive gate reproduces all ten files byte
+  for byte at `75ceb69`; MVP 5 is ready for a formal closure decision.
 - External publication remains excluded. Formal closure is reconsidered after
   the dynamics and operation-growth gates, without promoting a public trace API.
 

@@ -1,14 +1,28 @@
 # MVP status
 
-- Active MVP: **none**
-- Status: MVP 1 through MVP 5 closed
+- Active MVP: **MVP 6**
+- Status: MVP 1 through MVP 5 closed; MVP 6 active under DEC-061
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
 - MVP 4: closed locally under DEC-052
 - MVP 5: closed under DEC-060
+- MVP 6: active under DEC-061
 
 ## Current slice
+
+MVP 6 replaces algorithm-specific Web steppers and rendering branches with one
+private generated program, one bounded WASM visual machine and one derived
+presentation description under DEC-061 through DEC-063. Its first reversible
+slice gives semantic execution the available viewport width and makes current
+state the first mobile content. This layout gate is complete; bytecode contract
+and lowering are the next slice.
+
+The machine remains limited to one typed sequence, bounded scalars and
+structured control. Its generated program and presentation description are
+disposable build products, not schema, ABI, evidence or registry authority.
+
+## Completed foundation
 
 MVP 1 through MVP 5 are closed locally. MVP 5 preserves a
 locally openable static catalog with three curated Rust/WASM algorithms and

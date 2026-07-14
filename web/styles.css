@@ -18,7 +18,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
-body { margin: 0; min-width: 320px; min-height: 100vh; }
+body { margin: 0; min-width: 320px; min-height: 100vh; overflow-x: clip; }
 button, input, textarea, select { font: inherit; letter-spacing: 0; }
 button, select, input, textarea { border-radius: 4px; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
@@ -85,9 +85,18 @@ h3 { margin: 0; font-size: 1rem; letter-spacing: 0; }
 .complexity-strip strong { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.15rem; }
 .complexity-strip small { color: var(--muted); max-width: 28ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.dynamics-panel { display: grid; grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.15fr); margin-bottom: 22px; border: 1px solid var(--line); background: var(--paper); }
+.dynamics-panel {
+  position: relative;
+  left: 50%;
+  width: 100vw;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.65fr) minmax(0, 1.35fr);
+  margin: 0 0 22px -50vw;
+  border-block: 1px solid var(--line);
+  background: var(--paper);
+}
 .dynamics-panel:focus-visible { outline: 3px solid rgba(36, 99, 167, 0.3); outline-offset: 2px; }
-.dynamics-code, .dynamics-state { min-width: 0; padding: 22px; }
+.dynamics-code, .dynamics-state { min-width: 0; padding: 24px clamp(22px, 4vw, 72px); }
 .dynamics-code { background: var(--ink); color: white; }
 .dynamics-code .section-index { color: #7dd8b8; }
 .dynamics-code .section-heading code { color: #ffd878; font-size: 0.66rem; overflow-wrap: anywhere; }
@@ -193,7 +202,9 @@ footer { min-height: 58px; padding: 16px clamp(20px, 5vw, 72px); background: #e4
   .complexity-strip { width: 100%; }
   .workbench { grid-template-columns: 1fr; }
   .dynamics-panel { grid-template-columns: 1fr; }
-  .dynamics-state { border-left: 0; border-top: 1px solid var(--line); }
+  .dynamics-code, .dynamics-state { padding: 20px clamp(16px, 5vw, 28px); }
+  .dynamics-state { order: -1; min-height: 50svh; border-left: 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; }
+  .dynamics-state .trace-sequence { flex: 1; min-height: clamp(180px, 30svh, 320px); }
   .generator-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .result-panel { border-left: 0; border-top: 1px solid var(--line); }
   .sequence-visual { min-height: 180px; }

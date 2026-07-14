@@ -104,5 +104,8 @@ differential period is intentional.
 The compilers remain specialized to five reviewed AST shapes. Adjacent
 `is_sorted`, stable insertion and symmetric reverse now use generated paths
 while retaining their hand-written steppers as operation-for-operation oracles.
-There is no general predicate, call, write-value or multi-region model. Removing
-the retained references requires the explicit consolidation checkpoint.
+The browser now imports only `VisualMachine` and derives all five configurations
+from the projection; it has no per-algorithm execution dispatch. The specialized
+WASM exports remain available only to differential tests. There is no general
+predicate, call, write-value or multi-region model. Removing the retained
+exports requires a later explicit consolidation decision.

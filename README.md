@@ -32,9 +32,10 @@ even `sequence.partition`, adjacent `sequence.is_sorted`, stable insertion and
 symmetric reverse from their exact reviewed ASTs to private programs executed
 by the common WASM visual machine. The retained `is_sorted`, insertion and
 reverse steppers are operation-for-operation differential oracles. All three
-MVP 5 execution paths have migrated under DEC-062/DEC-063; their removal awaits
-the explicit consolidation checkpoint. The current bytecode, predicate
-intrinsic and presentation shapes are not public contracts.
+MVP 5 execution paths have migrated under DEC-062/DEC-063. Consolidation A
+removes their imports and dispatch from the browser while retaining the WASM
+exports for differential tests. The current bytecode, predicate intrinsic and
+presentation shapes are not public contracts.
 
 ## Project map
 

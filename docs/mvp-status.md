@@ -22,7 +22,8 @@ swap counters, and a visible boundary. The three MVP 5 steppers remain as
 differential references. Adjacent `is_sorted`, stable insertion and symmetric
 reverse now execute through generated programs in the browser and match their
 retained steppers operation-for-operation. Differential migration is complete;
-the explicit consolidation checkpoint is next.
+consolidation A has removed specialized browser imports and dispatch while
+retaining the WASM exports as differential oracles.
 
 The machine remains limited to one typed sequence, bounded indices and
 structured control; its current instruction subset is documented in

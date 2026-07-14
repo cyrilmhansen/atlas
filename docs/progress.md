@@ -1,5 +1,31 @@
 # Progress log
 
+## 2026-07-14 - Generated browser consolidation
+
+### Result
+
+- Removed all specialized observation and stepper imports from `web/app.js`.
+- Removed the three algorithm-specific execution functions, fallback stepper
+  construction and active-algorithm dispatch branches.
+- Derived all five browser configurations from projected program/presentation
+  data and execute them exclusively through `VisualMachine`.
+- Retained the specialized WASM exports and their native, trace and differential
+  tests as temporary independent oracles under the accepted consolidation A.
+
+### Verification
+
+- `scripts/check-web.sh` passed, including all retained oracle tests and a new
+  static boundary gate rejecting specialized browser imports or dispatch.
+- The gate verifies that all five projected dynamics carry a generated program
+  and presentation description.
+
+### Limits
+
+- Specialized WASM exports remain deliberately present and are not used by the
+  browser bundle entry point.
+- Their later removal is a separate incompatibility decision; it is not required
+  to validate the consolidated browser architecture.
+
 ## 2026-07-14 - Differential generated reverse migration
 
 ### Result

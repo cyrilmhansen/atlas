@@ -32,6 +32,7 @@ node web/tests/generator.mjs
 node web/tests/playback.mjs
 node web/tests/scale_growth.mjs "$node_output/atlas_web.js"
 node web/tests/projection.cjs "$output_dir/data/atlas.json"
+node web/tests/generated_browser_boundary.cjs web/app.js "$output_dir/data/atlas.json"
 
 test -s "$output_dir/index.html"
 test -s "$output_dir/styles.css"

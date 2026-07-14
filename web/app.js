@@ -1,53 +1,8 @@
-import init, {
-  InsertionSortStepper,
-  IsSortedStepper,
-  ReverseStepper,
-  VisualMachine,
-  observe_insertion_sort_i32,
-  observe_is_sorted_i32,
-  observe_reverse_i32,
-} from "./pkg/atlas_web.js";
+import init, { VisualMachine } from "./pkg/atlas_web.js";
 import { EXPLORE_MAX_LENGTH, generateSequence, randomSeed } from "./generator.mjs";
 import { PLAYBACK_SPEEDS, isLoopContext, playbackDelay } from "./playback.mjs";
 
-const algorithmUi = {
-  is_sorted: {
-    id: "order.is_sorted.adjacent",
-    dataset: "sort.degenerate.equal",
-    boundary: "The read-only algorithm state stays in WASM; each displayed state copies current values only.",
-    resultLabel: "Result",
-    comparisonLabel: "Comparisons",
-    secondaryLabel: "First inversion",
-    sequenceHeading: "Sequence state",
-    legend: "first decreasing pair",
-    moved: false,
-    datasetProblem: "sequence.sort",
-  },
-  insertion: {
-    id: "sort.insertion",
-    dataset: "sort.regression.duplicates",
-    boundary: "The incremental algorithm state stays in WASM; each displayed state copies current tagged values only.",
-    resultLabel: "Correction + stability",
-    comparisonLabel: "Comparisons",
-    secondaryLabel: "Adjacent swaps",
-    sequenceHeading: "Stable sorted output",
-    legend: "moved from original index",
-    moved: true,
-    datasetProblem: "sequence.sort",
-  },
-  reverse: {
-    id: "reverse.symmetric.in_place",
-    dataset: "sort.regression.duplicates",
-    boundary: "The incremental algorithm state stays in WASM; each displayed state copies current values and origins only.",
-    resultLabel: "Correction + involution",
-    comparisonLabel: "Semantic reads / writes",
-    secondaryLabel: "Symmetric swaps",
-    sequenceHeading: "Reversed output",
-    legend: "moved from original index",
-    moved: true,
-    datasetProblem: "sequence.sort",
-  },
-};
+const algorithmUi = {};
 
 function hydrateGeneratedAlgorithms() {
   for (const dynamics of projection.dynamics) {
@@ -72,7 +27,6 @@ function hydrateGeneratedAlgorithms() {
       highlight: presentation.highlight,
       predicateLabel: presentation.predicate_label,
       dynamics,
-      generated: true,
     };
     if (document.querySelector(`[data-algorithm="${presentation.key}"]`)) continue;
     const option = document.createElement("button");
@@ -288,24 +242,14 @@ function renderTraceState() {
   elements["execution-context"].hidden = !showsLoopContext;
   if (showsLoopContext) {
     if (tracePlayback.algorithm === "reverse") {
-      const generated = algorithmUi[tracePlayback.algorithm].generated;
-      const leftIndex = generated
-        ? tracePlayback.stepper.register_value("left")
-        : tracePlayback.stepper.left_index;
-      const rightIndex = generated
-        ? tracePlayback.stepper.register_value("right")
-        : tracePlayback.stepper.right_index;
+      const leftIndex = tracePlayback.stepper.register_value("left");
+      const rightIndex = tracePlayback.stepper.register_value("right");
       elements["execution-context"].textContent = tracePlayback.stepper.done
         ? `left index ${leftIndex} · loop complete`
         : `left index ${leftIndex} · right index ${rightIndex}`;
     } else {
-      const generated = algorithmUi[tracePlayback.algorithm].generated;
-      const outerIndex = generated
-        ? tracePlayback.stepper.register_value("index")
-        : tracePlayback.stepper.outer_index;
-      const currentIndex = generated
-        ? tracePlayback.stepper.register_value("current")
-        : tracePlayback.stepper.current_index;
+      const outerIndex = tracePlayback.stepper.register_value("index");
+      const currentIndex = tracePlayback.stepper.register_value("current");
       elements["execution-context"].textContent = tracePlayback.stepper.done
         ? `outer index ${outerIndex} · loop complete`
         : `outer index ${outerIndex} · current index ${currentIndex}`;
@@ -314,9 +258,7 @@ function renderTraceState() {
   const atEnd = Boolean(tracePlayback.stepper?.done);
   const stoppedEarly = tracePlayback.algorithm === "is_sorted"
     && atEnd
-    && (algorithmUi[tracePlayback.algorithm].generated
-      ? tracePlayback.stepper.has_result
-      : !tracePlayback.stepper.sorted);
+    && tracePlayback.stepper.has_result;
   elements["trace-progress"].textContent = atEnd
     ? `${stoppedEarly ? "Early stop" : "Complete"} / ${tracePlayback.index + 1} WASM steps`
     : tracePlayback.index < 0 ? "Ready / WASM" : `WASM step ${tracePlayback.index + 1}`;
@@ -381,13 +323,11 @@ function prepareStepper(values, algorithm) {
   }
   tracePlayback.algorithm = algorithm;
   tracePlayback.input = [...values];
-  const input = new Int32Array(values);
   const ui = algorithmUi[algorithm];
-  tracePlayback.stepper = ui.generated
-    ? new VisualMachine(JSON.stringify(ui.dynamics.program), input)
-    : algorithm === "insertion"
-      ? new InsertionSortStepper(input)
-      : algorithm === "reverse" ? new ReverseStepper(input) : new IsSortedStepper(input);
+  tracePlayback.stepper = new VisualMachine(
+    JSON.stringify(ui.dynamics.program),
+    new Int32Array(values),
+  );
   readStepperState();
   renderTraceState();
 }
@@ -577,26 +517,6 @@ function displayTiming(timing, boundary) {
   elements["runtime-context"].textContent = `${timing.iterations} repeated ${boundary} calls in ${timing.elapsedMilliseconds.toFixed(1)} ms; ${navigator.userAgent}. Not algorithm-only or portable benchmark evidence.`;
 }
 
-function runIsSorted(values) {
-  const input = new Int32Array(values);
-  const observation = observe_is_sorted_i32(input);
-  const firstInversion = observation.first_inversion;
-  const expectedBit = observation.sorted ? 1 : 0;
-  const timing = measureLocalCall(
-    () => observe_is_sorted_i32(input),
-    (sample) => sample.sorted ? 1 : 0,
-    expectedBit,
-  );
-  elements["sorted-result"].textContent = observation.sorted ? "Sorted" : "Not sorted";
-  elements["sorted-result"].className = observation.sorted ? "is-true" : "is-false";
-  elements["comparison-count"].textContent = String(observation.comparisons);
-  elements["inversion-index"].textContent = firstInversion ?? "None";
-  renderSequence(values, { firstInversion });
-  prepareStepper(values, "is_sorted");
-  displayTiming(timing, "JS/WASM observation");
-  observation.free();
-}
-
 function stableSortIsCorrect(values, output, originalIndices) {
   const sorted = output.every((value, index) => index === 0 || output[index - 1] <= value);
   const sortedIndices = [...originalIndices].sort((left, right) => left - right);
@@ -608,54 +528,6 @@ function stableSortIsCorrect(values, output, originalIndices) {
     || output[index - 1] !== value
     || originalIndices[index - 1] < originalIndices[index]);
   return sorted && permutation && valuesMatchOrigins && stable;
-}
-
-function runInsertionSort(values) {
-  const input = new Int32Array(values);
-  const observation = observe_insertion_sort_i32(input);
-  const output = Array.from(observation.values);
-  const originalIndices = Array.from(observation.original_indices);
-  const correct = stableSortIsCorrect(values, output, originalIndices);
-  const expectedBit = observation.comparisons & 1;
-  const timing = measureLocalCall(
-    () => observe_insertion_sort_i32(input),
-    (sample) => sample.comparisons & 1,
-    expectedBit,
-  );
-  elements["sorted-result"].textContent = correct ? "Stable sorted" : "Correction failed";
-  elements["sorted-result"].className = correct ? "is-true" : "is-false";
-  elements["comparison-count"].textContent = String(observation.comparisons);
-  elements["inversion-index"].textContent = String(observation.swaps);
-  renderSequence(output, { originalIndices });
-  prepareStepper(values, "insertion");
-  displayTiming(timing, "JS/WASM sort observation");
-  observation.free();
-}
-
-function runReverse(values) {
-  const input = new Int32Array(values);
-  const observation = observe_reverse_i32(input);
-  const output = Array.from(observation.values);
-  const expected = [...values].reverse();
-  const restored = observe_reverse_i32(observation.values);
-  const correct = output.every((value, index) => value === expected[index])
-    && output.length === expected.length
-    && Array.from(restored.values).every((value, index) => value === values[index]);
-  const expectedBit = observation.swaps & 1;
-  const timing = measureLocalCall(
-    () => observe_reverse_i32(input),
-    (sample) => sample.swaps & 1,
-    expectedBit,
-  );
-  elements["sorted-result"].textContent = correct ? "Reversed + restored" : "Correction failed";
-  elements["sorted-result"].className = correct ? "is-true" : "is-false";
-  elements["comparison-count"].textContent = `${observation.reads} / ${observation.writes}`;
-  elements["inversion-index"].textContent = String(observation.swaps);
-  renderSequence(output, { originalIndices: values.map((_, index) => values.length - 1 - index) });
-  prepareStepper(values, "reverse");
-  displayTiming(timing, "JS/WASM reverse observation");
-  restored.free();
-  observation.free();
 }
 
 function completedVisualMachine(values) {
@@ -741,10 +613,7 @@ function runObservation() {
     const values = parseSequence();
     elements["input-count"].textContent = `${values.length} value${values.length === 1 ? "" : "s"}`;
     if (!wasmReady) throw new Error("WebAssembly runtime is not ready");
-    if (algorithmUi[activeAlgorithm].generated) runGeneratedAlgorithm(values);
-    else if (activeAlgorithm === "is_sorted") runIsSorted(values);
-    else if (activeAlgorithm === "insertion") runInsertionSort(values);
-    else runReverse(values);
+    runGeneratedAlgorithm(values);
     if (generatedInput && generatedInput.length > EXPLORE_MAX_LENGTH) renderScaleStudy(generatedInput);
     else elements["scale-panel"].hidden = true;
     setRuntimeStatus("Executed in WASM", "ready");
@@ -762,29 +631,10 @@ function runObservation() {
 }
 
 function countSelectedOperation(values) {
-  const input = new Int32Array(values);
-  if (algorithmUi[activeAlgorithm].generated) {
-    const observation = completedVisualMachine(values);
-    const count = observation[algorithmUi[activeAlgorithm].primaryCounter];
-    observation.free();
-    return [count, algorithmUi[activeAlgorithm].comparisonLabel];
-  }
-  if (activeAlgorithm === "is_sorted") {
-    const observation = observe_is_sorted_i32(input);
-    const count = observation.comparisons;
-    observation.free();
-    return [count, "Adjacent comparisons"];
-  }
-  if (activeAlgorithm === "insertion") {
-    const observation = observe_insertion_sort_i32(input);
-    const count = observation.comparisons;
-    observation.free();
-    return [count, "Comparisons"];
-  }
-  const observation = observe_reverse_i32(input);
-  const count = observation.swaps;
+  const observation = completedVisualMachine(values);
+  const count = observation[algorithmUi[activeAlgorithm].primaryCounter];
   observation.free();
-  return [count, "Symmetric swaps"];
+  return [count, algorithmUi[activeAlgorithm].comparisonLabel];
 }
 
 function renderScaleStudy(configuration) {
@@ -893,7 +743,7 @@ function applyProjection() {
   elements["sequence-heading"].textContent = ui.sequenceHeading;
   elements["legend-text"].textContent = ui.legend;
   elements["legend-text"].parentElement.classList.toggle("is-moved", ui.moved);
-  elements["legend-text"].parentElement.classList.toggle("is-selected", Boolean(ui.generated));
+  elements["legend-text"].parentElement.classList.add("is-selected");
   const dynamics = projection.dynamics.find((item) => item.algorithm_id === algorithm.id);
   elements["dynamics-panel"].hidden = !dynamics;
   if (dynamics) {

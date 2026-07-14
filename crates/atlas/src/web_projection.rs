@@ -79,7 +79,8 @@ struct WebDynamics {
     algorithm_id: &'static str,
     ast_id: &'static str,
     pseudocode_source: &'static str,
-    max_trace_input_length: usize,
+    max_interactive_input_length: usize,
+    max_analytical_trace_input_length: usize,
 }
 
 #[derive(Serialize)]
@@ -133,13 +134,15 @@ impl<'a> WebProjection<'a> {
                     algorithm_id: "order.is_sorted.adjacent",
                     ast_id: "ast.order.is_sorted.adjacent.v0",
                     pseudocode_source: include_str!("../pseudocode/is_sorted.atlas-pseudo"),
-                    max_trace_input_length: 64,
+                    max_interactive_input_length: 64,
+                    max_analytical_trace_input_length: 64,
                 },
                 WebDynamics {
                     algorithm_id: "sort.insertion",
                     ast_id: "ast.sort.insertion.v0",
                     pseudocode_source: include_str!("../pseudocode/insertion_sort.atlas-pseudo"),
-                    max_trace_input_length: 32,
+                    max_interactive_input_length: 64,
+                    max_analytical_trace_input_length: 32,
                 },
             ],
         })
@@ -300,7 +303,11 @@ mod tests {
             value["dynamics"][0]["ast_id"],
             "ast.order.is_sorted.adjacent.v0"
         );
-        assert_eq!(value["dynamics"][0]["max_trace_input_length"], 64);
+        assert_eq!(value["dynamics"][0]["max_interactive_input_length"], 64);
+        assert_eq!(
+            value["dynamics"][0]["max_analytical_trace_input_length"],
+            64
+        );
         assert!(
             value["dynamics"][0]["pseudocode_source"]
                 .as_str()
@@ -309,7 +316,11 @@ mod tests {
         );
         assert_eq!(value["dynamics"][1]["algorithm_id"], "sort.insertion");
         assert_eq!(value["dynamics"][1]["ast_id"], "ast.sort.insertion.v0");
-        assert_eq!(value["dynamics"][1]["max_trace_input_length"], 32);
+        assert_eq!(value["dynamics"][1]["max_interactive_input_length"], 64);
+        assert_eq!(
+            value["dynamics"][1]["max_analytical_trace_input_length"],
+            32
+        );
         assert!(
             value["dynamics"][1]["pseudocode_source"]
                 .as_str()

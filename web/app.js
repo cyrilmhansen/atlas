@@ -5,7 +5,8 @@ import init, {
   observe_reverse_i32,
   trace_is_sorted_i32,
 } from "./pkg/atlas_web.js";
-import { EXPLORE_MAX_LENGTH, generateSequence } from "./generator.mjs";
+import { EXPLORE_MAX_LENGTH, generateSequence, randomSeed } from "./generator.mjs";
+import { PLAYBACK_SPEEDS, playbackDelay } from "./playback.mjs";
 
 const algorithmUi = {
   is_sorted: {
@@ -54,7 +55,7 @@ const elements = Object.fromEntries(
     "sequence-note", "dynamics-panel", "trace-ast-id", "pseudocode-code",
     "trace-progress", "trace-sequence", "trace-event", "trace-slider",
     "trace-reset", "trace-previous", "trace-play", "trace-next", "trace-speed",
-    "generator-profile", "generator-size", "generator-seed", "generate-button",
+    "generator-profile", "generator-size", "generator-seed", "generator-random-seed", "generate-button",
     "scale-panel", "scale-operation", "scale-chart", "scale-note",
     "catalog-search", "catalog-body",
   ].map((id) => [id, document.getElementById(id)]),
@@ -79,7 +80,7 @@ const tracePlayback = {
 };
 
 function stopTracePlayback() {
-  if (tracePlayback.timer !== null) window.clearInterval(tracePlayback.timer);
+  if (tracePlayback.timer !== null) window.clearTimeout(tracePlayback.timer);
   tracePlayback.timer = null;
   elements["trace-play"].textContent = "Play";
 }
@@ -283,8 +284,8 @@ function readInsertionStepState() {
 function prepareInsertionStepper(values) {
   clearTrace("Preparing the incremental WASM execution.");
   const dynamics = projection.dynamics.find((item) => item.algorithm_id === "sort.insertion");
-  if (values.length > dynamics.max_trace_input_length) {
-    clearTrace(`Scale input (${values.length} values): interactive execution is bounded to ${dynamics.max_trace_input_length}.`);
+  if (values.length > dynamics.max_interactive_input_length) {
+    clearTrace(`Scale input (${values.length} values): interactive execution is bounded to ${dynamics.max_interactive_input_length}.`);
     return;
   }
   tracePlayback.mode = "stepper";
@@ -312,6 +313,27 @@ function advancePlayback() {
   readInsertionStepState();
   renderTraceState();
   return true;
+}
+
+function renderPlaybackSpeeds() {
+  elements["trace-speed"].replaceChildren(...PLAYBACK_SPEEDS.map((speed) => {
+    const option = document.createElement("option");
+    option.value = String(speed.delayMilliseconds);
+    option.textContent = speed.label;
+    option.selected = Boolean(speed.selected);
+    return option;
+  }));
+}
+
+function schedulePlaybackStep() {
+  tracePlayback.timer = window.setTimeout(() => {
+    tracePlayback.timer = null;
+    if (!advancePlayback()) {
+      stopTracePlayback();
+      return;
+    }
+    schedulePlaybackStep();
+  }, playbackDelay(elements["trace-speed"].value));
 }
 
 function datasetOptionLabel(dataset) {
@@ -358,6 +380,16 @@ function parseSequence() {
 function setRuntimeStatus(label, state) {
   elements["runtime-status"].textContent = label;
   elements["runtime-status"].className = `runtime-status${state ? ` is-${state}` : ""}`;
+}
+
+function refreshRandomSeed() {
+  elements["generator-seed"].value = String(randomSeed());
+}
+
+function syncSeedMode(refresh) {
+  const random = elements["generator-random-seed"].checked;
+  elements["generator-seed"].disabled = random;
+  if (random && refresh) refreshRandomSeed();
 }
 
 function renderSequence(values, highlight = {}) {
@@ -526,7 +558,7 @@ function runObservation() {
     else runReverse(values);
     if (generatedInput && generatedInput.length > EXPLORE_MAX_LENGTH) renderScaleStudy(generatedInput);
     else elements["scale-panel"].hidden = true;
-    setRuntimeStatus("WASM ready", "ready");
+    setRuntimeStatus("Executed in WASM", "ready");
   } catch (error) {
     elements["sorted-result"].textContent = "Invalid input";
     elements["sorted-result"].className = "is-false";
@@ -590,6 +622,7 @@ function generateFromControls() {
   try {
     const profile = elements["generator-profile"].value;
     const length = Number(elements["generator-size"].value);
+    if (elements["generator-random-seed"].checked) refreshRandomSeed();
     const seed = Number(elements["generator-seed"].value);
     const values = generateSequence(profile, length, seed);
     generatedInput = { profile, length, seed };
@@ -703,6 +736,7 @@ elements["sequence-input"].addEventListener("input", () => {
   elements["dataset-context"].textContent = "Custom ephemeral input; no registry evidence.";
   generatedInput = null;
   clearTrace("Input edited; run the algorithm to initialize its semantic execution.");
+  setRuntimeStatus("Ready to execute", "");
   try {
     const count = parseSequence().length;
     elements["input-count"].textContent = `${count} value${count === 1 ? "" : "s"}`;
@@ -711,6 +745,7 @@ elements["sequence-input"].addEventListener("input", () => {
   }
 });
 elements["generate-button"].addEventListener("click", generateFromControls);
+elements["generator-random-seed"].addEventListener("change", () => syncSeedMode(true));
 elements["trace-reset"].addEventListener("click", () => {
   stopTracePlayback();
   setTraceIndex(-1);
@@ -732,11 +767,13 @@ elements["trace-play"].addEventListener("click", () => {
   else if (tracePlayback.mode !== "stepper"
     && tracePlayback.index >= tracePlayback.events.length - 1) setTraceIndex(-1);
   elements["trace-play"].textContent = "Pause";
-  tracePlayback.timer = window.setInterval(() => {
-    if (!advancePlayback()) {
-      stopTracePlayback();
-    }
-  }, Number(elements["trace-speed"].value));
+  schedulePlaybackStep();
+});
+elements["trace-speed"].addEventListener("change", () => {
+  if (tracePlayback.timer === null) return;
+  window.clearTimeout(tracePlayback.timer);
+  tracePlayback.timer = null;
+  schedulePlaybackStep();
 });
 elements["trace-slider"].addEventListener("input", () => {
   stopTracePlayback();
@@ -761,6 +798,8 @@ elements["run-button"].addEventListener("click", runObservation);
 elements["catalog-search"].addEventListener("input", renderCatalog);
 
 const query = new URLSearchParams(window.location.search);
+renderPlaybackSpeeds();
+syncSeedMode(true);
 const requestedAlgorithm = query.get("algorithm");
 if (requestedAlgorithm && algorithmUi[requestedAlgorithm]) {
   activeAlgorithm = requestedAlgorithm;
@@ -793,6 +832,8 @@ try {
     elements["generator-profile"].value = requestedProfile;
     elements["generator-size"].value = requestedSize;
     elements["generator-seed"].value = requestedSeed;
+    elements["generator-random-seed"].checked = false;
+    syncSeedMode(false);
     generateFromControls();
   } else {
     runObservation();

@@ -36,5 +36,6 @@ the correction oracle.
   browser runtime is introduced.
 
 DEC-059 refines the insertion-sort implementation of this decision: its
-interactive presentation uses a stateful WASM stepper bounded to 32 elements,
-while its trace remains a validation/analysis oracle only.
+interactive presentation uses a stateful WASM stepper bounded to 64 elements,
+while its separately bounded 32-element trace remains a validation/analysis
+oracle only.

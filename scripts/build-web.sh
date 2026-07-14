@@ -21,6 +21,6 @@ wasm-bindgen \
   --out-name atlas_web \
   target/wasm32-unknown-unknown/release/atlas_web_wasm.wasm
 
-cp web/index.html web/styles.css web/app.js web/generator.mjs "$output_dir/"
+cp web/index.html web/styles.css web/app.js web/generator.mjs web/playback.mjs "$output_dir/"
 
 printf 'Built Atlas Web bundle at %s\n' "$output_dir"

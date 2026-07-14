@@ -4,6 +4,7 @@ import {
   EXPLORE_MAX_LENGTH,
   MAX_GENERATED_LENGTH,
   generateSequence,
+  randomSeed,
 } from "../generator.mjs";
 
 assert.deepEqual(generateSequence("uniform", 8, 17), generateSequence("uniform", 8, 17));
@@ -16,5 +17,7 @@ assert.equal(generateSequence("uniform", MAX_GENERATED_LENGTH, 0).length, 4096);
 assert.throws(() => generateSequence("uniform", 4097, 0), /between 0 and 4096/);
 assert.throws(() => generateSequence("unknown", 8, 0), /unknown generation profile/);
 assert.throws(() => generateSequence("uniform", 8, -1), /unsigned 32-bit integer/);
+assert.equal(randomSeed({ getRandomValues: (values) => { values[0] = 0xfedcba98; } }), 0xfedcba98);
+assert.throws(() => randomSeed({}), /random generation is unavailable/);
 
 console.log("Deterministic Web data profiles, sizes, seeds and limits passed.");

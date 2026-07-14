@@ -32,8 +32,8 @@ while (stepper.step()) {}
 assert.deepEqual(Array.from(stepper.values), [1, 2, 3]);
 
 assert.throws(
-  () => new bindings.InsertionSortStepper(new Int32Array(33)),
-  /exceeds the Atlas insertion Explore limit of 32/,
+  () => new bindings.InsertionSortStepper(new Int32Array(65)),
+  /exceeds the Atlas insertion Explore limit of 64/,
 );
 
 trace.free();

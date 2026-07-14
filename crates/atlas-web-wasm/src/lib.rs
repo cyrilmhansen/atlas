@@ -8,6 +8,7 @@ use wasm_bindgen::prelude::*;
 pub const MAX_INPUT_LENGTH: usize = 4_096;
 pub const MAX_TRACE_INPUT_LENGTH: usize = 64;
 pub const MAX_INSERTION_TRACE_INPUT_LENGTH: usize = 32;
+pub const MAX_INSERTION_STEPPER_INPUT_LENGTH: usize = 64;
 
 const LEFT_READ_NODE: &str = "is-sorted.left.read";
 const RIGHT_READ_NODE: &str = "is-sorted.right.read";
@@ -323,7 +324,7 @@ impl InsertionSortStepper {
     pub fn new(values: &[i32]) -> Result<InsertionSortStepper, JsError> {
         Self::from_values(values).map_err(|length| {
             JsError::new(&format!(
-                "stepper input length {length} exceeds the Atlas insertion Explore limit of {MAX_INSERTION_TRACE_INPUT_LENGTH}"
+                "stepper input length {length} exceeds the Atlas insertion Explore limit of {MAX_INSERTION_STEPPER_INPUT_LENGTH}"
             ))
         })
     }
@@ -467,7 +468,7 @@ impl InsertionSortStepper {
 
 impl InsertionSortStepper {
     fn from_values(values: &[i32]) -> Result<Self, usize> {
-        if values.len() > MAX_INSERTION_TRACE_INPUT_LENGTH {
+        if values.len() > MAX_INSERTION_STEPPER_INPUT_LENGTH {
             return Err(values.len());
         }
         let tagged = values
@@ -729,9 +730,10 @@ mod tests {
         COMPARE_NODE, INSERTION_COMPARE_NODE, INSERTION_CURRENT_READ_NODE,
         INSERTION_PREVIOUS_READ_NODE, INSERTION_SWAP_NODE, InsertionSortObservation,
         InsertionSortStepper, IsSortedObservation, LEFT_READ_NODE, MAX_INPUT_LENGTH,
-        MAX_INSERTION_TRACE_INPUT_LENGTH, MAX_TRACE_INPUT_LENGTH, RIGHT_READ_NODE,
-        ReverseObservation, TraceOperation, observe_insertion_sort, observe_is_sorted,
-        observe_reverse, trace_insertion_sort, trace_is_sorted,
+        MAX_INSERTION_STEPPER_INPUT_LENGTH, MAX_INSERTION_TRACE_INPUT_LENGTH,
+        MAX_TRACE_INPUT_LENGTH, RIGHT_READ_NODE, ReverseObservation, TraceOperation,
+        observe_insertion_sort, observe_is_sorted, observe_reverse, trace_insertion_sort,
+        trace_is_sorted,
     };
 
     #[test]
@@ -999,5 +1001,17 @@ mod tests {
             Err(MAX_INSERTION_TRACE_INPUT_LENGTH + 1)
         );
         assert!(observe_insertion_sort(&vec![0; MAX_INPUT_LENGTH]).is_ok());
+    }
+
+    #[test]
+    fn insertion_stepper_accepts_every_explore_size_without_expanding_trace_limit() {
+        assert!(
+            InsertionSortStepper::from_values(&[0; MAX_INSERTION_STEPPER_INPUT_LENGTH]).is_ok()
+        );
+        assert_eq!(
+            InsertionSortStepper::from_values(&[0; MAX_INSERTION_STEPPER_INPUT_LENGTH + 1]),
+            Err(MAX_INSERTION_STEPPER_INPUT_LENGTH + 1)
+        );
+        assert_eq!(MAX_INSERTION_TRACE_INPUT_LENGTH, 32);
     }
 }

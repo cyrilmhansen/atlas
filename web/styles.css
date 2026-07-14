@@ -125,11 +125,15 @@ select { min-height: 36px; padding: 0 32px 0 10px; }
 label { color: var(--muted); font-size: 0.78rem; font-weight: 700; }
 .editable-badge { padding: 5px 8px; border: 1px solid #86c9ae; background: var(--green-soft); color: #075b43; font-size: 0.7rem; font-weight: 750; text-transform: uppercase; }
 .source-control { display: grid; grid-template-columns: auto minmax(180px, 1fr); align-items: center; gap: 12px; margin-bottom: 14px; }
-.generator-controls { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr auto; align-items: end; gap: 10px; margin: 0 0 16px; padding: 12px; border: 1px solid var(--line); }
+.generator-controls { display: grid; grid-template-columns: 1.3fr 0.7fr 1fr auto; align-items: end; gap: 10px; margin: 0 0 16px; padding: 12px; border: 1px solid var(--line); }
 .generator-controls legend { padding: 0 5px; color: var(--muted); font-size: 0.7rem; font-weight: 700; }
 .generator-controls label { display: grid; gap: 5px; }
 .generator-controls select, .generator-controls input { width: 100%; min-width: 0; min-height: 36px; }
 .generator-controls input { padding: 0 8px; }
+.generator-controls input:disabled { background: #eef1ef; color: var(--muted); }
+.seed-control { display: grid; gap: 5px; }
+.generator-controls .checkbox-control { display: flex; align-items: center; gap: 6px; min-height: 20px; font-size: 0.68rem; }
+.generator-controls .checkbox-control input { width: 15px; min-height: 15px; margin: 0; padding: 0; accent-color: var(--green); }
 .generator-controls button { min-height: 36px; padding: 0 12px; border: 1px solid #9ca9a2; background: white; color: var(--ink); cursor: pointer; font-weight: 700; }
 .editor-label { display: inline-block; color: var(--green); }
 textarea { display: block; width: 100%; margin-top: 8px; padding: 12px; resize: vertical; line-height: 1.5; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

@@ -80,9 +80,7 @@
               <button id="trace-next" type="button">Next</button>
               <label for="trace-speed">Speed
                 <select id="trace-speed">
-                  <option value="1200">Slow</option>
-                  <option value="650" selected>Normal</option>
-                  <option value="250">Fast</option>
+                  <option value="800">1x</option>
                 </select>
               </label>
             </div>
@@ -130,9 +128,15 @@
                   </optgroup>
                 </select>
               </label>
-              <label for="generator-seed">Seed
-                <input id="generator-seed" type="number" min="0" max="4294967295" step="1" value="1">
-              </label>
+              <div class="seed-control">
+                <label for="generator-seed">Seed
+                  <input id="generator-seed" type="number" min="0" max="4294967295" step="1" value="1" disabled>
+                </label>
+                <label class="checkbox-control" for="generator-random-seed">
+                  <input id="generator-random-seed" type="checkbox" checked>
+                  Random seed
+                </label>
+              </div>
               <button id="generate-button" type="button">Generate</button>
             </fieldset>
             <label class="editor-label" for="sequence-input">Sequence values - edit directly</label>
@@ -140,7 +144,7 @@
             <p class="dataset-context" id="dataset-context">Dataset provenance pending.</p>
             <div class="input-actions">
               <span id="input-count">Pending</span>
-              <button id="run-button" class="primary-command" type="button">Run</button>
+              <button id="run-button" class="primary-command" type="button">Execute input</button>
             </div>
           </section>
 

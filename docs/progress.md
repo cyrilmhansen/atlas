@@ -1,5 +1,34 @@
 # Progress log
 
+## 2026-07-14 - Web playback and generation UX corrections
+
+### Result
+
+- Replaced fixed-interval playback with a rescheduled timeout so speed changes
+  apply to the next step immediately.
+- Added a factor-two speed scale from `0.5x` to `8x`.
+- Made local random seeds the default while keeping the actual seed visible;
+  unchecking `Random seed` enables reproducible fixed-seed editing.
+- Separated the 64-element insertion stepper limit from the 32-element
+  analytical-trace limit, fixing Play being disabled for a declared Explore
+  size.
+- Renamed `Run` to `Execute input`, marks edited input as ready, and reports
+  `Executed in WASM` after the current textarea has run.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm --locked --offline` (14 tests)
+- `cargo test -p atlas --lib web_projection::tests --locked --offline`
+- `scripts/check-web.sh`, including factor-two speeds and injected random seed
+- Headless Chrome fixed-seed insertion at 64 elements with active Play
+
+### Limits
+
+- Browser randomness selects an ephemeral seed; reproducibility still depends
+  on recording or fixing the displayed seed.
+- The analytical insertion trace intentionally remains smaller than the
+  interactive stepper because it materializes all operations.
+
 ## 2026-07-14 - Incremental WASM insertion dynamics
 
 ### Result
@@ -22,8 +51,8 @@
 
 ### Limits
 
-- Insertion animation is bounded to 32 elements; Scale execution remains
-  aggregate and supports 4096 elements.
+- Insertion animation is bounded to 64 elements and its analytical trace to 32;
+  aggregate Scale execution supports 4096 elements.
 - `is_sorted` presentation still materializes its bounded trace. Reverse has no
   semantic dynamics adapter yet.
 - The extended clean-archive reproducibility gate remains pending.

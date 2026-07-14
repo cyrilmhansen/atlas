@@ -17,8 +17,9 @@ the final stable result and counters with the native generic implementation.
 Aggregate Scale execution continues to return only results and counters.
 
 Backward navigation resets the WASM state and deterministically re-executes to
-the requested step. The current Explore bound of 32 insertion-sort elements
-keeps that deliberately simple strategy bounded without storing snapshots.
+the requested step. The Explore bound of 64 insertion-sort elements keeps that
+deliberately simple strategy bounded without storing snapshots. Its independent
+analytical trace remains limited to 32 elements.
 
 ## Consequences
 

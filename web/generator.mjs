@@ -4,6 +4,13 @@ export const MAX_GENERATED_LENGTH = 4096;
 const MASK_64 = (1n << 64n) - 1n;
 const PROFILES = new Set(["uniform", "ascending", "descending", "few_unique"]);
 
+export function randomSeed(randomSource = globalThis.crypto) {
+  if (!randomSource?.getRandomValues) throw new Error("secure local random generation is unavailable");
+  const seed = new Uint32Array(1);
+  randomSource.getRandomValues(seed);
+  return seed[0];
+}
+
 function nextSplitMix64(state) {
   const nextState = (state + 0x9e3779b97f4a7c15n) & MASK_64;
   let value = nextState;

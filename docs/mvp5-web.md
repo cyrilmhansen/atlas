@@ -66,11 +66,13 @@ is immediately marked as custom, ephemeral and without registry evidence.
 
 DEC-058 adds a second deterministic local-data path. The user can edit the
 sequence directly or generate `uniform`, `few_unique`, `ascending` and
-`descending` profiles from an explicit unsigned 32-bit seed. Explore sizes 8
-through 64 admit bounded animation. Scale sizes 128 through 4096 retain the
-existing execution limit and show exact operation counts across multiple `n`
-values. Generated data remains ephemeral and is never promoted to DatasetSpec
-or registry evidence.
+`descending` profiles. By default each generation draws a new unsigned 32-bit
+seed from the browser's local cryptographic random source and displays the seed.
+Unchecking `Random seed` makes the field editable and reuses that fixed seed;
+URL scenarios also select fixed mode. Explore sizes 8 through 64 admit bounded
+animation. Scale sizes 128 through 4096 retain the existing execution limit and
+show exact operation counts across multiple `n` values. Generated data remains
+ephemeral and is never promoted to DatasetSpec or registry evidence.
 
 Adjacent `is_sorted` is the first semantic-dynamics adapter. It calls the native
 algorithm and records each left read, right read and comparison at its comparator
@@ -99,8 +101,13 @@ frame at each semantic operation. Rust and Node tests compare every step with
 the bounded analytical trace, then compare the final values, original indices,
 comparisons and swaps with the native implementation. Previous-step and slider
 navigation reset the WASM state and deterministically re-execute to the chosen
-position. The 32-element insertion Explore bound keeps this replay bounded;
-Scale execution through 4096 elements remains aggregate and trace-free.
+position. The 64-element insertion Explore bound keeps this replay bounded;
+its independent analytical trace remains capped at 32. Scale execution through
+4096 elements remains aggregate and trace-free.
+
+Playback delays form a factor-two series from `0.5x` through `8x`. Changing the
+selection while playing cancels the pending timeout and schedules the next WASM
+step immediately with the new delay.
 
 The Scale chart runs complete generated sequences at increasing sizes and plots
 deterministic comparisons or swaps. It illustrates profile-dependent operation

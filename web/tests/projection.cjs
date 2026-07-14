@@ -35,14 +35,16 @@ assert.deepEqual(projection.datasets[4].values, [5, -1, 5, 3, 0, -8, 3]);
 assert.equal(projection.dynamics.length, 2);
 assert.equal(projection.dynamics[0].algorithm_id, "order.is_sorted.adjacent");
 assert.equal(projection.dynamics[0].ast_id, "ast.order.is_sorted.adjacent.v0");
-assert.equal(projection.dynamics[0].max_trace_input_length, 64);
+assert.equal(projection.dynamics[0].max_interactive_input_length, 64);
+assert.equal(projection.dynamics[0].max_analytical_trace_input_length, 64);
 assert.match(
   projection.dynamics[0].pseudocode_source,
   /operation is-sorted\.adjacent\.compare \| Compare/,
 );
 assert.equal(projection.dynamics[1].algorithm_id, "sort.insertion");
 assert.equal(projection.dynamics[1].ast_id, "ast.sort.insertion.v0");
-assert.equal(projection.dynamics[1].max_trace_input_length, 32);
+assert.equal(projection.dynamics[1].max_interactive_input_length, 64);
+assert.equal(projection.dynamics[1].max_analytical_trace_input_length, 32);
 assert.match(
   projection.dynamics[1].pseudocode_source,
   /operation insertion\.adjacent\.swap \| Swap/,

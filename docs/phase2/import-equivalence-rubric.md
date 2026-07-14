@@ -1,7 +1,7 @@
 # Phase 2 import-equivalence rubric
 
 Status: K-M0 pilot rubric  
-Protocol revision: `k-m0.1`
+Protocol revision: `k-m0.2` (frozen for the first corpus batches)
 
 This rubric compares two independent worksheets after both are complete. It
 does not reward textual identity. The comparison asks whether remaining
@@ -12,6 +12,10 @@ differences alter a knowledge decision.
 Compare one source subject at a time, then compare cross-source normalization
 for the same named algorithm. Preserve raw worksheets. A reviewer creates one
 matrix without silently rewriting either proposal.
+
+First compare facts drawn from the identical mandatory packet. Adjudicate facts
+from supplemental pages separately; unequal optional reading is source coverage,
+not automatically semantic disagreement.
 
 ## Outcome labels
 
@@ -110,13 +114,14 @@ produced only after one importer sees the other is not independent agreement.
 - Pause corpus growth when unresolved differences repeatedly change selection,
   substitution or composition outcomes.
 
-## Pilot acceptance
+## Pilot evaluation
 
-The pilot succeeds when it yields:
+The pilot is evaluated on whether it yields:
 
 - six independent subject worksheets: three subjects by two importers;
 - a completed five-dimension matrix;
-- authoring effort at worksheet granularity;
+- externally observed batch elapsed time, or an explicit `unavailable` result
+  with the failed collection method preserved;
 - at least one minimal operational discriminant for every substantive
   divergence;
 - explicit separation of source ambiguity, protocol ambiguity, model

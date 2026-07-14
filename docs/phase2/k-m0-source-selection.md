@@ -67,17 +67,22 @@ with identical API decomposition.
 
 ## Source packet shown to each importer
 
-Each independent importer receives:
+Each independent importer receives these mandatory pages:
 
-1. this source list and the same pinned URLs;
-2. `docs/phase2/import-worksheet.md` without another importer's answers;
-3. schema 0.1 and the current CLI documentation;
-4. `docs/phase2/current-model-baseline.md`;
-5. the instruction to report loss rather than extend the schema or AST.
+1. the six exact algorithm URLs listed under the two selected sources;
+2. the two code/license index URLs listed above;
+3. this source-selection document;
+4. `docs/phase2/import-worksheet.md` without another importer's answers;
+5. schema 0.1 and the current CLI documentation;
+6. `docs/phase2/current-model-baseline.md`;
+7. the instruction to report loss rather than extend the schema or AST.
 
-Importers may follow links reached directly from the selected pages when a
-dependency type or stated invariant needs clarification. Every additional page
-must be recorded. They may not consult an existing Atlas draft for these cases.
+The initial `k-m0.1` pilot allowed importers to follow directly linked pages.
+That produced unequal effective source coverage for petgraph union-find. Under
+`k-m0.2`, a followed page is supplemental: its URL and every fact it adds are
+recorded separately and adjudicated only after both raw submissions are frozen.
+
+Importers may not consult an existing Atlas draft for these cases.
 
 ## Licensing boundary
 

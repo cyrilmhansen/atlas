@@ -2737,3 +2737,33 @@ sh scripts/check-rv64-lp64-abi.sh
 git diff --check
 rg -n "petgraph|Algorithms, 4th Edition|Protocol revision" docs/phase2
 ```
+
+## 2026-07-14 - K-M0 independent import comparison
+
+### Result
+
+- Ran two isolated imports of BFS, Dijkstra and union-find and preserved all six
+  raw worksheets with SHA-256 identities.
+- Found equivalent decision boundaries for BFS and union-find.
+- Found one substantive Dijkstra divergence: exact source contracts reject an
+  algs4 path-tree candidate for a distance-only request unless Atlas can record
+  the valid one-way output projection.
+- Recorded manual discriminating requests for traversal/path output, early goal
+  and arithmetic domain, plus state growth/query mutation/failure behavior.
+- Revised the protocol once to `k-m0.2`, with mandatory versus supplemental
+  sources and externally observed batch timing.
+
+### Limits
+
+- Importer effort self-estimates were not comparable; no authoring-cost result
+  is claimed.
+- All operational probes remain manual because no graph entities exist yet.
+- Dijkstra projection, persistent state, amortized costs and numeric validity
+  remain experimental findings, not schema fields.
+
+### Verification
+
+```sh
+sha256sum docs/phase2/imports/importer-{a,b}/*.md
+git diff --check
+```

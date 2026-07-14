@@ -1,25 +1,35 @@
 # Phase 2 manual import worksheet
 
 Status: K-M0 pilot template  
-Protocol revision: `k-m0.1`
+Protocol revision: `k-m0.2` (frozen for the first corpus batches)
 
-Complete one worksheet per source subject. Use plain Markdown. Do not edit the
-registry, schema, AST or another importer's worksheet while completing it.
+Complete one worksheet per algorithmic subject, comparing every mandatory
+source assigned to that subject. Use plain Markdown. Do not edit the registry,
+schema, AST or another importer's worksheet while completing it.
 Write `not stated`, `not representable`, or `uncertain` instead of filling a gap
 from general knowledge.
+
+The source packet distinguishes mandatory pages, which every importer must
+inspect, from supplemental pages. Supplemental pages may clarify a fact but
+must be listed and kept separate during initial equivalence comparison. Do not
+use such a fact to call another import divergent before both imports have been
+adjudicated against that page.
 
 ## 1. Work record
 
 - Importer identifier:
-- Start and end time:
-- Active authoring minutes:
-- Source-reading minutes:
-- Atlas-modeling minutes:
+- Externally observed batch start and end time:
+- Batch elapsed minutes:
+- Active authoring minutes: observed or `unavailable`:
+- Source-reading minutes: observed or `unavailable`:
+- Atlas-modeling minutes: observed or `unavailable`:
 - Human interventions and their duration:
 - Tools used beyond browser, editor and existing Atlas CLI:
 
-Timing is approximate and collected at worksheet granularity. No per-field
-instrumentation is required.
+Batch elapsed time is recorded by the orchestrator, not reconstructed by the
+importer. Activity subdivisions may be `unavailable`; retrospective estimates
+must not support an authoring-cost conclusion. No per-field instrumentation is
+required.
 
 ## 2. Source identity
 
@@ -33,7 +43,8 @@ instrumentation is required.
 - Source class: book, library, paper, standard, or other:
 - Code license:
 - Documentation license or copyright status:
-- Additional pages consulted:
+- Mandatory pages consulted:
+- Supplemental pages consulted:
 
 ## 3. Source-faithful account
 
@@ -55,8 +66,9 @@ normalization.
 - Variants explicitly distinguished by the source:
 - Ambiguities or internally inconsistent statements:
 
-For each substantive statement, cite its exact source locator. Do not assign an
-Atlas evidence level yet.
+For each substantive statement, cite its exact source locator and mark whether
+it came from a mandatory or supplemental page. Do not assign an Atlas evidence
+level yet.
 
 ## 4. Proposed Atlas normalization
 

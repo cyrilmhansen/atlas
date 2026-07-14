@@ -19,13 +19,14 @@ audit, three-program vocabulary and active external-corpus phase are recorded in
 
 ## Active slice
 
-K-M0 has selected the pinned `petgraph` 0.8.3 library documentation and the
-Algorithms, 4th Edition booksite for independent BFS, Dijkstra and union-find
-imports. A manual fidelity worksheet, five-dimensional equivalence rubric and
-pre-import schema/AST/composition baseline are recorded under `docs/phase2/`.
-No registry entity, dependency, public schema field, AST capability or runtime
-instrumentation has been added. The next gate is the independent import, not
-more protocol tooling.
+K-M0 is complete. Two isolated importers produced six BFS, Dijkstra and
+union-find worksheets from `petgraph` 0.8.3 and the Algorithms, 4th Edition
+booksite. The five-dimensional comparison found decision-level convergence for
+BFS and union-find, plus a substantive Dijkstra projection/identity divergence.
+Protocol `k-m0.2` corrects unequal optional source coverage and unreliable
+self-estimated effort once, then freezes the manual process. No registry entity,
+dependency, public schema field, AST capability or runtime instrumentation has
+been added. K-M1 is the next gate.
 
 ## Latest closed slice
 

@@ -103,14 +103,19 @@ so rather than claiming undifferentiated source fidelity.
 
 ### K-M0 - Import protocol and baseline
 
-Status: protocol materials prepared; independent imports not started.
+Status: completed with a mixed, informative result. Six isolated worksheets,
+the equivalence matrix and protocol revision `k-m0.2` are recorded. Effort
+self-estimates were not comparable and are explicitly unavailable as phase
+evidence.
 
 K-M0 working documents:
 
 - `docs/phase2/k-m0-source-selection.md`;
 - `docs/phase2/import-worksheet.md`;
 - `docs/phase2/import-equivalence-rubric.md`;
-- `docs/phase2/current-model-baseline.md`.
+- `docs/phase2/current-model-baseline.md`;
+- `docs/phase2/k-m0-comparison.md`;
+- `docs/phase2/imports/importer-a/` and `importer-b/` (raw submissions).
 
 Deliverables:
 
@@ -357,8 +362,9 @@ None should be decided solely from the current sequence corpus.
 
 ## First active milestone
 
-Current gate: source/licensing selection and the manual protocol are prepared;
-the independent imports have not started.
+Current gate: K-M0 is complete. K-M1 must preserve exact source contracts and
+experimental projection notes; it must not turn the Dijkstra divergence into a
+public schema relation.
 
 1. Select sources and licensing boundaries for the graph pilot.
 2. Draft the import worksheet outside the public schema.

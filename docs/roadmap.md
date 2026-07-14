@@ -31,11 +31,12 @@ activate Phase 2. The audit and maintained planning documents are:
 Atlas Knowledge is active. Atlas Execution Lab is frozen and Atlas Explorer is
 maintained for the duration of Phase 2.
 
-K-M0 is in progress. Its source selection, manual fidelity worksheet,
-equivalence rubric and pre-import model baseline are prepared under
-`docs/phase2/`. The working source pair is `petgraph` 0.8.3 and the Algorithms,
-4th Edition booksite; both will be applied independently to BFS, Dijkstra and
-union-find. No registry import has started.
+K-M0 is complete with a mixed, informative result. Its six isolated imports and
+comparison report are under `docs/phase2/`. BFS and union-find converged at the
+decision level; Dijkstra exposed a real difference between exact source
+contracts and a common all-distances projection. Protocol `k-m0.2` freezes
+mandatory source pages and external batch timing after optional source coverage
+and self-estimated effort proved non-comparable. No registry import has started.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

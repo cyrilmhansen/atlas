@@ -1,5 +1,28 @@
 # Progress log
 
+## 2026-07-14 - Close MVP 6 scope
+
+### Result
+
+- Accepted `close-mvp6-A` as DEC-064 and closed MVP 6 at the audited generated
+  visual-machine boundary.
+- Completed Stage 5 by distinguishing the single production browser runtime
+  from private specialized exports retained solely as differential test oracles.
+- Kept bytecode, presentation, projection and WASM interfaces explicitly
+  private and activated no subsequent MVP.
+
+### Verification
+
+- The closure relies on the clean-archive, exact-bundle, five-program
+  differential and four-viewport evidence in `docs/mvp6-review.md`.
+- `scripts/check-web.sh` remains the final executable acceptance gate.
+
+### Limits
+
+- The five lowerings remain specialized reviewed shapes, not a general compiler.
+- Broader presentation semantics, performance fingerprints, publication and a
+  new MVP require separate activation decisions.
+
 ## 2026-07-14 - MVP 6 closure-candidate audit
 
 ### Result

@@ -1,8 +1,8 @@
 # MVP 6 review
 
 Review date: 2026-07-14. This records the generic executable-presentation audit
-at commit `75c4cea54be8c4a7f7f86259b201ad475c9897db`. It is closure evidence, not a
-closure decision or a stabilization of private interfaces.
+at commit `75c4cea54be8c4a7f7f86259b201ad475c9897db`. DEC-064 subsequently accepts
+this evidence and closes MVP 6 without stabilizing private interfaces.
 
 ## Demonstrated boundary
 
@@ -73,10 +73,9 @@ Pseudocode, state, controls and claims remain separated without page overflow.
 - Specialized WASM exports remain differential test oracles. They increase test
   surface and bundle bindings but are not browser execution paths.
 
-## Closure decision required
+## Closure decision
 
-The roadmap Stage 5 acceptance text currently requires no per-algorithm export,
-while consolidation A deliberately retains those exports as test oracles. The
-implementation and DEC-061 functional exit criteria are otherwise satisfied.
-Closing MVP 6 therefore requires either accepting test-only exports as part of
-the demonstrated boundary or performing the separately rejected full removal.
+DEC-064 accepts test-only specialized exports as part of consolidation A. They
+remain independent JavaScript/WASM boundary oracles and are not imported by the
+production browser entry point. Stage 5 and MVP 6 are therefore complete at the
+demonstrated boundary.

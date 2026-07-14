@@ -1,29 +1,28 @@
 # MVP status
 
-- Active MVP: **MVP 6**
-- Status: MVP 1 through MVP 5 closed; MVP 6 active under DEC-061
+- Active MVP: **none**
+- Status: MVP 1 through MVP 6 closed; no subsequent MVP activated
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
 - MVP 4: closed locally under DEC-052
 - MVP 5: closed under DEC-060
-- MVP 6: active under DEC-061
+- MVP 6: closed under DEC-064
 
-## Current slice
+## Latest closed slice
 
 MVP 6 replaces algorithm-specific Web steppers and rendering branches with one
 private generated program, one bounded WASM visual machine and one derived
-presentation description under DEC-061 through DEC-063. The viewport-width
-layout gate and the first two generated executions are complete:
-`sequence.minimum` and even `sequence.partition` are compiled from their exact
-reviewed ASTs, executed by the common machine and rendered from projected
-presentation metadata. Partition adds mutation, origin tracking, predicate and
-swap counters, and a visible boundary. The three MVP 5 steppers remain as
-differential references. Adjacent `is_sorted`, stable insertion and symmetric
-reverse now execute through generated programs in the browser and match their
+presentation description under DEC-061 through DEC-063. Its viewport-width
+layout and five generated executions are complete. `sequence.minimum`, even
+`sequence.partition`, adjacent `is_sorted`, stable insertion and symmetric
+reverse compile from their exact reviewed ASTs, execute through the common
+machine and render from projected presentation metadata. The three MVP 5
+steppers remain differential references; their generated replacements match the
 retained steppers operation-for-operation. Differential migration is complete;
 consolidation A has removed specialized browser imports and dispatch while
-retaining the WASM exports as differential oracles.
+retaining the WASM exports as differential oracles. DEC-064 accepts this
+test-only boundary and closes MVP 6 without stabilizing the private interfaces.
 
 The machine remains limited to one typed sequence, bounded indices and
 structured control; its current instruction subset is documented in
@@ -33,7 +32,7 @@ registry authority.
 
 ## Completed foundation
 
-MVP 1 through MVP 5 are closed locally. MVP 5 preserves a
+MVP 1 through MVP 6 are closed. MVP 5 preserves a
 locally openable static catalog with three curated Rust/WASM algorithms and
 separated theoretical, counted and locally timed characteristics. Publication,
 a stable Web format, advanced trace playback and MIR-in-browser execution remain

@@ -25,9 +25,9 @@ AST-linked incremental WASM execution for `is_sorted`, insertion sort and
 reverse. Analytical traces remain test-only. See `docs/mvp5-web.md` for the
 exact authority, counter, dynamics and timing boundaries. Its projection and
 WASM interfaces remain private, the site is not published, and no subsequent
-MVP is active.
+MVP was activated by its closure.
 
-MVP 6 is active under DEC-061. Its generated paths compile `sequence.minimum`,
+MVP 6 is closed under DEC-064. Its generated paths compile `sequence.minimum`,
 even `sequence.partition`, adjacent `sequence.is_sorted`, stable insertion and
 symmetric reverse from their exact reviewed ASTs to private programs executed
 by the common WASM visual machine. The retained `is_sorted`, insertion and
@@ -44,11 +44,12 @@ presentation shapes are not public contracts.
 - `crates/atlas`: registry model, validation, and reference CLI;
 - `crates/atlas-mir`: experimental MIR adapter boundary;
 - `crates/atlas-web-wasm`: private curated browser execution facade;
-- `web`: static MVP 5 workbench and catalog sources;
+- `web`: static generated-execution workbench and catalog sources;
 - `docs/schema-0.1.md`: current public schema contract;
 - `docs/mir-integration.md`: exact MVP 4 MIR build and execution boundary;
 - `docs/mvp5-web.md`: static artifact build, authority and timing boundaries;
 - `docs/mvp6-visual-machine.md`: private generated-program and WASM-machine boundary;
+- `docs/mvp6-review.md`: MVP 6 closure audit and reproducibility evidence;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

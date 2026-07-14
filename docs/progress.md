@@ -1,5 +1,28 @@
 # Progress log
 
+## 2026-07-14 - Extended bundle reproducibility audit
+
+### Result
+
+- Started the clean-archive MVP 5 gate after all three semantic adapters became
+  complete.
+- The archive exposed `scripts/check-web.sh` reading the default `build/web`
+  projection and file checks even when `ATLAS_WEB_OUTPUT` selected another
+  directory; a prior local build had masked this defect.
+- Updated every projection and bundle existence check to use the effective
+  configured output directory.
+
+### Verification
+
+- Normal custom-output Web gate passed.
+- First clean-archive gate failed at the correctly diagnosed hard-coded path;
+  the final archive/hash comparison is rerun after committing this correction.
+
+### Limits
+
+- No reproducibility claim is recorded until the post-fix archive produces an
+  identical ten-file manifest.
+
 ## 2026-07-14 - Incremental WASM reverse dynamics
 
 ### Result

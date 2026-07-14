@@ -5,6 +5,7 @@ repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$repo_root"
 
 ./scripts/build-web.sh
+output_dir=${ATLAS_WEB_OUTPUT:-build/web}
 
 node_output=build/web-node
 rm -rf "$node_output"
@@ -25,14 +26,14 @@ node web/tests/reverse_stepper.cjs "$node_output/atlas_web.js"
 node web/tests/generator.mjs
 node web/tests/playback.mjs
 node web/tests/scale_growth.mjs "$node_output/atlas_web.js"
-node web/tests/projection.cjs build/web/data/atlas.json
+node web/tests/projection.cjs "$output_dir/data/atlas.json"
 
-test -s build/web/index.html
-test -s build/web/styles.css
-test -s build/web/app.js
-test -s build/web/generator.mjs
-test -s build/web/playback.mjs
-test -s build/web/pkg/atlas_web.js
-test -s build/web/pkg/atlas_web_bg.wasm
+test -s "$output_dir/index.html"
+test -s "$output_dir/styles.css"
+test -s "$output_dir/app.js"
+test -s "$output_dir/generator.mjs"
+test -s "$output_dir/playback.mjs"
+test -s "$output_dir/pkg/atlas_web.js"
+test -s "$output_dir/pkg/atlas_web_bg.wasm"
 
 printf 'MVP 5 Web acceptance slice passed.\n'

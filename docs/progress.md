@@ -1,5 +1,29 @@
 # Progress log
 
+## 2026-07-15 - Draft bounded Phase 2 ontology review
+
+### Result
+
+- Grouped observed failures into import protocol, knowledge semantics and
+  selection-engine layers instead of treating every mismatch as a schema field.
+- Tied every candidate concept to independent graph, dynamic-state, streaming
+  or numerical cases.
+- Defined seven concrete K-M5 discriminants and an unchanged schema 0.1 control.
+- Proposed three representation strategies and three meanings for `proven`,
+  with separate recommendations and no implementation.
+
+### Verification
+
+- The review was checked against K-M0 through K-M4-W reports and schema 0.1.
+- No public schema, registry, index, CLI, AST or runtime file changed.
+
+### Limits
+
+- The recommended overlay has no accepted format and is not registry authority.
+- K-M5 remains blocked by human validation of the two class C semantic choices.
+- Universal typing, planning, proof checking and automatic import remain outside
+  the proposed experiment.
+
 ## 2026-07-15 - Complete K-M4-W open-access source repair
 
 ### Result

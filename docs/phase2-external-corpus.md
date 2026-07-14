@@ -259,6 +259,12 @@ and a readable archival alternative when practical. Open access permits
 inspection; it does not silently grant a software license or permission to copy
 an implementation.
 
+The required bounded ontology review is now documented in
+`docs/phase2/ontology-review.md`. It separates import-protocol defects from
+knowledge semantics and query execution, defines seven K-M5 discriminants and
+presents two independent human decisions: representation strategy and the
+meaning of evidence level `proven`. No option is implemented before validation.
+
 ### K-M5 - Manifest-driven candidate discovery
 
 Status: **planned, held behind the post-K-M4 ontology review**.

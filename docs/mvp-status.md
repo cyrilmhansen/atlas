@@ -31,6 +31,11 @@ neutral incremental second-central-moment import while Welford 1962 remains
 historical, not textually verified. The two imports agree strongly and add
 empty-state adaptation plus `proven` evidence semantics to the ontology review.
 
+The bounded ontology review is drafted and no implementation is active. It
+recommends a disposable decision overlay before schema 0.2 and an auditable
+proof-artifact meaning for `proven`. Both choices require human validation;
+K-M5 remains planned behind this gate.
+
 ## Latest closed slice
 
 MVP 6 replaces algorithm-specific Web steppers and rendering branches with one

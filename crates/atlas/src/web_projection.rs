@@ -2,11 +2,16 @@ use std::fmt;
 
 use serde::Serialize;
 
-use crate::ast::minimum_ast;
-use crate::datasets::{DatasetClass, GenerationError, SORT_DATASET_SPEC};
+use crate::ast::{minimum_ast, partition_ast};
+use crate::datasets::{
+    DatasetClass, GenerationError, IntPredicate, PARTITION_DATASET_SPEC, SORT_DATASET_SPEC,
+};
 use crate::index::ProjectionSummary;
 use crate::registry::{Algorithm, Claim, Implementation, Problem, Registry};
-use crate::visual_program::{VisualProgram, VisualProgramError, compile_minimum_visual_program};
+use crate::visual_program::{
+    VisualProgram, VisualProgramError, compile_minimum_visual_program,
+    compile_partition_even_visual_program,
+};
 
 pub const WEB_PROJECTION_FORMAT: &str = "atlas-web-private-v0";
 
@@ -73,6 +78,7 @@ struct WebDataset {
     class: &'static str,
     seed: u64,
     values: Vec<i32>,
+    predicate: Option<String>,
     content_digest_sha256: String,
 }
 
@@ -93,6 +99,8 @@ struct WebPresentation {
     selector_label: &'static str,
     primitive: &'static str,
     default_dataset: &'static str,
+    dataset_problem_id: &'static str,
+    dataset_predicate: Option<&'static str>,
     boundary: &'static str,
     result_label: &'static str,
     primary_counter_label: &'static str,
@@ -100,6 +108,12 @@ struct WebPresentation {
     sequence_heading: &'static str,
     legend: &'static str,
     comparison_interest: &'static str,
+    result_view: &'static str,
+    primary_counter: &'static str,
+    secondary_counter: &'static str,
+    highlight: &'static str,
+    tracks_origins: bool,
+    predicate_label: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -119,6 +133,7 @@ impl<'a> WebProjection<'a> {
         let datasets = SORT_DATASET_SPEC
             .generate_all()?
             .into_iter()
+            .chain(PARTITION_DATASET_SPEC.generate_all()?)
             .map(|dataset| WebDataset {
                 spec_id: dataset.spec_id,
                 case_id: dataset.case_id,
@@ -126,6 +141,7 @@ impl<'a> WebProjection<'a> {
                 class: dataset_class_name(dataset.class),
                 seed: dataset.seed,
                 values: dataset.values,
+                predicate: dataset.predicate.map(predicate_name),
                 content_digest_sha256: dataset.content_digest_sha256,
             })
             .collect();
@@ -188,6 +204,8 @@ impl<'a> WebProjection<'a> {
                         selector_label: "Minimum",
                         primitive: "sequence",
                         default_dataset: "sort.regression.duplicates",
+                        dataset_problem_id: "sequence.sort",
+                        dataset_predicate: None,
                         boundary: "The generated program and current sequence stay in WASM; the selected result is copied for display.",
                         result_label: "First minimum",
                         primary_counter_label: "Comparisons",
@@ -195,6 +213,41 @@ impl<'a> WebProjection<'a> {
                         sequence_heading: "Minimum selection",
                         legend: "first minimum value",
                         comparison_interest: "less",
+                        result_view: "optional_value",
+                        primary_counter: "comparisons",
+                        secondary_counter: "result_index",
+                        highlight: "selected_index",
+                        tracks_origins: false,
+                        predicate_label: None,
+                    }),
+                },
+                WebDynamics {
+                    algorithm_id: "partition.two_pointer.in_place",
+                    ast_id: "ast.partition.two_pointer.in_place.v0",
+                    pseudocode_source: include_str!("../pseudocode/partition.atlas-pseudo"),
+                    max_interactive_input_length: 64,
+                    max_analytical_trace_input_length: 0,
+                    program: Some(compile_partition_even_visual_program(&partition_ast())?),
+                    presentation: Some(WebPresentation {
+                        key: "partition",
+                        selector_label: "Partition",
+                        primitive: "sequence",
+                        default_dataset: "partition.adversarial.alternating",
+                        dataset_problem_id: "sequence.partition",
+                        dataset_predicate: Some("even"),
+                        boundary: "The generated even-predicate program mutates the sequence in WASM; current values and origins are copied for display.",
+                        result_label: "Boundary",
+                        primary_counter_label: "Predicate evaluations",
+                        secondary_label: "Swaps",
+                        sequence_heading: "Even / odd in-place partition",
+                        legend: "values matching is_even",
+                        comparison_interest: "none",
+                        result_view: "partition_boundary",
+                        primary_counter: "predicate_evaluations",
+                        secondary_counter: "swaps",
+                        highlight: "partition_boundary",
+                        tracks_origins: true,
+                        predicate_label: Some("is_even"),
                     }),
                 },
             ],
@@ -264,6 +317,15 @@ fn dataset_class_name(class: DatasetClass) -> &'static str {
         DatasetClass::Degenerate => "degenerate",
         DatasetClass::Adversarial => "adversarial",
         DatasetClass::Regression => "regression",
+    }
+}
+
+fn predicate_name(predicate: IntPredicate) -> String {
+    match predicate {
+        IntPredicate::Even => "even".to_owned(),
+        IntPredicate::LessThan(limit) => format!("less_than:{limit}"),
+        IntPredicate::Always => "always".to_owned(),
+        IntPredicate::Never => "never".to_owned(),
     }
 }
 
@@ -339,7 +401,7 @@ mod tests {
         assert_eq!(value["counts"]["problems"], 10);
         assert_eq!(value["counts"]["algorithms"], 15);
         assert_eq!(value["counts"]["implementations"], 20);
-        assert_eq!(value["datasets"].as_array().unwrap().len(), 5);
+        assert_eq!(value["datasets"].as_array().unwrap().len(), 10);
         assert_eq!(
             value["datasets"][4]["case_id"],
             "sort.regression.duplicates"
@@ -424,6 +486,27 @@ mod tests {
             9
         );
         assert_eq!(value["dynamics"][3]["presentation"]["key"], "minimum");
+        assert_eq!(
+            value["datasets"][8]["case_id"],
+            "partition.adversarial.alternating"
+        );
+        assert_eq!(value["datasets"][8]["predicate"], "even");
+        assert_eq!(
+            value["dynamics"][4]["algorithm_id"],
+            "partition.two_pointer.in_place"
+        );
+        assert_eq!(
+            value["dynamics"][4]["program"]["instructions"]
+                .as_array()
+                .unwrap()
+                .len(),
+            19
+        );
+        assert_eq!(value["dynamics"][4]["presentation"]["key"], "partition");
+        assert_eq!(
+            value["dynamics"][4]["presentation"]["dataset_predicate"],
+            "even"
+        );
         assert!(first.contains("order.is_sorted.adjacent"));
     }
 }

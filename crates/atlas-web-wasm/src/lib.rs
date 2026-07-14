@@ -50,9 +50,31 @@ enum VisualInstructionSpec {
         when_true: usize,
         when_false: usize,
     },
+    BranchIndexLessThanIndex {
+        left_register: usize,
+        right_register: usize,
+        when_true: usize,
+        when_false: usize,
+    },
+    BranchPredicate {
+        when_true: usize,
+        when_false: usize,
+    },
+    SetRegisterToLength {
+        register: usize,
+    },
     Read {
         node_id: String,
         register: usize,
+    },
+    ReadPrevious {
+        node_id: String,
+        register: usize,
+    },
+    PredicateEven {
+        node_id: String,
+        register: usize,
+        previous: bool,
     },
     CompareLess {
         node_id: String,
@@ -66,10 +88,22 @@ enum VisualInstructionSpec {
     Increment {
         register: usize,
     },
+    Decrement {
+        register: usize,
+    },
+    SwapPrevious {
+        node_id: String,
+        left_register: usize,
+        right_register: usize,
+    },
     Jump {
         target: usize,
     },
     ReturnOptionalIndex {
+        register: usize,
+    },
+    ReturnIndex {
+        node_id: String,
         register: usize,
     },
 }
@@ -88,14 +122,18 @@ struct VisualOperation {
 pub struct VisualMachine {
     program: VisualProgramSpec,
     values: Vec<i32>,
+    original_indices: Vec<u32>,
     initial_registers: Vec<usize>,
     registers: Vec<usize>,
     pc: usize,
     comparison_less: bool,
+    predicate_result: bool,
     result_index: Option<usize>,
     done: bool,
     steps: u32,
     comparisons: u32,
+    predicate_evaluations: u32,
+    swaps: u32,
     operation: Option<VisualOperation>,
 }
 
@@ -132,9 +170,13 @@ impl VisualMachine {
 
     #[wasm_bindgen(getter)]
     pub fn original_indices(&self) -> Box<[u32]> {
-        (0..self.values.len() as u32)
-            .collect::<Vec<_>>()
-            .into_boxed_slice()
+        if self.original_indices.is_empty() {
+            (0..self.values.len() as u32)
+                .collect::<Vec<_>>()
+                .into_boxed_slice()
+        } else {
+            self.original_indices.clone().into_boxed_slice()
+        }
     }
 
     #[wasm_bindgen(getter)]
@@ -153,6 +195,21 @@ impl VisualMachine {
     }
 
     #[wasm_bindgen(getter)]
+    pub fn predicate_evaluations(&self) -> u32 {
+        self.predicate_evaluations
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn predicate_result(&self) -> bool {
+        self.predicate_result
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn swaps(&self) -> u32 {
+        self.swaps
+    }
+
+    #[wasm_bindgen(getter)]
     pub fn has_result(&self) -> bool {
         self.result_index.is_some()
     }
@@ -164,7 +221,9 @@ impl VisualMachine {
 
     #[wasm_bindgen(getter)]
     pub fn result_value(&self) -> Option<i32> {
-        self.result_index.map(|index| self.values[index])
+        self.result_index
+            .and_then(|index| self.values.get(index))
+            .copied()
     }
 
     pub fn register_value(&self, name: &str) -> Option<u32> {
@@ -234,14 +293,18 @@ impl VisualMachine {
         let mut machine = Self {
             program,
             values: values.to_vec(),
+            original_indices: Vec::new(),
             registers: initial_registers.clone(),
             initial_registers,
             pc: 0,
             comparison_less: false,
+            predicate_result: false,
             result_index: None,
             done: false,
             steps: 0,
             comparisons: 0,
+            predicate_evaluations: 0,
+            swaps: 0,
             operation: None,
         };
         machine.settle_control()?;
@@ -257,13 +320,17 @@ impl VisualMachine {
         }
         self.values.clear();
         self.values.extend_from_slice(values);
+        self.original_indices.clear();
         self.registers.clone_from(&self.initial_registers);
         self.pc = 0;
         self.comparison_less = false;
+        self.predicate_result = false;
         self.result_index = None;
         self.done = false;
         self.steps = 0;
         self.comparisons = 0;
+        self.predicate_evaluations = 0;
+        self.swaps = 0;
         self.operation = None;
         self.settle_control()
     }
@@ -299,6 +366,39 @@ impl VisualMachine {
                 });
                 self.pc += 1;
             }
+            VisualInstructionSpec::ReadPrevious { node_id, register } => {
+                let index = self.previous_index(register)?;
+                self.value(index)?;
+                self.operation = Some(VisualOperation {
+                    node_id,
+                    kind: "Read",
+                    left_index: index,
+                    right_index: None,
+                    ordering: None,
+                });
+                self.pc += 1;
+            }
+            VisualInstructionSpec::PredicateEven {
+                node_id,
+                register,
+                previous,
+            } => {
+                let index = if previous {
+                    self.previous_index(register)?
+                } else {
+                    self.read_register(register)?
+                };
+                self.predicate_result = self.value(index)? % 2 == 0;
+                self.predicate_evaluations += 1;
+                self.operation = Some(VisualOperation {
+                    node_id,
+                    kind: "Predicate",
+                    left_index: index,
+                    right_index: None,
+                    ordering: None,
+                });
+                self.pc += 1;
+            }
             VisualInstructionSpec::CompareLess {
                 node_id,
                 left_register,
@@ -317,6 +417,47 @@ impl VisualMachine {
                     ordering: Some(ordering_value(ordering)),
                 });
                 self.pc += 1;
+            }
+            VisualInstructionSpec::SwapPrevious {
+                node_id,
+                left_register,
+                right_register,
+            } => {
+                let left_index = self.read_register(left_register)?;
+                let right_index = self.previous_index(right_register)?;
+                self.value(left_index)?;
+                self.value(right_index)?;
+                if self.original_indices.is_empty() {
+                    self.original_indices = (0..self.values.len() as u32).collect();
+                }
+                self.values.swap(left_index, right_index);
+                self.original_indices.swap(left_index, right_index);
+                self.swaps += 1;
+                self.operation = Some(VisualOperation {
+                    node_id,
+                    kind: "Swap",
+                    left_index,
+                    right_index: Some(right_index),
+                    ordering: None,
+                });
+                self.pc += 1;
+            }
+            VisualInstructionSpec::ReturnIndex { node_id, register } => {
+                let index = self.read_register(register)?;
+                if index > self.values.len() {
+                    return Err(format!(
+                        "visual program returns out-of-bounds boundary {index}"
+                    ));
+                }
+                self.result_index = Some(index);
+                self.done = true;
+                self.operation = Some(VisualOperation {
+                    node_id,
+                    kind: "Partition",
+                    left_index: index,
+                    right_index: None,
+                    ordering: None,
+                });
             }
             _ => return Err("visual machine did not settle on a semantic instruction".to_owned()),
         }
@@ -337,7 +478,12 @@ impl VisualMachine {
                 .ok_or_else(|| format!("visual program counter {} is out of bounds", self.pc))?
                 .clone();
             match instruction {
-                VisualInstructionSpec::Read { .. } | VisualInstructionSpec::CompareLess { .. } => {
+                VisualInstructionSpec::Read { .. }
+                | VisualInstructionSpec::ReadPrevious { .. }
+                | VisualInstructionSpec::PredicateEven { .. }
+                | VisualInstructionSpec::CompareLess { .. }
+                | VisualInstructionSpec::SwapPrevious { .. }
+                | VisualInstructionSpec::ReturnIndex { .. } => {
                     return Ok(());
                 }
                 VisualInstructionSpec::HaltIfEmpty => {
@@ -358,6 +504,34 @@ impl VisualMachine {
                         when_false
                     };
                 }
+                VisualInstructionSpec::BranchIndexLessThanIndex {
+                    left_register,
+                    right_register,
+                    when_true,
+                    when_false,
+                } => {
+                    self.pc = if self.read_register(left_register)?
+                        < self.read_register(right_register)?
+                    {
+                        when_true
+                    } else {
+                        when_false
+                    };
+                }
+                VisualInstructionSpec::BranchPredicate {
+                    when_true,
+                    when_false,
+                } => {
+                    self.pc = if self.predicate_result {
+                        when_true
+                    } else {
+                        when_false
+                    };
+                }
+                VisualInstructionSpec::SetRegisterToLength { register } => {
+                    self.registers[register] = self.values.len();
+                    self.pc += 1;
+                }
                 VisualInstructionSpec::CopyIfLess {
                     target_register,
                     source_register,
@@ -371,6 +545,12 @@ impl VisualMachine {
                     self.registers[register] = self.registers[register]
                         .checked_add(1)
                         .ok_or_else(|| "visual register overflow".to_owned())?;
+                    self.pc += 1;
+                }
+                VisualInstructionSpec::Decrement { register } => {
+                    self.registers[register] = self.registers[register]
+                        .checked_sub(1)
+                        .ok_or_else(|| "visual register underflow".to_owned())?;
                     self.pc += 1;
                 }
                 VisualInstructionSpec::Jump { target } => self.pc = target,
@@ -396,6 +576,12 @@ impl VisualMachine {
         self.values
             .get(index)
             .ok_or_else(|| format!("visual program reads out-of-bounds index {index}"))
+    }
+
+    fn previous_index(&self, register: usize) -> Result<usize, String> {
+        self.read_register(register)?
+            .checked_sub(1)
+            .ok_or_else(|| "visual program index underflow".to_owned())
     }
 }
 
@@ -443,12 +629,47 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
                 target(*when_true)?;
                 target(*when_false)?;
             }
+            VisualInstructionSpec::BranchIndexLessThanIndex {
+                left_register,
+                right_register,
+                when_true,
+                when_false,
+            } => {
+                register(*left_register)?;
+                register(*right_register)?;
+                target(*when_true)?;
+                target(*when_false)?;
+            }
+            VisualInstructionSpec::BranchPredicate {
+                when_true,
+                when_false,
+            } => {
+                target(*when_true)?;
+                target(*when_false)?;
+            }
+            VisualInstructionSpec::SetRegisterToLength {
+                register: destination,
+            } => register(*destination)?,
             VisualInstructionSpec::Read {
+                node_id,
+                register: source,
+            }
+            | VisualInstructionSpec::ReadPrevious {
                 node_id,
                 register: source,
             } => {
                 if node_id.is_empty() {
                     return Err("visual read node ID must not be empty".to_owned());
+                }
+                register(*source)?;
+            }
+            VisualInstructionSpec::PredicateEven {
+                node_id,
+                register: source,
+                ..
+            } => {
+                if node_id.is_empty() {
+                    return Err("visual predicate node ID must not be empty".to_owned());
                 }
                 register(*source)?;
             }
@@ -473,10 +694,33 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
             VisualInstructionSpec::Increment {
                 register: destination,
             }
+            | VisualInstructionSpec::Decrement {
+                register: destination,
+            }
             | VisualInstructionSpec::ReturnOptionalIndex {
                 register: destination,
             } => {
                 register(*destination)?;
+            }
+            VisualInstructionSpec::SwapPrevious {
+                node_id,
+                left_register,
+                right_register,
+            } => {
+                if node_id.is_empty() {
+                    return Err("visual swap node ID must not be empty".to_owned());
+                }
+                register(*left_register)?;
+                register(*right_register)?;
+            }
+            VisualInstructionSpec::ReturnIndex {
+                node_id,
+                register: source,
+            } => {
+                if node_id.is_empty() {
+                    return Err("visual return node ID must not be empty".to_owned());
+                }
+                register(*source)?;
             }
             VisualInstructionSpec::Jump {
                 target: destination,
@@ -487,6 +731,7 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
         matches!(
             instruction,
             VisualInstructionSpec::ReturnOptionalIndex { .. }
+                | VisualInstructionSpec::ReturnIndex { .. }
         )
     }) {
         return Err("visual program has no return instruction".to_owned());
@@ -1585,6 +1830,14 @@ mod tests {
         super::VisualMachine::from_json(&serde_json::to_string(&program).unwrap(), values).unwrap()
     }
 
+    fn partition_visual_machine(values: &[i32]) -> super::VisualMachine {
+        let program = atlas::visual_program::compile_partition_even_visual_program(
+            &atlas::ast::partition_ast(),
+        )
+        .unwrap();
+        super::VisualMachine::from_json(&serde_json::to_string(&program).unwrap(), values).unwrap()
+    }
+
     #[test]
     fn generated_minimum_machine_matches_native_and_preserves_first_tie() {
         use atlas_algorithms::minimum::minimum_by;
@@ -1627,6 +1880,83 @@ mod tests {
         );
         assert!(machine.done);
         assert_eq!(machine.result_index, Some(1));
+    }
+
+    #[test]
+    fn generated_even_partition_matches_native_mutation_and_boundary() {
+        use atlas_algorithms::partition::partition_in_place;
+
+        for input in [
+            vec![],
+            vec![2, 4, 6],
+            vec![1, 3, 5],
+            vec![1, 2, 3, 4, 5, 6],
+            vec![0, 1, 0, 1, 0, 1],
+        ] {
+            let mut native = input.clone();
+            let mut native_predicates = 0;
+            let native_boundary = partition_in_place(&mut native, |value| {
+                native_predicates += 1;
+                value % 2 == 0
+            });
+            let mut machine = partition_visual_machine(&input);
+            while machine.step_checked().unwrap() {}
+
+            assert_eq!(machine.values, native);
+            assert_eq!(machine.result_index(), Some(native_boundary as u32));
+            assert_eq!(machine.predicate_evaluations, native_predicates);
+            assert!(
+                machine.values[..native_boundary]
+                    .iter()
+                    .all(|value| value % 2 == 0)
+            );
+            assert!(
+                machine.values[native_boundary..]
+                    .iter()
+                    .all(|value| value % 2 != 0)
+            );
+            let mut origins = machine.original_indices().into_vec();
+            origins.sort_unstable();
+            assert_eq!(origins, (0..input.len() as u32).collect::<Vec<_>>());
+        }
+    }
+
+    #[test]
+    fn generated_even_partition_exposes_mutation_and_exact_ast_nodes() {
+        use atlas::ast::{SemanticOperation, partition_ast};
+
+        let mut machine = partition_visual_machine(&[1, 2, 3, 4, 5, 6]);
+        let mut operations = Vec::new();
+        while machine.step_checked().unwrap() {
+            let operation = machine.operation.as_ref().unwrap();
+            operations.push((operation.node_id.clone(), operation.kind));
+        }
+
+        assert_eq!(machine.values, [6, 2, 4, 3, 5, 1]);
+        assert_eq!(machine.result_index(), Some(3));
+        assert_eq!(machine.predicate_evaluations, 6);
+        assert_eq!(machine.swaps, 2);
+        assert_eq!(machine.steps, 15);
+        assert_eq!(
+            operations
+                .iter()
+                .filter(|(_, kind)| *kind == "Swap")
+                .count(),
+            2
+        );
+        assert_eq!(operations.last().unwrap().0, "partition.boundary");
+
+        let ast = partition_ast();
+        for (node_id, kind) in operations {
+            let expected = match kind {
+                "Read" => SemanticOperation::Read,
+                "Predicate" => SemanticOperation::Predicate,
+                "Swap" => SemanticOperation::Swap,
+                "Partition" => SemanticOperation::Partition,
+                _ => panic!("unexpected operation kind {kind}"),
+            };
+            assert_eq!(ast.operation_by_id(&node_id), Some(expected));
+        }
     }
 
     #[test]

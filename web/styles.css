@@ -184,6 +184,9 @@ textarea { display: block; width: 100%; margin-top: 8px; padding: 12px; resize: 
 .value-column.is-inversion .value-bar { background: var(--coral); border-top-color: #8e2e1e; }
 .value-column.is-moved .value-bar { background: var(--yellow); border-top-color: #8b620f; }
 .value-column.is-selected .value-bar { background: var(--green); border-top-color: #064b37; }
+.value-column.is-matching .value-bar { background: var(--green); border-top-color: #064b37; }
+.value-column.is-rejected .value-bar { background: var(--blue); border-top-color: #164b83; opacity: 0.72; }
+.value-column.is-boundary { border-left: 2px solid var(--coral); padding-left: 4px; }
 .value-column small { color: var(--muted); font-size: 0.62rem; }
 .empty-state { align-self: center; justify-self: center; color: var(--muted); }
 .sequence-note { margin: 8px 0 0; color: var(--muted); font-size: 0.7rem; }
@@ -203,6 +206,8 @@ footer { min-height: 58px; padding: 16px clamp(20px, 5vw, 72px); background: #e4
   .app-header, .algorithm-band, .catalog-header { align-items: stretch; flex-direction: column; }
   .authority { align-items: flex-start; }
   .authority code { overflow-wrap: anywhere; }
+  .algorithm-selector { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .algorithm-option + .algorithm-option { border-left: 1px solid #9ca9a2; }
   .complexity-strip { width: 100%; }
   .workbench { grid-template-columns: 1fr; }
   .dynamics-panel { grid-template-columns: 1fr; }

@@ -14,10 +14,12 @@
 MVP 6 replaces algorithm-specific Web steppers and rendering branches with one
 private generated program, one bounded WASM visual machine and one derived
 presentation description under DEC-061 through DEC-063. The viewport-width
-layout gate and the first generated execution are complete: `sequence.minimum`
-is compiled from its exact reviewed AST, executed by the common machine and
-rendered from projected presentation metadata. The three MVP 5 steppers remain
-as differential references. Even partition is the next mutating gate.
+layout gate and the first two generated executions are complete:
+`sequence.minimum` and even `sequence.partition` are compiled from their exact
+reviewed ASTs, executed by the common machine and rendered from projected
+presentation metadata. Partition adds mutation, origin tracking, predicate and
+swap counters, and a visible boundary. The three MVP 5 steppers remain as
+differential references; adjacent `is_sorted` is the next migration gate.
 
 The machine remains limited to one typed sequence, bounded indices and
 structured control; its current instruction subset is documented in

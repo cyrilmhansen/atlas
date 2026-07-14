@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::ast::{AlgorithmAst, SemanticOperation, minimum_ast};
+use crate::ast::{AlgorithmAst, SemanticOperation, minimum_ast, partition_ast};
 
 pub const VISUAL_PROGRAM_FORMAT: &str = "atlas-visual-bytecode-private-v0";
 
@@ -28,9 +28,31 @@ pub enum VisualInstruction {
         when_true: usize,
         when_false: usize,
     },
+    BranchIndexLessThanIndex {
+        left_register: usize,
+        right_register: usize,
+        when_true: usize,
+        when_false: usize,
+    },
+    BranchPredicate {
+        when_true: usize,
+        when_false: usize,
+    },
+    SetRegisterToLength {
+        register: usize,
+    },
     Read {
         node_id: &'static str,
         register: usize,
+    },
+    ReadPrevious {
+        node_id: &'static str,
+        register: usize,
+    },
+    PredicateEven {
+        node_id: &'static str,
+        register: usize,
+        previous: bool,
     },
     CompareLess {
         node_id: &'static str,
@@ -44,10 +66,22 @@ pub enum VisualInstruction {
     Increment {
         register: usize,
     },
+    Decrement {
+        register: usize,
+    },
+    SwapPrevious {
+        node_id: &'static str,
+        left_register: usize,
+        right_register: usize,
+    },
     Jump {
         target: usize,
     },
     ReturnOptionalIndex {
+        register: usize,
+    },
+    ReturnIndex {
+        node_id: &'static str,
         register: usize,
     },
 }
@@ -126,6 +160,105 @@ pub fn compile_minimum_visual_program(
     Ok(program)
 }
 
+pub fn compile_partition_even_visual_program(
+    ast: &AlgorithmAst,
+) -> Result<VisualProgram, VisualProgramError> {
+    let errors = ast.validate();
+    if !errors.is_empty() {
+        return Err(VisualProgramError(format!(
+            "cannot compile invalid AST: {}",
+            errors.join("; ")
+        )));
+    }
+    if ast != &partition_ast() {
+        return Err(VisualProgramError(
+            "even-partition visual lowering accepts only the reviewed partition AST shape"
+                .to_owned(),
+        ));
+    }
+
+    let program = VisualProgram {
+        format: VISUAL_PROGRAM_FORMAT,
+        algorithm_id: ast.algorithm_id,
+        ast_id: ast.id,
+        registers: vec![
+            VisualRegister {
+                name: "left",
+                initial: 0,
+            },
+            VisualRegister {
+                name: "right",
+                initial: 0,
+            },
+        ],
+        instructions: vec![
+            VisualInstruction::SetRegisterToLength { register: 1 },
+            VisualInstruction::BranchIndexLessThanIndex {
+                left_register: 0,
+                right_register: 1,
+                when_true: 2,
+                when_false: 18,
+            },
+            VisualInstruction::Read {
+                node_id: "partition.left.read",
+                register: 0,
+            },
+            VisualInstruction::PredicateEven {
+                node_id: "partition.left.predicate",
+                register: 0,
+                previous: false,
+            },
+            VisualInstruction::BranchPredicate {
+                when_true: 5,
+                when_false: 7,
+            },
+            VisualInstruction::Increment { register: 0 },
+            VisualInstruction::Jump { target: 1 },
+            VisualInstruction::BranchIndexLessThanIndex {
+                left_register: 0,
+                right_register: 1,
+                when_true: 8,
+                when_false: 18,
+            },
+            VisualInstruction::ReadPrevious {
+                node_id: "partition.right.read",
+                register: 1,
+            },
+            VisualInstruction::PredicateEven {
+                node_id: "partition.right.predicate",
+                register: 1,
+                previous: true,
+            },
+            VisualInstruction::BranchPredicate {
+                when_true: 13,
+                when_false: 11,
+            },
+            VisualInstruction::Decrement { register: 1 },
+            VisualInstruction::Jump { target: 7 },
+            VisualInstruction::BranchIndexLessThanIndex {
+                left_register: 0,
+                right_register: 1,
+                when_true: 14,
+                when_false: 18,
+            },
+            VisualInstruction::SwapPrevious {
+                node_id: "partition.swap",
+                left_register: 0,
+                right_register: 1,
+            },
+            VisualInstruction::Increment { register: 0 },
+            VisualInstruction::Decrement { register: 1 },
+            VisualInstruction::Jump { target: 1 },
+            VisualInstruction::ReturnIndex {
+                node_id: "partition.boundary",
+                register: 0,
+            },
+        ],
+    };
+    validate_visual_program(&program, ast)?;
+    Ok(program)
+}
+
 pub fn validate_visual_program(
     program: &VisualProgram,
     ast: &AlgorithmAst,
@@ -176,12 +309,48 @@ pub fn validate_visual_program(
                 target(*when_true)?;
                 target(*when_false)?;
             }
+            VisualInstruction::BranchIndexLessThanIndex {
+                left_register,
+                right_register,
+                when_true,
+                when_false,
+            } => {
+                register(*left_register)?;
+                register(*right_register)?;
+                target(*when_true)?;
+                target(*when_false)?;
+            }
+            VisualInstruction::BranchPredicate {
+                when_true,
+                when_false,
+            } => {
+                target(*when_true)?;
+                target(*when_false)?;
+            }
+            VisualInstruction::SetRegisterToLength {
+                register: destination,
+            } => register(*destination)?,
             VisualInstruction::Read {
                 node_id,
                 register: source,
             } => {
                 register(*source)?;
                 validate_node(ast, node_id, SemanticOperation::Read)?;
+            }
+            VisualInstruction::ReadPrevious {
+                node_id,
+                register: source,
+            } => {
+                register(*source)?;
+                validate_node(ast, node_id, SemanticOperation::Read)?;
+            }
+            VisualInstruction::PredicateEven {
+                node_id,
+                register: source,
+                ..
+            } => {
+                register(*source)?;
+                validate_node(ast, node_id, SemanticOperation::Predicate)?;
             }
             VisualInstruction::CompareLess {
                 node_id,
@@ -202,10 +371,29 @@ pub fn validate_visual_program(
             VisualInstruction::Increment {
                 register: target_register,
             }
+            | VisualInstruction::Decrement {
+                register: target_register,
+            }
             | VisualInstruction::ReturnOptionalIndex {
                 register: target_register,
             } => {
                 register(*target_register)?;
+            }
+            VisualInstruction::SwapPrevious {
+                node_id,
+                left_register,
+                right_register,
+            } => {
+                register(*left_register)?;
+                register(*right_register)?;
+                validate_node(ast, node_id, SemanticOperation::Swap)?;
+            }
+            VisualInstruction::ReturnIndex {
+                node_id,
+                register: source,
+            } => {
+                register(*source)?;
+                validate_node(ast, node_id, SemanticOperation::Partition)?;
             }
             VisualInstruction::Jump {
                 target: jump_target,
@@ -233,9 +421,12 @@ fn validate_node(
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::{Statement, minimum_ast};
+    use crate::ast::{Statement, minimum_ast, partition_ast};
 
-    use super::{VisualInstruction, compile_minimum_visual_program, validate_visual_program};
+    use super::{
+        VisualInstruction, compile_minimum_visual_program, compile_partition_even_visual_program,
+        validate_visual_program,
+    };
 
     #[test]
     fn minimum_lowering_is_deterministic_and_keeps_exact_ast_nodes() {
@@ -264,6 +455,25 @@ mod tests {
         let error = compile_minimum_visual_program(&ast).unwrap_err();
 
         assert!(error.0.contains("reviewed minimum AST shape"));
+    }
+
+    #[test]
+    fn even_partition_lowering_is_deterministic_and_ast_linked() {
+        let ast = partition_ast();
+        let first = compile_partition_even_visual_program(&ast).unwrap();
+        let second = compile_partition_even_visual_program(&ast).unwrap();
+
+        assert_eq!(first, second);
+        assert_eq!(first.registers.len(), 2);
+        assert_eq!(first.instructions.len(), 19);
+        assert!(first.instructions.iter().any(|instruction| matches!(
+            instruction,
+            VisualInstruction::SwapPrevious {
+                node_id: "partition.swap",
+                ..
+            }
+        )));
+        validate_visual_program(&first, &ast).unwrap();
     }
 
     #[test]

@@ -11,7 +11,7 @@ assert.equal(projection.build.target, "wasm32-unknown-unknown");
 assert.equal(projection.build.profile, "release");
 assert.deepEqual(projection.counts, { problems: 10, algorithms: 15, implementations: 20 });
 
-assert.equal(projection.datasets.length, 5);
+assert.equal(projection.datasets.length, 10);
 assert.deepEqual(
   projection.datasets.map((dataset) => [dataset.case_id, dataset.class]),
   [
@@ -20,19 +20,22 @@ assert.deepEqual(
     ["sort.degenerate.equal", "degenerate"],
     ["sort.adversarial.descending", "adversarial"],
     ["sort.regression.duplicates", "regression"],
+    ["partition.typical.mixed_sign", "typical"],
+    ["partition.boundary.empty", "boundary"],
+    ["partition.degenerate.all_matching", "degenerate"],
+    ["partition.adversarial.alternating", "adversarial"],
+    ["partition.regression.none_matching", "regression"],
   ],
 );
 for (const dataset of projection.datasets) {
-  assert.equal(dataset.spec_id, "dataset.sequence.sort.m2.v0");
-  assert.equal(dataset.problem_id, "sequence.sort");
   assert.match(dataset.content_digest_sha256, /^[0-9a-f]{64}$/);
   assert.ok(Array.isArray(dataset.values));
 }
-assert.equal(new Set(projection.datasets.map((dataset) => dataset.content_digest_sha256)).size, 5);
+assert.equal(new Set(projection.datasets.map((dataset) => dataset.content_digest_sha256)).size, 10);
 assert.deepEqual(projection.datasets[1].values, []);
 assert.deepEqual(projection.datasets[4].values, [5, -1, 5, 3, 0, -8, 3]);
 
-assert.equal(projection.dynamics.length, 4);
+assert.equal(projection.dynamics.length, 5);
 assert.equal(projection.dynamics[0].algorithm_id, "order.is_sorted.adjacent");
 assert.equal(projection.dynamics[0].ast_id, "ast.order.is_sorted.adjacent.v0");
 assert.equal(projection.dynamics[0].max_interactive_input_length, 64);
@@ -66,6 +69,15 @@ assert.equal(projection.dynamics[3].presentation.primitive, "sequence");
 assert.match(
   projection.dynamics[3].pseudocode_source,
   /operation minimum\.compare \| Compare/,
+);
+assert.equal(projection.dynamics[4].algorithm_id, "partition.two_pointer.in_place");
+assert.equal(projection.dynamics[4].ast_id, "ast.partition.two_pointer.in_place.v0");
+assert.equal(projection.dynamics[4].program.instructions.length, 19);
+assert.equal(projection.dynamics[4].presentation.key, "partition");
+assert.equal(projection.dynamics[4].presentation.dataset_predicate, "even");
+assert.match(
+  projection.dynamics[4].pseudocode_source,
+  /operation partition\.swap \| Swap/,
 );
 
 const algorithm = projection.algorithms.find((item) => item.id === "order.is_sorted.adjacent");

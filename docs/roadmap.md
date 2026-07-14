@@ -455,9 +455,9 @@ Planned stages:
 | Stage | Deliverable | Acceptance boundary |
 |---|---|---|
 | 0. Responsive execution band | **Complete:** viewport-width state visualization with mobile state priority | no page overflow at 390, 768, 1440 and 1920 pixel viewports |
-| 1. Program contract | **Complete for the read-only subset:** private validated instruction and state model | unsupported AST shapes fail before bundle generation |
+| 1. Program contract | **Complete for the current read-only and mutating subsets:** private validated instruction and state model | unsupported AST shapes fail before bundle generation |
 | 2. First generated execution | **Complete:** one `sequence.minimum` program and shared sequence renderer | exact AST nodes and native result agree |
-| 3. Mutating generality | even partition through the same program and machine | mutation, counters and partition invariant agree with native Rust |
+| 3. Mutating generality | **Complete:** even partition through the same program and machine | mutation, counters and partition invariant agree with native Rust |
 | 4. Differential migration | `is_sorted`, insertion and reverse generated paths | step and final-state equivalence with retained hand-written references |
 | 5. Consolidation | remove accepted per-algorithm browser/WASM paths at an explicit checkpoint | five algorithms, no per-algorithm export or `app.js` dispatch branch |
 
@@ -468,9 +468,10 @@ visual machine and presentation description remain private. Performance
 fingerprint implementation is deliberately deferred to a later scope; its
 research basis is `docs/performance-model-research.md`.
 
-The implemented read-only contract and its bounds are recorded in
-`docs/mvp6-visual-machine.md`. Stage 3 must extend this private machine with
-explicit writes and swaps, not infer mutation in the browser renderer.
+The implemented contract and its bounds are recorded in
+`docs/mvp6-visual-machine.md`. Stage 3 adds explicit swap mutation and origin
+tracking. Its provisional `predicate_even` intrinsic is not a general call
+model; widening predicates or calls remains a separate decision.
 
 ## Strategic decisions to prepare
 

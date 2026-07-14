@@ -1,5 +1,37 @@
 # Progress log
 
+## 2026-07-14 - Generated mutating partition execution
+
+### Result
+
+- Added a 19-instruction lowering of the exact reviewed two-pointer partition
+  AST to the same private visual program model as minimum.
+- Extended the common WASM machine with two-index control, previous-index reads,
+  a provisional `predicate_even` intrinsic, checked decrement, swap mutation
+  with origin tracking, and a semantic boundary return.
+- Matched native Rust mutation and boundary on empty, all-matching,
+  none-matching, mixed and alternating inputs; retained exact AST node links.
+- Projected partition DatasetSpec cases and their predicates, filtering the Web
+  selector so the even program cannot silently use an incompatible declared
+  predicate.
+- Added shared boundary/matching highlights, predicate and swap counters, and a
+  responsive five-algorithm selector.
+
+### Verification
+
+- 53 `atlas` and 24 `atlas-web-wasm` library tests passed.
+- `scripts/check-web.sh` passed with the new Node differential partition gate.
+- Chrome headless at 1440x1000 and 390x900 showed readable two-row state and a
+  non-overflowing mobile selector.
+
+### Limits
+
+- `predicate_even` is a reversible private intrinsic, not a callback or call
+  ABI. Other predicates require a later explicit decision.
+- Assertions in the partition AST are checked by differential tests rather than
+  emitted as presentation steps.
+- The three MVP 5 steppers remain; adjacent `is_sorted` is the next migration.
+
 ## 2026-07-14 - First generated MVP 6 execution
 
 ### Result

@@ -21,6 +21,7 @@ const algorithmUi = {
     sequenceHeading: "Sequence state",
     legend: "first decreasing pair",
     moved: false,
+    datasetProblem: "sequence.sort",
   },
   insertion: {
     id: "sort.insertion",
@@ -32,6 +33,7 @@ const algorithmUi = {
     sequenceHeading: "Stable sorted output",
     legend: "moved from original index",
     moved: true,
+    datasetProblem: "sequence.sort",
   },
   reverse: {
     id: "reverse.symmetric.in_place",
@@ -43,6 +45,7 @@ const algorithmUi = {
     sequenceHeading: "Reversed output",
     legend: "moved from original index",
     moved: true,
+    datasetProblem: "sequence.sort",
   },
 };
 
@@ -59,8 +62,15 @@ function hydrateGeneratedAlgorithms() {
       secondaryLabel: presentation.secondary_label,
       sequenceHeading: presentation.sequence_heading,
       legend: presentation.legend,
-      moved: false,
+      moved: presentation.tracks_origins,
+      datasetProblem: presentation.dataset_problem_id,
+      datasetPredicate: presentation.dataset_predicate,
       comparisonInterest: presentation.comparison_interest,
+      resultView: presentation.result_view,
+      primaryCounter: presentation.primary_counter,
+      secondaryCounter: presentation.secondary_counter,
+      highlight: presentation.highlight,
+      predicateLabel: presentation.predicate_label,
       dynamics,
       generated: true,
     };
@@ -196,8 +206,19 @@ function traceEventLabel(event) {
     return `${event.nodeId}: read values[${event.leftIndex}] = ${tracePlayback.values[event.leftIndex]}`;
   }
   if (event.operation === "Swap") {
-    const relation = tracePlayback.algorithm === "reverse" ? "symmetric" : "adjacent";
+    const relation = tracePlayback.algorithm === "reverse"
+      ? "symmetric"
+      : algorithmUi[tracePlayback.algorithm].resultView === "partition_boundary"
+        ? "partition"
+        : "adjacent";
     return `${event.nodeId}: swap ${relation} positions #${event.leftIndex} and #${event.rightIndex}; the WASM state is now updated.`;
+  }
+  if (event.operation === "Predicate") {
+    const value = tracePlayback.values[event.leftIndex];
+    return `${event.nodeId}: ${algorithmUi[tracePlayback.algorithm].predicateLabel}(${value}) is ${event.predicateResult}; continue the corresponding scan.`;
+  }
+  if (event.operation === "Partition") {
+    return `${event.nodeId}: return boundary #${event.leftIndex}; matching values precede it.`;
   }
   const symbols = ["<", "=", ">"];
   const comparison = `${event.nodeId}: compare values[${event.leftIndex}] ${symbols[event.ordering + 1]} values[${event.rightIndex}]`;
@@ -226,6 +247,9 @@ function renderTraceState() {
     const cell = document.createElement("div");
     cell.className = "trace-cell";
     if (event?.operation === "Read" && index === event.leftIndex) cell.classList.add("is-read");
+    if (event?.operation === "Predicate" && index === event.leftIndex) {
+      cell.classList.add(event.predicateResult ? "is-compare" : "is-inversion");
+    }
     if (event?.operation === "Compare"
       && (index === event.leftIndex || index === event.rightIndex)) {
       const inversion = algorithmUi[tracePlayback.algorithm].comparisonInterest === "less"
@@ -281,7 +305,9 @@ function renderTraceState() {
   elements["trace-event"].textContent = event
     ? traceEventLabel(event)
     : atEnd
-      ? tracePlayback.algorithm === "minimum"
+      ? algorithmUi[tracePlayback.algorithm].resultView === "partition_boundary"
+        ? `Partition complete at boundary #${tracePlayback.stepper.result_index}.`
+        : tracePlayback.algorithm === "minimum"
         ? tracePlayback.stepper.has_result
           ? `Return the first minimum, ${tracePlayback.stepper.result_value}, at #${tracePlayback.stepper.result_index}.`
           : "Empty input has no minimum; return none."
@@ -321,6 +347,7 @@ function readStepperState() {
     leftIndex: stepper.operation_left_index,
     rightIndex: stepper.operation_right_index,
     ordering: stepper.operation_ordering,
+    predicateResult: stepper.operation_kind === "Predicate" ? stepper.predicate_result : undefined,
   };
   elements["trace-slider"].max = String(stepper.steps);
   elements["trace-slider"].value = String(stepper.steps);
@@ -393,7 +420,8 @@ function selectDataset(caseId) {
   if (!dataset) throw new Error(`derived projection is missing dataset case ${caseId}`);
   elements["dataset-select"].value = dataset.case_id;
   elements["sequence-input"].value = dataset.values.join(", ");
-  elements["dataset-context"].textContent = `${dataset.spec_id} for ${dataset.problem_id}; ${dataset.class}; seed ${dataset.seed}; sha256 ${dataset.content_digest_sha256}`;
+  const predicate = dataset.predicate ? `; predicate ${dataset.predicate}` : "";
+  elements["dataset-context"].textContent = `${dataset.spec_id} for ${dataset.problem_id}; ${dataset.class}${predicate}; seed ${dataset.seed}; sha256 ${dataset.content_digest_sha256}`;
   generatedInput = null;
   setEditedInputPending(false);
 }
@@ -403,13 +431,16 @@ function populateDatasets() {
   custom.value = "";
   custom.textContent = "Custom or generated input";
   custom.disabled = true;
-  elements["dataset-select"].replaceChildren(custom, ...projection.datasets.map((dataset) => {
+  const ui = algorithmUi[activeAlgorithm];
+  const datasets = projection.datasets.filter((dataset) => dataset.problem_id === ui.datasetProblem
+    && (ui.datasetPredicate === undefined || dataset.predicate === ui.datasetPredicate));
+  elements["dataset-select"].replaceChildren(custom, ...datasets.map((dataset) => {
     const option = document.createElement("option");
     option.value = dataset.case_id;
     option.textContent = datasetOptionLabel(dataset);
     return option;
   }));
-  selectDataset(algorithmUi[activeAlgorithm].dataset);
+  selectDataset(ui.dataset);
 }
 
 function parseSequence() {
@@ -469,6 +500,10 @@ function renderSequence(values, highlight = {}) {
     }
     if (highlight.originalIndices && highlight.originalIndices[index] !== index) column.classList.add("is-moved");
     if (highlight.selectedIndex === index) column.classList.add("is-selected");
+    if (highlight.partitionBoundary !== undefined) {
+      column.classList.add(index < highlight.partitionBoundary ? "is-matching" : "is-rejected");
+      if (index === highlight.partitionBoundary) column.classList.add("is-boundary");
+    }
     const bar = document.createElement("div");
     bar.className = "value-bar";
     bar.style.height = `${Math.max(8, Math.round((Math.abs(value) / scale) * 130))}px`;
@@ -612,6 +647,7 @@ function completedVisualMachine(values) {
 }
 
 function runGeneratedAlgorithm(values) {
+  const ui = algorithmUi[activeAlgorithm];
   const observation = completedVisualMachine(values);
   const resultIndex = observation.result_index;
   const resultValue = observation.result_value;
@@ -621,11 +657,20 @@ function runGeneratedAlgorithm(values) {
     (sample) => sample.has_result ? ((sample.result_index ?? 0) % 251) + 1 : 0,
     expectedBit,
   );
-  elements["sorted-result"].textContent = observation.has_result ? String(resultValue) : "None";
+  const partition = ui.resultView === "partition_boundary";
+  elements["sorted-result"].textContent = partition
+    ? String(resultIndex)
+    : observation.has_result ? String(resultValue) : "None";
   elements["sorted-result"].className = observation.has_result ? "is-true" : "";
-  elements["comparison-count"].textContent = String(observation.comparisons);
-  elements["inversion-index"].textContent = resultIndex ?? "None";
-  renderSequence(values, { selectedIndex: resultIndex });
+  elements["comparison-count"].textContent = String(observation[ui.primaryCounter]);
+  elements["inversion-index"].textContent = observation[ui.secondaryCounter] ?? "None";
+  const output = Array.from(observation.values);
+  renderSequence(output, partition
+    ? {
+      partitionBoundary: resultIndex,
+      originalIndices: ui.moved ? Array.from(observation.original_indices) : undefined,
+    }
+    : { selectedIndex: resultIndex });
   prepareStepper(values, activeAlgorithm);
   displayTiming(timing, "generated-program construction and WASM execution");
   observation.free();
@@ -659,7 +704,10 @@ function runObservation() {
 function countSelectedOperation(values) {
   const input = new Int32Array(values);
   if (algorithmUi[activeAlgorithm].generated) {
-    return [Math.max(values.length - 1, 0), algorithmUi[activeAlgorithm].comparisonLabel];
+    const observation = completedVisualMachine(values);
+    const count = observation[algorithmUi[activeAlgorithm].primaryCounter];
+    observation.free();
+    return [count, algorithmUi[activeAlgorithm].comparisonLabel];
   }
   if (activeAlgorithm === "is_sorted") {
     const observation = observe_is_sorted_i32(input);
@@ -719,7 +767,10 @@ function generateFromControls() {
     elements["dataset-select"].value = "";
     elements["sequence-input"].value = values.join(", ");
     const regime = length <= EXPLORE_MAX_LENGTH ? "Explore" : "Scale";
-    elements["dataset-context"].textContent = `Generated locally; ${regime}; ${profile}; length ${length}; seed ${seed}; deterministic and ephemeral.`;
+    const predicate = algorithmUi[activeAlgorithm].predicateLabel
+      ? `; predicate ${algorithmUi[activeAlgorithm].predicateLabel}`
+      : "";
+    elements["dataset-context"].textContent = `Generated locally; ${regime}; ${profile}; length ${length}; seed ${seed}${predicate}; deterministic and ephemeral.`;
     runObservation();
   } catch (error) {
     elements["runtime-context"].textContent = error instanceof Error ? error.message : String(error);
@@ -798,7 +849,7 @@ document.querySelector(".algorithm-selector").addEventListener("click", (event) 
   if (!option) return;
   selectAlgorithm(option.dataset.algorithm);
   if (!projection) return;
-  selectDataset(algorithmUi[activeAlgorithm].dataset);
+  populateDatasets();
   applyProjection();
   runObservation();
 });

@@ -399,11 +399,13 @@ Current status:
   prior Web output. All eight generated files match the normal build bit for
   bit, and effective build/runtime environments are exposed.
 - DEC-058 extends the active scope with Stage 4 before closure. Its first gate is
-  a bounded adjacent-`is_sorted` trace linked to exact AST nodes, alongside
+  bounded adjacent-`is_sorted` dynamics linked to exact AST nodes, alongside
   deterministic editable-data generation and a separate scale regime.
 - That first gate is complete: Explore provides pseudocode-linked playback up to
   64 elements, while Scale plots exact comparisons/swaps through 4096 elements
-  without treating browser timing as complexity evidence.
+  without treating browser timing as complexity evidence. DEC-059 subsequently
+  moved the presentation to incremental WASM state; its analytical trace is now
+  a test oracle only.
 - Insertion adds a typed AST, parser-equivalent pseudocode and a stateful WASM
   stepper under DEC-059. It retains only the current tagged sequence and is
   checked operation-by-operation against the analytical trace and finally

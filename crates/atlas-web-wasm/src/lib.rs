@@ -93,6 +93,14 @@ impl TraceOperation {
     }
 }
 
+fn ordering_value(ordering: Ordering) -> i8 {
+    match ordering {
+        Ordering::Less => -1,
+        Ordering::Equal => 0,
+        Ordering::Greater => 1,
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct TraceEvent {
     node_id: &'static str,
@@ -100,6 +108,174 @@ struct TraceEvent {
     left_index: u32,
     right_index: Option<u32>,
     ordering: Option<i8>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum IsSortedStepPhase {
+    LeftRead,
+    RightRead,
+    Compare,
+    Complete,
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IsSortedStepper {
+    values: Vec<i32>,
+    index: usize,
+    phase: IsSortedStepPhase,
+    sorted: bool,
+    first_inversion: Option<u32>,
+    comparisons: u32,
+    steps: u32,
+    operation: Option<TraceEvent>,
+}
+
+#[wasm_bindgen]
+impl IsSortedStepper {
+    #[wasm_bindgen(constructor)]
+    pub fn new(values: &[i32]) -> Result<IsSortedStepper, JsError> {
+        Self::from_values(values).map_err(|length| {
+            JsError::new(&format!(
+                "stepper input length {length} exceeds the Atlas Explore limit of {MAX_TRACE_INPUT_LENGTH}"
+            ))
+        })
+    }
+
+    pub fn reset(&mut self, values: &[i32]) -> Result<(), JsError> {
+        *self = Self::new(values)?;
+        Ok(())
+    }
+
+    pub fn step(&mut self) -> bool {
+        self.operation = None;
+        match self.phase {
+            IsSortedStepPhase::LeftRead => {
+                self.operation = Some(TraceEvent {
+                    node_id: LEFT_READ_NODE,
+                    operation: TraceOperation::Read,
+                    left_index: self.index as u32 - 1,
+                    right_index: None,
+                    ordering: None,
+                });
+                self.phase = IsSortedStepPhase::RightRead;
+            }
+            IsSortedStepPhase::RightRead => {
+                self.operation = Some(TraceEvent {
+                    node_id: RIGHT_READ_NODE,
+                    operation: TraceOperation::Read,
+                    left_index: self.index as u32,
+                    right_index: None,
+                    ordering: None,
+                });
+                self.phase = IsSortedStepPhase::Compare;
+            }
+            IsSortedStepPhase::Compare => {
+                let ordering = self.values[self.index - 1].cmp(&self.values[self.index]);
+                self.comparisons += 1;
+                self.operation = Some(TraceEvent {
+                    node_id: COMPARE_NODE,
+                    operation: TraceOperation::Compare,
+                    left_index: self.index as u32 - 1,
+                    right_index: Some(self.index as u32),
+                    ordering: Some(ordering_value(ordering)),
+                });
+                if ordering == Ordering::Greater {
+                    self.sorted = false;
+                    self.first_inversion = Some(self.index as u32);
+                    self.phase = IsSortedStepPhase::Complete;
+                } else {
+                    self.index += 1;
+                    self.phase = if self.index >= self.values.len() {
+                        IsSortedStepPhase::Complete
+                    } else {
+                        IsSortedStepPhase::LeftRead
+                    };
+                }
+            }
+            IsSortedStepPhase::Complete => return false,
+        }
+        self.steps += 1;
+        true
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn values(&self) -> Box<[i32]> {
+        self.values.clone().into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn sorted(&self) -> bool {
+        self.sorted
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn first_inversion(&self) -> Option<u32> {
+        self.first_inversion
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn comparisons(&self) -> u32 {
+        self.comparisons
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn steps(&self) -> u32 {
+        self.steps
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn done(&self) -> bool {
+        self.phase == IsSortedStepPhase::Complete
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_node_id(&self) -> Option<String> {
+        self.operation.map(|operation| operation.node_id.to_owned())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_kind(&self) -> Option<String> {
+        self.operation
+            .map(|operation| operation.operation.name().to_owned())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_left_index(&self) -> Option<u32> {
+        self.operation.map(|operation| operation.left_index)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_right_index(&self) -> Option<u32> {
+        self.operation.and_then(|operation| operation.right_index)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_ordering(&self) -> Option<i8> {
+        self.operation.and_then(|operation| operation.ordering)
+    }
+}
+
+impl IsSortedStepper {
+    fn from_values(values: &[i32]) -> Result<Self, usize> {
+        if values.len() > MAX_TRACE_INPUT_LENGTH {
+            return Err(values.len());
+        }
+        Ok(Self {
+            values: values.to_vec(),
+            index: 1,
+            phase: if values.len() < 2 {
+                IsSortedStepPhase::Complete
+            } else {
+                IsSortedStepPhase::LeftRead
+            },
+            sorted: true,
+            first_inversion: None,
+            comparisons: 0,
+            steps: 0,
+            operation: None,
+        })
+    }
 }
 
 #[wasm_bindgen]
@@ -518,14 +694,6 @@ impl InsertionSortStepper {
     }
 }
 
-fn ordering_value(ordering: Ordering) -> i8 {
-    match ordering {
-        Ordering::Less => -1,
-        Ordering::Equal => 0,
-        Ordering::Greater => 1,
-    }
-}
-
 #[wasm_bindgen]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InsertionSortTrace {
@@ -739,8 +907,8 @@ mod tests {
     use super::{
         COMPARE_NODE, INSERTION_COMPARE_NODE, INSERTION_CURRENT_READ_NODE,
         INSERTION_PREVIOUS_READ_NODE, INSERTION_SWAP_NODE, InsertionSortObservation,
-        InsertionSortStepper, IsSortedObservation, LEFT_READ_NODE, MAX_INPUT_LENGTH,
-        MAX_INSERTION_STEPPER_INPUT_LENGTH, MAX_INSERTION_TRACE_INPUT_LENGTH,
+        InsertionSortStepper, IsSortedObservation, IsSortedStepper, LEFT_READ_NODE,
+        MAX_INPUT_LENGTH, MAX_INSERTION_STEPPER_INPUT_LENGTH, MAX_INSERTION_TRACE_INPUT_LENGTH,
         MAX_TRACE_INPUT_LENGTH, RIGHT_READ_NODE, ReverseObservation, TraceOperation,
         observe_insertion_sort, observe_is_sorted, observe_reverse, trace_insertion_sort,
         trace_is_sorted,
@@ -920,6 +1088,44 @@ mod tests {
         assert!(!stopped.sorted);
         assert_eq!(stopped.first_inversion, Some(1));
         assert_eq!(stopped.events.len(), 3);
+    }
+
+    #[test]
+    fn is_sorted_stepper_matches_trace_and_native_complete_scan() {
+        let input = [1, 1, 3, 5];
+        let trace = trace_is_sorted(&input).unwrap();
+        let native = observe_is_sorted(&input).unwrap();
+        let mut stepper = IsSortedStepper::from_values(&input).unwrap();
+
+        for expected in &trace.events {
+            assert!(stepper.step());
+            assert_eq!(stepper.operation, Some(*expected));
+        }
+
+        assert!(stepper.done());
+        assert!(!stepper.step());
+        assert_eq!(stepper.sorted, native.sorted);
+        assert_eq!(stepper.first_inversion, native.first_inversion);
+        assert_eq!(stepper.comparisons, native.comparisons);
+        assert_eq!(stepper.steps as usize, trace.events.len());
+    }
+
+    #[test]
+    fn is_sorted_stepper_preserves_early_stop_and_zero_step_cases() {
+        let mut stopped = IsSortedStepper::from_values(&[5, -1, 7]).unwrap();
+        while stopped.step() {}
+        assert!(!stopped.sorted);
+        assert_eq!(stopped.first_inversion, Some(1));
+        assert_eq!(stopped.comparisons, 1);
+        assert_eq!(stopped.steps, 3);
+
+        for input in [&[][..], &[7][..]] {
+            let mut complete = IsSortedStepper::from_values(input).unwrap();
+            assert!(complete.done());
+            assert!(!complete.step());
+            assert!(complete.sorted);
+            assert_eq!(complete.steps, 0);
+        }
     }
 
     #[test]

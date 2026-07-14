@@ -17,6 +17,7 @@ wasm-bindgen \
 
 node web/tests/is_sorted.cjs "$node_output/atlas_web.js"
 node web/tests/is_sorted_trace.cjs "$node_output/atlas_web.js"
+node web/tests/is_sorted_stepper.cjs "$node_output/atlas_web.js"
 node web/tests/insertion_sort.cjs "$node_output/atlas_web.js"
 node web/tests/insertion_stepper.cjs "$node_output/atlas_web.js"
 node web/tests/reverse.cjs "$node_output/atlas_web.js"

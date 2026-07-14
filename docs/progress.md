@@ -1,5 +1,32 @@
 # Progress log
 
+## 2026-07-14 - Incremental WASM is-sorted dynamics
+
+### Result
+
+- Replaced the browser's materialized `is_sorted` event list with a stateful
+  WASM stepper under the already accepted DEC-059 boundary.
+- Kept exact left-read, right-read and comparison AST-node highlighting while
+  retaining only current input, scan state, result and counters.
+- Preserved the three-step immediate-inversion stop and zero-step empty/singleton
+  behavior.
+- Generalized playback, reset and backward deterministic replay across both Web
+  steppers; `web/app.js` no longer imports either analytical trace.
+- Kept the bounded trace APIs as Rust/Node differential oracles only.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm --locked --offline` (17 tests)
+- `scripts/check-web.sh`, including stepper/trace/native equivalence
+- Headless Chrome descending eight-value input: Play active, `Ready / WASM`, no
+  loop-context leakage from insertion
+
+### Limits
+
+- `is_sorted` and insertion remain separate pauseable implementations checked
+  against the native generic algorithms.
+- Reverse still has aggregate execution only.
+
 ## 2026-07-14 - Temporary insertion loop context
 
 ### Result

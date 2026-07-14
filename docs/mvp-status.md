@@ -30,13 +30,13 @@ sorting DatasetSpec with their original attribution and content digests. The
 bundle records its effective build and browser environments. A Git archive
 without repository metadata or prior build products reproduces all eight bundle
 files bit for bit. DEC-058 keeps MVP 5 open for editable deterministic data,
-operation-growth views and bounded semantic dynamics. Adjacent `is_sorted` is
-the first accepted trace adapter: its bounded native trace, exact AST-node
-links, pseudocode highlighting and playback controls are implemented. Seeded
+operation-growth views and bounded semantic dynamics. Adjacent `is_sorted` has
+exact AST-node links, pseudocode highlighting and incremental WASM playback.
+Its bounded analytical trace is now test-only. Seeded
 Explore/Scale generation and deterministic multi-size operation charts are also
-complete. Insertion now has equivalent typed AST/pseudocode and a stateful WASM
-stepper under DEC-059: the browser retains current state rather than a trace,
-while differential tests retain the trace as an oracle. Reverse remains
+complete. Insertion has equivalent typed AST/pseudocode and a stateful WASM
+stepper under DEC-059. Both browser paths retain current state rather than a
+trace, while differential tests retain traces as oracles. Reverse remains
 aggregate/Scale-only, and the extended bundle reproducibility gate must be
 rerun before closure.
 

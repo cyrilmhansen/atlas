@@ -1,9 +1,9 @@
 import init, {
   InsertionSortStepper,
+  IsSortedStepper,
   observe_insertion_sort_i32,
   observe_is_sorted_i32,
   observe_reverse_i32,
-  trace_is_sorted_i32,
 } from "./pkg/atlas_web.js";
 import { EXPLORE_MAX_LENGTH, generateSequence, randomSeed } from "./generator.mjs";
 import { PLAYBACK_SPEEDS, isInsertionLoopContext, playbackDelay } from "./playback.mjs";
@@ -12,7 +12,7 @@ const algorithmUi = {
   is_sorted: {
     id: "order.is_sorted.adjacent",
     dataset: "sort.degenerate.equal",
-    boundary: "Read-only input; no output transport copy.",
+    boundary: "The read-only algorithm state stays in WASM; each displayed state copies current values only.",
     resultLabel: "Result",
     comparisonLabel: "Comparisons",
     secondaryLabel: "First inversion",
@@ -66,13 +66,10 @@ let wasmReady = false;
 let activeAlgorithm = "is_sorted";
 let generatedInput = null;
 const tracePlayback = {
-  mode: null,
+  algorithm: null,
   values: [],
   originalIndices: [],
-  events: [],
   index: -1,
-  sorted: null,
-  firstInversion: null,
   input: [],
   stepper: null,
   operation: null,
@@ -88,17 +85,14 @@ function stopTracePlayback() {
 function clearTrace(message) {
   stopTracePlayback();
   tracePlayback.stepper?.free();
-  tracePlayback.mode = null;
+  tracePlayback.algorithm = null;
   tracePlayback.values = [];
   tracePlayback.originalIndices = [];
-  tracePlayback.events = [];
   tracePlayback.index = -1;
-  tracePlayback.sorted = null;
-  tracePlayback.firstInversion = null;
   tracePlayback.input = [];
   tracePlayback.stepper = null;
   tracePlayback.operation = null;
-  elements["trace-progress"].textContent = "No trace";
+  elements["trace-progress"].textContent = "No execution";
   elements["trace-event"].textContent = message;
   elements["trace-slider"].max = "0";
   elements["trace-slider"].value = "0";
@@ -164,28 +158,31 @@ function traceEventLabel(event) {
   }
   const symbols = ["<", "=", ">"];
   const comparison = `${event.nodeId}: compare values[${event.leftIndex}] ${symbols[event.ordering + 1]} values[${event.rightIndex}]`;
-  if (tracePlayback.mode === "stepper") {
+  if (tracePlayback.algorithm === "insertion") {
     return event.ordering < 0
       ? `${comparison}; the current element must move left.`
       : `${comparison}; this insertion position is stable.`;
   }
-  if (tracePlayback.index !== tracePlayback.events.length - 1) return comparison;
-  return tracePlayback.sorted
+  if (event.ordering > 0) {
+    return `${comparison}; inversion at #${tracePlayback.stepper.first_inversion}, return false and stop early.`;
+  }
+  return tracePlayback.stepper.done
     ? `${comparison}; scan complete, return true.`
-    : `${comparison}; inversion at #${tracePlayback.firstInversion}, return false and stop early.`;
+    : `${comparison}; continue with the next adjacent pair.`;
 }
 
 function renderTraceState() {
-  const event = tracePlayback.mode === "stepper"
-    ? tracePlayback.operation
-    : tracePlayback.events[tracePlayback.index];
+  const event = tracePlayback.operation;
   elements["trace-sequence"].replaceChildren(...tracePlayback.values.map((value, index) => {
     const cell = document.createElement("div");
     cell.className = "trace-cell";
     if (event?.operation === "Read" && index === event.leftIndex) cell.classList.add("is-read");
     if (event?.operation === "Compare"
       && (index === event.leftIndex || index === event.rightIndex)) {
-      cell.classList.add(tracePlayback.mode === "stepper" && event.ordering < 0
+      const inversion = tracePlayback.algorithm === "insertion"
+        ? event.ordering < 0
+        : event.ordering > 0;
+      cell.classList.add(inversion
         ? "is-inversion"
         : "is-compare");
     }
@@ -194,7 +191,7 @@ function renderTraceState() {
     const label = document.createElement("span");
     label.textContent = String(value);
     const position = document.createElement("small");
-    position.textContent = tracePlayback.mode === "stepper"
+    position.textContent = tracePlayback.algorithm === "insertion"
       ? `from #${tracePlayback.originalIndices[index]}`
       : `#${index}`;
     cell.append(label, position);
@@ -206,91 +203,55 @@ function renderTraceState() {
       "is-context",
       isInsertionLoopContext(
         line.dataset.controlId,
-        tracePlayback.mode,
+        tracePlayback.algorithm === "insertion" ? "stepper" : null,
         Boolean(tracePlayback.stepper?.done),
       ),
     );
   });
-  const showsLoopContext = tracePlayback.mode === "stepper" && Boolean(tracePlayback.stepper);
+  const showsLoopContext = tracePlayback.algorithm === "insertion" && Boolean(tracePlayback.stepper);
   elements["execution-context"].hidden = !showsLoopContext;
   if (showsLoopContext) {
     elements["execution-context"].textContent = tracePlayback.stepper.done
       ? `outer index ${tracePlayback.stepper.outer_index} · loop complete`
       : `outer index ${tracePlayback.stepper.outer_index} · current index ${tracePlayback.stepper.current_index}`;
   }
-  const atEnd = tracePlayback.mode === "stepper"
-    ? Boolean(tracePlayback.stepper?.done)
-    : Boolean(event) && tracePlayback.index === tracePlayback.events.length - 1;
-  elements["trace-progress"].textContent = tracePlayback.mode === "stepper"
-    ? atEnd
-      ? `Complete / ${tracePlayback.index + 1} WASM steps`
-      : tracePlayback.index < 0 ? "Ready / WASM" : `WASM step ${tracePlayback.index + 1}`
-    : atEnd
-      ? `${tracePlayback.sorted ? "Complete" : "Early stop"} / ${tracePlayback.events.length} events`
-      : event
-        ? `Event ${tracePlayback.index + 1} / ${tracePlayback.events.length}`
-        : `Ready / ${tracePlayback.events.length} events`;
+  const atEnd = Boolean(tracePlayback.stepper?.done);
+  const stoppedEarly = tracePlayback.algorithm === "is_sorted"
+    && atEnd
+    && !tracePlayback.stepper.sorted;
+  elements["trace-progress"].textContent = atEnd
+    ? `${stoppedEarly ? "Early stop" : "Complete"} / ${tracePlayback.index + 1} WASM steps`
+    : tracePlayback.index < 0 ? "Ready / WASM" : `WASM step ${tracePlayback.index + 1}`;
   elements["trace-event"].textContent = event
     ? traceEventLabel(event)
-    : tracePlayback.mode === "stepper" && tracePlayback.stepper?.done
-      ? "No insertion step is required; the sequence is already complete."
-      : tracePlayback.mode === "stepper"
-        ? "Initial WASM state; advance to execute the first semantic operation."
-    : tracePlayback.events.length === 0 && tracePlayback.sorted
-      ? "No adjacent pair exists; return true without a read or comparison."
-      : "Initial immutable sequence; advance to the first semantic event.";
+    : atEnd
+      ? tracePlayback.algorithm === "is_sorted"
+        ? "No adjacent pair exists; return true without a read or comparison."
+        : "No insertion step is required; the sequence is already complete."
+      : "Initial WASM state; advance to execute the first semantic operation.";
   elements["trace-slider"].value = String(tracePlayback.index + 1);
   updateTraceControls();
 }
 
 function updateTraceControls() {
-  const isStepper = tracePlayback.mode === "stepper";
-  const available = isStepper ? Boolean(tracePlayback.stepper) : tracePlayback.events.length > 0;
+  const available = Boolean(tracePlayback.stepper);
   elements["trace-reset"].disabled = !available || tracePlayback.index < 0;
   elements["trace-previous"].disabled = !available || tracePlayback.index < 0;
-  elements["trace-play"].disabled = !available || (isStepper && tracePlayback.stepper.done && tracePlayback.index < 0);
-  elements["trace-next"].disabled = !available || (isStepper
-    ? tracePlayback.stepper.done
-    : tracePlayback.index >= tracePlayback.events.length - 1);
+  elements["trace-play"].disabled = !available
+    || (tracePlayback.stepper.done && tracePlayback.index < 0);
+  elements["trace-next"].disabled = !available || tracePlayback.stepper.done;
 }
 
 function setTraceIndex(index) {
-  if (tracePlayback.mode === "stepper") {
-    seekInsertionStep(index);
-    return;
-  }
-  tracePlayback.index = Math.max(-1, Math.min(index, tracePlayback.events.length - 1));
-  renderTraceState();
+  seekStepper(index);
 }
 
-function prepareIsSortedTrace(values) {
-  clearTrace("Preparing the bounded analytical trace.");
-  if (values.length > EXPLORE_MAX_LENGTH) {
-    clearTrace(`Scale input (${values.length} values): semantic animation is bounded to ${EXPLORE_MAX_LENGTH}.`);
-    return;
-  }
-  const trace = trace_is_sorted_i32(new Int32Array(values));
-  tracePlayback.mode = "trace";
-  tracePlayback.values = [...values];
-  tracePlayback.events = Array.from({ length: trace.event_count }, (_, index) => ({
-    nodeId: trace.event_node_id(index),
-    operation: trace.event_operation(index),
-    leftIndex: trace.event_left_index(index),
-    rightIndex: trace.event_right_index(index),
-    ordering: trace.event_ordering(index),
-  }));
-  tracePlayback.index = -1;
-  tracePlayback.sorted = trace.sorted;
-  tracePlayback.firstInversion = trace.first_inversion;
-  elements["trace-slider"].max = String(tracePlayback.events.length);
-  trace.free();
-  renderTraceState();
-}
-
-function readInsertionStepState() {
+function readStepperState() {
   const stepper = tracePlayback.stepper;
   tracePlayback.values = Array.from(stepper.values);
-  tracePlayback.originalIndices = Array.from(stepper.original_indices);
+  tracePlayback.originalIndices = tracePlayback.algorithm === "insertion"
+    ? Array.from(stepper.original_indices)
+    : [];
   tracePlayback.index = stepper.steps - 1;
   tracePlayback.operation = stepper.operation_node_id === undefined ? null : {
     nodeId: stepper.operation_node_id,
@@ -303,36 +264,34 @@ function readInsertionStepState() {
   elements["trace-slider"].value = String(stepper.steps);
 }
 
-function prepareInsertionStepper(values) {
+function prepareStepper(values, algorithm) {
   clearTrace("Preparing the incremental WASM execution.");
-  const dynamics = projection.dynamics.find((item) => item.algorithm_id === "sort.insertion");
+  const algorithmId = algorithmUi[algorithm].id;
+  const dynamics = projection.dynamics.find((item) => item.algorithm_id === algorithmId);
   if (values.length > dynamics.max_interactive_input_length) {
     clearTrace(`Scale input (${values.length} values): interactive execution is bounded to ${dynamics.max_interactive_input_length}.`);
     return;
   }
-  tracePlayback.mode = "stepper";
+  tracePlayback.algorithm = algorithm;
   tracePlayback.input = [...values];
-  tracePlayback.stepper = new InsertionSortStepper(new Int32Array(values));
-  readInsertionStepState();
+  tracePlayback.stepper = algorithm === "insertion"
+    ? new InsertionSortStepper(new Int32Array(values))
+    : new IsSortedStepper(new Int32Array(values));
+  readStepperState();
   renderTraceState();
 }
 
-function seekInsertionStep(index) {
+function seekStepper(index) {
   const target = Math.max(-1, index);
   tracePlayback.stepper.reset(new Int32Array(tracePlayback.input));
   for (let step = 0; step <= target && tracePlayback.stepper.step(); step += 1) {}
-  readInsertionStepState();
+  readStepperState();
   renderTraceState();
 }
 
 function advancePlayback() {
-  if (tracePlayback.mode !== "stepper") {
-    if (tracePlayback.index >= tracePlayback.events.length - 1) return false;
-    setTraceIndex(tracePlayback.index + 1);
-    return true;
-  }
   if (!tracePlayback.stepper.step()) return false;
-  readInsertionStepState();
+  readStepperState();
   renderTraceState();
   return true;
 }
@@ -513,7 +472,7 @@ function runIsSorted(values) {
   elements["comparison-count"].textContent = String(observation.comparisons);
   elements["inversion-index"].textContent = firstInversion ?? "None";
   renderSequence(values, { firstInversion });
-  prepareIsSortedTrace(values);
+  prepareStepper(values, "is_sorted");
   displayTiming(timing, "JS/WASM observation");
   observation.free();
 }
@@ -544,7 +503,7 @@ function runInsertionSort(values) {
   elements["comparison-count"].textContent = String(observation.comparisons);
   elements["inversion-index"].textContent = String(observation.swaps);
   renderSequence(output, { originalIndices });
-  prepareInsertionStepper(values);
+  prepareStepper(values, "insertion");
   displayTiming(timing, "JS/WASM sort observation");
   observation.free();
 }
@@ -727,7 +686,7 @@ function applyProjection() {
   if (dynamics) {
     renderPseudocode(dynamics);
   } else {
-    clearTrace("No validated semantic trace is exposed for this algorithm.");
+    clearTrace("No validated semantic execution is exposed for this algorithm.");
   }
   renderCatalog();
 }
@@ -794,9 +753,7 @@ elements["trace-play"].addEventListener("click", () => {
     stopTracePlayback();
     return;
   }
-  if (tracePlayback.mode === "stepper" && tracePlayback.stepper.done) setTraceIndex(-1);
-  else if (tracePlayback.mode !== "stepper"
-    && tracePlayback.index >= tracePlayback.events.length - 1) setTraceIndex(-1);
+  if (tracePlayback.stepper.done) setTraceIndex(-1);
   elements["trace-play"].textContent = "Pause";
   schedulePlaybackStep();
 });

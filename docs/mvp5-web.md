@@ -79,17 +79,22 @@ instead enable `Apply edited input`; applying a valid edit refreshes both the
 observation and semantic-execution state and disables the button again. This
 explicit boundary avoids executing incomplete numeric tokens on every keystroke.
 
-Adjacent `is_sorted` is the first semantic-dynamics adapter. It calls the native
-algorithm and records each left read, right read and comparison at its comparator
-boundary. Every event exposes the exact node ID from
-`ast.order.is_sorted.adjacent.v0`; Rust tests verify node existence and operation
-concordance against the AST. The browser renders the already tested textual
-pseudocode, active node, immutable sequence state, event detail, timeline and
-reset/previous/play/next controls. Inputs above 64 elements cannot produce this
-trace. The initial demonstration uses the 12-element equal DatasetSpec case so
-the complete 33-event scan is visible. Inputs with an inversion still stop
-immediately as the native algorithm requires; the final event explicitly labels
-that early return instead of making the short trace look truncated.
+Adjacent `is_sorted` is the first semantic-dynamics adapter. Its stateful WASM
+stepper executes each left read, right read and comparison and retains only the
+immutable input, scan index, result and counters. Each current operation exposes
+the exact node ID from `ast.order.is_sorted.adjacent.v0`; Rust tests verify node
+existence and operation concordance against the AST. The browser renders the
+tested textual pseudocode, active node, immutable sequence state and
+reset/previous/play/next controls without receiving an event list. Inputs above
+64 elements cannot create this interactive state. The initial demonstration
+uses the 12-element equal DatasetSpec case so the complete 33-step scan is
+visible. Inputs with an inversion stop after three steps as the algorithm
+requires, with an explicit early-return label.
+
+The bounded analytical `is_sorted` trace remains private test machinery. Rust
+and Node tests compare every stepper operation with it, and compare the final
+result and first inversion with the native generic implementation. It is not
+imported by the Web application.
 
 Insertion sort uses the incremental model accepted in DEC-059. Its typed AST
 and private textual pseudocode describe the same adjacent stable insertion used
@@ -140,8 +145,8 @@ algorithm-only timing nor portable benchmark evidence.
   the dynamics and correction path.
 - Reverse exposes Scale counts but does not yet have a validated pseudocode or
   interactive execution adapter.
-- `is_sorted` still materializes a bounded analytical trace for presentation;
-  migrating it to the incremental WASM model is a later internal improvement.
+- Both interactive algorithms retain only their current WASM state; analytical
+  traces are restricted to validation and analysis tests.
 
 ## Reproducible bundle gate
 

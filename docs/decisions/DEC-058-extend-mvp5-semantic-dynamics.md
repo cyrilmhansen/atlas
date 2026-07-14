@@ -30,8 +30,9 @@ the correction oracle.
   longer represents MVP 5 closure readiness.
 - Larger interactive runs may illustrate counted growth under a selected data
   profile; they do not infer or prove asymptotic complexity.
-- Reverse and insertion dynamics require separately tested AST/trace adapters.
-  Their current aggregate counters must not be presented as execution traces.
+- Reverse and insertion dynamics require separately tested semantic adapters.
+  Their aggregate counters must not be presented as execution traces. DEC-059
+  subsequently selected incremental WASM state for interactive adapters.
 - No public trace schema, stable Web API, general state-machine renderer or MIR
   browser runtime is introduced.
 

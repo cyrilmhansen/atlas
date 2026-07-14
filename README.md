@@ -50,8 +50,9 @@ complete and corpus growth is paused for its bounded ontology review. See
 `docs/phase2-external-corpus.md` and
 `docs/phase2/k-m4-dual-import-comparison.md`. K-M4-W repairs the inaccessible
 online-moments source with two open primary reports while retaining a neutral
-algorithm identity. The subsequent bounded ontology review is drafted without
-changing schema 0.1.
+algorithm identity. DEC-067 and DEC-068 accept the subsequent bounded ontology
+review without changing schema 0.1: a disposable decision-overlay experiment
+and an auditable meaning of `proven`.
 
 ## Project map
 
@@ -73,6 +74,8 @@ changing schema 0.1.
 - `docs/phase2/k-m4-dual-import-comparison.md`: independent normalization agreement and divergence gate;
 - `docs/phase2/k-m4-w-comparison.md`: open-access source repair for incremental second central moments;
 - `docs/phase2/ontology-review.md`: evidence-based ontology alternatives and K-M5 discriminants;
+- `docs/phase2/import-protocol-k-m0.3.md`: current source-normalization and evidence protocol;
+- `docs/phase2/k-m5-decision-overlay.md`: private overlay experiment and complexity budget;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

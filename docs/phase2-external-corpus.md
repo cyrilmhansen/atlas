@@ -263,7 +263,9 @@ The required bounded ontology review is now documented in
 `docs/phase2/ontology-review.md`. It separates import-protocol defects from
 knowledge semantics and query execution, defines seven K-M5 discriminants and
 presents two independent human decisions: representation strategy and the
-meaning of evidence level `proven`. No option is implemented before validation.
+meaning of evidence level `proven`. Options A/A are accepted under DEC-067 and
+DEC-068. Protocol `k-m0.3` and the private K-M5 overlay boundary are now frozen;
+schema 0.1 remains unchanged.
 
 ### K-M5 - Manifest-driven candidate discovery
 

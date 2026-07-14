@@ -1,5 +1,30 @@
 # Progress log
 
+## 2026-07-15 - Accept the bounded ontology experiment
+
+### Result
+
+- Recorded `ontology-A` in DEC-067: schema 0.1 remains authoritative and K-M5
+  may compare it with a private disposable decision overlay.
+- Recorded `proven-A` in DEC-068: proof level requires an inspectable artifact,
+  exact claim mapping and review/verifier method.
+- Revised future import procedure as protocol `k-m0.3` without rewriting any
+  completed worksheet.
+- Froze the seven schema 0.1 controls, overlay vocabulary, complexity budget,
+  validation tests and deletion/promotion criteria.
+
+### Verification
+
+- Decisions and protocol were checked against K-M4/K-M4-W discriminants and
+  schema 0.1 evidence semantics.
+- No registry, schema, index, CLI, AST or runtime file changed.
+
+### Limits
+
+- The overlay format is private and has no compatibility promise.
+- Its parser, validator, facts and evaluator are not implemented yet.
+- No public schema promotion is authorized by these decisions.
+
 ## 2026-07-15 - Draft bounded Phase 2 ontology review
 
 ### Result

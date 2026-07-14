@@ -1,6 +1,6 @@
 # Phase 2 bounded ontology review
 
-Status: decision proposal after K-M4 and K-M4-W
+Status: decisions accepted under DEC-067 and DEC-068
 
 Scope: Atlas Knowledge only
 
@@ -153,7 +153,7 @@ phase synthesis.
 
 ### Recommendation
 
-Recommend **Option A**. It is the only option that measures both target value
+Accepted: **Option A** (`ontology-A`). It is the only option that measures both target value
 (changed decisions) and meta cost (facts and code required) before a public
 commitment. Its hard boundary is that the overlay is neither registry authority
 nor a compatibility promise. If the experiment needs candidate-specific fields
@@ -196,7 +196,7 @@ it. Existing schema syntax remains but the phase protocol forbids new uses.
 
 ### Recommendation
 
-Recommend **Option A**. It keeps `proven` operationally stronger than
+Accepted: **Option A** (`proven-A`). It keeps `proven` operationally stronger than
 `declared`, preserves reversible promotion and avoids making peer review a
 machine-checkable property it is not. The proof artifact need not be generated
 by a proof assistant, but its exact claim mapping and review method must be
@@ -204,7 +204,7 @@ inspectable.
 
 ## Acceptance for the next slice
 
-After human validation, the next slice is not a schema migration. It should:
+The accepted next slice is not a schema migration. It should:
 
 - record the accepted decisions;
 - revise only the import protocol rules that are independent of representation;

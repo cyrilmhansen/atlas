@@ -1,5 +1,32 @@
 # Progress log
 
+## 2026-07-14 - Differential generated reverse migration
+
+### Result
+
+- Added an 11-instruction lowering of the exact symmetric-reverse AST with
+  checked left/right registers, explicit reads and register-selected swap.
+- Added structural read/write counters to the common machine and preserved lazy
+  origin tracking, swap counts and the involution result shown by the Web page.
+- Switched the existing Reverse selector to its generated program and derived
+  presentation while retaining the native observation and hand-written stepper
+  as independent oracles.
+- Completed the three-algorithm differential migration stage of MVP 6.
+
+### Verification
+
+- 56 `atlas` and 27 `atlas-web-wasm` library tests passed.
+- Rust and Node differential tests matched every visible operation, value,
+  origin, structural counter and step for empty, singleton, even, odd and
+  duplicate-heavy inputs.
+- `scripts/check-web.sh` passed with all five generated algorithm paths.
+
+### Limits
+
+- The three retained MVP 5 steppers remain intentionally available as oracles.
+- Removing per-algorithm browser/WASM paths is an explicit consolidation
+  checkpoint, not an automatic consequence of differential success.
+
 ## 2026-07-14 - Differential generated insertion migration
 
 ### Result

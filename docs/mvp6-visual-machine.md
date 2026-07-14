@@ -6,9 +6,9 @@ protocol. DEC-061 through DEC-063 define its scope.
 
 ## Authority and generation
 
-The minimum, partition, `is_sorted` and insertion pseudocode sources parse to
-the same typed `AlgorithmAst` values as their Rust AST builders. Each specialized compiler
-accepts only its exact reviewed AST shape and emits
+The minimum, partition, `is_sorted`, insertion and reverse pseudocode sources
+parse to the same typed `AlgorithmAst` values as their Rust AST builders. Each
+specialized compiler accepts only its exact reviewed AST shape and emits
 `atlas-visual-bytecode-private-v0`. Bundle generation validates every register
 and jump target and checks that each semantic instruction names an existing AST
 node with the matching operation kind.
@@ -16,8 +16,8 @@ node with the matching operation kind.
 The generated program is embedded in the derived Web projection. The browser
 passes its JSON representation to `VisualMachine`; it is never read from the
 registry or retained as execution evidence. Native `minimum_by`,
-`partition_in_place` and `is_sorted_by`, plus the retained insertion stepper,
-remain correction oracles.
+`partition_in_place` and `is_sorted_by`, plus the retained insertion and reverse
+steppers, remain correction oracles.
 
 ## Current machine
 
@@ -27,6 +27,7 @@ structural counters. Original indices are allocated lazily on the first swap;
 an unchanged identity is only produced when requested for display. Minimum uses
 two registers and nine instructions; even partition uses two registers and 19
 instructions; insertion uses two registers and 13 instructions.
+Symmetric reverse uses two registers and 11 instructions.
 
 | Instruction | Effect |
 |---|---|
@@ -48,6 +49,7 @@ instructions; insertion uses two registers and 13 instructions.
 | `copy_register` | copies one validated index register to another |
 | `increment` / `decrement` | checked index movement |
 | `swap_previous` | mutates values and origins and exposes its exact AST node |
+| `swap_registers` | swaps two checked register-selected values and origins |
 | `jump` | transfers to a validated in-program target |
 | `return_optional_index` | bounds-checks and returns the selected index |
 | `return_none` | completes without a selected or inversion index |
@@ -68,6 +70,8 @@ mutation. Dataset selection exposes and restricts the concrete predicate.
 Insertion copies the outer index into a current index, then uses strict adjacent
 comparisons and swaps. Equal values never move past one another; lazy origin
 tracking makes stability and permutation directly checkable.
+Reverse initializes its right index from sequence length, exposes two semantic
+reads per pair and counts the two writes performed by each symmetric swap.
 
 ## Bounds
 
@@ -89,15 +93,16 @@ input and keep sourced asymptotic claims separate.
 ## Validation and current limit
 
 Rust and Node tests cover empty, singleton, ordinary and tied-minimum cases,
-plus empty, all-matching, none-matching, mixed and alternating partitions and
-sorted, descending and duplicate-heavy insertion inputs.
+plus empty, all-matching, none-matching, mixed and alternating partitions,
+sorted, descending and duplicate-heavy insertion inputs, and even/odd reverse
+inputs with involution checks.
 Native mutation, boundary, permutation, counters, exact operation order,
 AST-node identity, invalid targets and the 4096-element bound are checked. The
-four generated paths coexist with the three hand-written MVP 5 steppers. This
+five generated paths coexist with the three hand-written MVP 5 steppers. This
 differential period is intentional.
 
-The compilers remain specialized to four reviewed AST shapes. Adjacent
-`is_sorted` and stable insertion now use generated paths while retaining their
-hand-written steppers as operation-for-operation oracles. There is no general
-predicate, call, write-value or multi-region model. Symmetric reverse is the
-next and final differential migration gate.
+The compilers remain specialized to five reviewed AST shapes. Adjacent
+`is_sorted`, stable insertion and symmetric reverse now use generated paths
+while retaining their hand-written steppers as operation-for-operation oracles.
+There is no general predicate, call, write-value or multi-region model. Removing
+the retained references requires the explicit consolidation checkpoint.

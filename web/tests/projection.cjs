@@ -62,6 +62,9 @@ assert.equal(projection.dynamics[2].algorithm_id, "reverse.symmetric.in_place");
 assert.equal(projection.dynamics[2].ast_id, "ast.reverse.symmetric.in_place.v0");
 assert.equal(projection.dynamics[2].max_interactive_input_length, 64);
 assert.equal(projection.dynamics[2].max_analytical_trace_input_length, 0);
+assert.equal(projection.dynamics[2].program.instructions.length, 11);
+assert.equal(projection.dynamics[2].presentation.result_view, "reversed");
+assert.equal(projection.dynamics[2].presentation.tracks_origins, true);
 assert.match(
   projection.dynamics[2].pseudocode_source,
   /operation reverse\.symmetric\.swap \| Swap/,

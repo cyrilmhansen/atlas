@@ -288,9 +288,16 @@ function renderTraceState() {
   elements["execution-context"].hidden = !showsLoopContext;
   if (showsLoopContext) {
     if (tracePlayback.algorithm === "reverse") {
+      const generated = algorithmUi[tracePlayback.algorithm].generated;
+      const leftIndex = generated
+        ? tracePlayback.stepper.register_value("left")
+        : tracePlayback.stepper.left_index;
+      const rightIndex = generated
+        ? tracePlayback.stepper.register_value("right")
+        : tracePlayback.stepper.right_index;
       elements["execution-context"].textContent = tracePlayback.stepper.done
-        ? `left index ${tracePlayback.stepper.left_index} · loop complete`
-        : `left index ${tracePlayback.stepper.left_index} · right index ${tracePlayback.stepper.right_index}`;
+        ? `left index ${leftIndex} · loop complete`
+        : `left index ${leftIndex} · right index ${rightIndex}`;
     } else {
       const generated = algorithmUi[tracePlayback.algorithm].generated;
       const outerIndex = generated
@@ -664,6 +671,7 @@ function completedVisualMachine(values) {
 function visualResultBit(observation, ui) {
   if (ui.resultView === "sortedness") return observation.has_result ? 2 : 1;
   if (ui.resultView === "stable_sorted") return (observation.comparisons % 251) + 1;
+  if (ui.resultView === "reversed") return (observation.swaps % 251) + 1;
   return observation.has_result ? ((observation.result_index ?? 0) % 251) + 1 : 0;
 }
 
@@ -681,26 +689,40 @@ function runGeneratedAlgorithm(values) {
   const partition = ui.resultView === "partition_boundary";
   const sortedness = ui.resultView === "sortedness";
   const stableSorted = ui.resultView === "stable_sorted";
+  const reversed = ui.resultView === "reversed";
   const output = Array.from(observation.values);
   const originalIndices = ui.moved ? Array.from(observation.original_indices) : undefined;
+  let restored;
   const correct = stableSorted
     ? stableSortIsCorrect(values, output, originalIndices)
+    : reversed
+      ? (() => {
+        restored = completedVisualMachine(output);
+        return output.length === values.length
+          && output.every((value, index) => value === values[values.length - 1 - index])
+          && originalIndices.every((origin, index) => origin === values.length - 1 - index)
+          && Array.from(restored.values).every((value, index) => value === values[index]);
+      })()
     : undefined;
-  elements["sorted-result"].textContent = stableSorted
-    ? correct ? "Stable sorted" : "Correction failed"
+  elements["sorted-result"].textContent = stableSorted || reversed
+    ? correct
+      ? reversed ? "Reversed + restored" : "Stable sorted"
+      : "Correction failed"
     : partition
     ? String(resultIndex)
     : sortedness
       ? observation.has_result ? "Not sorted" : "Sorted"
       : observation.has_result ? String(resultValue) : "None";
-  elements["sorted-result"].className = stableSorted
+  elements["sorted-result"].className = stableSorted || reversed
     ? correct ? "is-true" : "is-false"
     : sortedness
     ? observation.has_result ? "is-false" : "is-true"
     : observation.has_result ? "is-true" : "";
-  elements["comparison-count"].textContent = String(observation[ui.primaryCounter]);
+  elements["comparison-count"].textContent = reversed
+    ? `${observation.reads} / ${observation.writes}`
+    : String(observation[ui.primaryCounter]);
   elements["inversion-index"].textContent = observation[ui.secondaryCounter] ?? "None";
-  renderSequence(output, stableSorted
+  renderSequence(output, stableSorted || reversed
     ? { originalIndices }
     : partition
     ? {
@@ -710,6 +732,7 @@ function runGeneratedAlgorithm(values) {
     : sortedness ? { firstInversion: resultIndex } : { selectedIndex: resultIndex });
   prepareStepper(values, activeAlgorithm);
   displayTiming(timing, "generated-program construction and WASM execution");
+  restored?.free();
   observation.free();
 }
 

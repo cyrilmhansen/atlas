@@ -2,7 +2,7 @@ use std::fmt;
 
 use serde::Serialize;
 
-use crate::ast::{minimum_ast, partition_ast};
+use crate::ast::{minimum_ast, partition_ast, reverse_ast};
 use crate::datasets::{
     DatasetClass, GenerationError, IntPredicate, PARTITION_DATASET_SPEC, SORT_DATASET_SPEC,
 };
@@ -11,7 +11,7 @@ use crate::registry::{Algorithm, Claim, Implementation, Problem, Registry};
 use crate::visual_program::{
     VisualProgram, VisualProgramError, compile_insertion_visual_program,
     compile_is_sorted_visual_program, compile_minimum_visual_program,
-    compile_partition_even_visual_program,
+    compile_partition_even_visual_program, compile_reverse_visual_program,
 };
 
 pub const WEB_PROJECTION_FORMAT: &str = "atlas-web-private-v0";
@@ -234,8 +234,28 @@ impl<'a> WebProjection<'a> {
                     pseudocode_source: include_str!("../pseudocode/reverse.atlas-pseudo"),
                     max_interactive_input_length: 64,
                     max_analytical_trace_input_length: 0,
-                    program: None,
-                    presentation: None,
+                    program: Some(compile_reverse_visual_program(&reverse_ast())?),
+                    presentation: Some(WebPresentation {
+                        key: "reverse",
+                        selector_label: "Reverse",
+                        primitive: "sequence",
+                        default_dataset: "sort.regression.duplicates",
+                        dataset_problem_id: "sequence.sort",
+                        dataset_predicate: None,
+                        boundary: "The generated symmetric reverse program mutates values and lazily tracks origins in WASM; current state is copied for display.",
+                        result_label: "Correction + involution",
+                        primary_counter_label: "Semantic reads / writes",
+                        secondary_label: "Symmetric swaps",
+                        sequence_heading: "Reversed output",
+                        legend: "moved from original index",
+                        comparison_interest: "none",
+                        result_view: "reversed",
+                        primary_counter: "reads",
+                        secondary_counter: "swaps",
+                        highlight: "original_indices",
+                        tracks_origins: true,
+                        predicate_label: None,
+                    }),
                 },
                 WebDynamics {
                     algorithm_id: "select.minimum.linear",
@@ -538,6 +558,18 @@ mod tests {
                 .unwrap()
                 .contains("operation reverse.symmetric.swap | Swap")
         );
+        assert_eq!(
+            value["dynamics"][2]["program"]["instructions"]
+                .as_array()
+                .unwrap()
+                .len(),
+            11
+        );
+        assert_eq!(
+            value["dynamics"][2]["presentation"]["result_view"],
+            "reversed"
+        );
+        assert_eq!(value["dynamics"][2]["presentation"]["tracks_origins"], true);
         assert_eq!(
             value["dynamics"][3]["algorithm_id"],
             "select.minimum.linear"

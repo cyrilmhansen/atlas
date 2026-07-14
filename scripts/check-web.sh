@@ -25,6 +25,7 @@ node web/tests/insertion_sort.cjs "$node_output/atlas_web.js"
 node web/tests/insertion_stepper.cjs "$node_output/atlas_web.js"
 node web/tests/reverse.cjs "$node_output/atlas_web.js"
 node web/tests/reverse_stepper.cjs "$node_output/atlas_web.js"
+node web/tests/reverse_visual_machine.cjs "$node_output/atlas_web.js" "$output_dir/data/atlas.json"
 node web/tests/minimum_visual_machine.cjs "$node_output/atlas_web.js" "$output_dir/data/atlas.json"
 node web/tests/partition_visual_machine.cjs "$node_output/atlas_web.js" "$output_dir/data/atlas.json"
 node web/tests/generator.mjs

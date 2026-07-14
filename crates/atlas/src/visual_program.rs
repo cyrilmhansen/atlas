@@ -2,6 +2,7 @@ use serde::Serialize;
 
 use crate::ast::{
     AlgorithmAst, SemanticOperation, insertion_sort_ast, is_sorted_ast, minimum_ast, partition_ast,
+    reverse_ast,
 };
 
 pub const VISUAL_PROGRAM_FORMAT: &str = "atlas-visual-bytecode-private-v0";
@@ -99,6 +100,11 @@ pub enum VisualInstruction {
         register: usize,
     },
     SwapPrevious {
+        node_id: &'static str,
+        left_register: usize,
+        right_register: usize,
+    },
+    SwapRegisters {
         node_id: &'static str,
         left_register: usize,
         right_register: usize,
@@ -426,6 +432,70 @@ pub fn compile_insertion_visual_program(
     Ok(program)
 }
 
+pub fn compile_reverse_visual_program(
+    ast: &AlgorithmAst,
+) -> Result<VisualProgram, VisualProgramError> {
+    let errors = ast.validate();
+    if !errors.is_empty() {
+        return Err(VisualProgramError(format!(
+            "cannot compile invalid AST: {}",
+            errors.join("; ")
+        )));
+    }
+    if ast != &reverse_ast() {
+        return Err(VisualProgramError(
+            "reverse visual lowering accepts only the reviewed symmetric reverse AST shape"
+                .to_owned(),
+        ));
+    }
+
+    let program = VisualProgram {
+        format: VISUAL_PROGRAM_FORMAT,
+        algorithm_id: ast.algorithm_id,
+        ast_id: ast.id,
+        registers: vec![
+            VisualRegister {
+                name: "left",
+                initial: 0,
+            },
+            VisualRegister {
+                name: "right",
+                initial: 0,
+            },
+        ],
+        instructions: vec![
+            VisualInstruction::HaltIfEmpty,
+            VisualInstruction::SetRegisterToLength { register: 1 },
+            VisualInstruction::Decrement { register: 1 },
+            VisualInstruction::BranchIndexLessThanIndex {
+                left_register: 0,
+                right_register: 1,
+                when_true: 4,
+                when_false: 10,
+            },
+            VisualInstruction::Read {
+                node_id: "reverse.left.read",
+                register: 0,
+            },
+            VisualInstruction::Read {
+                node_id: "reverse.right.read",
+                register: 1,
+            },
+            VisualInstruction::SwapRegisters {
+                node_id: "reverse.symmetric.swap",
+                left_register: 0,
+                right_register: 1,
+            },
+            VisualInstruction::Increment { register: 0 },
+            VisualInstruction::Decrement { register: 1 },
+            VisualInstruction::Jump { target: 3 },
+            VisualInstruction::ReturnNone,
+        ],
+    };
+    validate_visual_program(&program, ast)?;
+    Ok(program)
+}
+
 pub fn validate_visual_program(
     program: &VisualProgram,
     ast: &AlgorithmAst,
@@ -597,6 +667,11 @@ pub fn validate_visual_program(
                 node_id,
                 left_register,
                 right_register,
+            }
+            | VisualInstruction::SwapRegisters {
+                node_id,
+                left_register,
+                right_register,
             } => {
                 register(*left_register)?;
                 register(*right_register)?;
@@ -636,12 +711,14 @@ fn validate_node(
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::{Statement, insertion_sort_ast, is_sorted_ast, minimum_ast, partition_ast};
+    use crate::ast::{
+        Statement, insertion_sort_ast, is_sorted_ast, minimum_ast, partition_ast, reverse_ast,
+    };
 
     use super::{
         VisualInstruction, compile_insertion_visual_program, compile_is_sorted_visual_program,
         compile_minimum_visual_program, compile_partition_even_visual_program,
-        validate_visual_program,
+        compile_reverse_visual_program, validate_visual_program,
     };
 
     #[test]
@@ -724,6 +801,25 @@ mod tests {
             instruction,
             VisualInstruction::SwapPrevious {
                 node_id: "insertion.adjacent.swap",
+                ..
+            }
+        )));
+        validate_visual_program(&first, &ast).unwrap();
+    }
+
+    #[test]
+    fn reverse_lowering_is_deterministic_and_ast_linked() {
+        let ast = reverse_ast();
+        let first = compile_reverse_visual_program(&ast).unwrap();
+        let second = compile_reverse_visual_program(&ast).unwrap();
+
+        assert_eq!(first, second);
+        assert_eq!(first.registers.len(), 2);
+        assert_eq!(first.instructions.len(), 11);
+        assert!(first.instructions.iter().any(|instruction| matches!(
+            instruction,
+            VisualInstruction::SwapRegisters {
+                node_id: "reverse.symmetric.swap",
                 ..
             }
         )));

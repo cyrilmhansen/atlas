@@ -123,6 +123,11 @@ enum VisualInstructionSpec {
         left_register: usize,
         right_register: usize,
     },
+    SwapRegisters {
+        node_id: String,
+        left_register: usize,
+        right_register: usize,
+    },
     Jump {
         target: usize,
     },
@@ -162,6 +167,8 @@ pub struct VisualMachine {
     steps: u32,
     comparisons: u32,
     predicate_evaluations: u32,
+    reads: u32,
+    writes: u32,
     swaps: u32,
     operation: Option<VisualOperation>,
 }
@@ -226,6 +233,16 @@ impl VisualMachine {
     #[wasm_bindgen(getter)]
     pub fn predicate_evaluations(&self) -> u32 {
         self.predicate_evaluations
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn reads(&self) -> u32 {
+        self.reads
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn writes(&self) -> u32 {
+        self.writes
     }
 
     #[wasm_bindgen(getter)]
@@ -334,6 +351,8 @@ impl VisualMachine {
             steps: 0,
             comparisons: 0,
             predicate_evaluations: 0,
+            reads: 0,
+            writes: 0,
             swaps: 0,
             operation: None,
         };
@@ -361,6 +380,8 @@ impl VisualMachine {
         self.steps = 0;
         self.comparisons = 0;
         self.predicate_evaluations = 0;
+        self.reads = 0;
+        self.writes = 0;
         self.swaps = 0;
         self.operation = None;
         self.settle_control()
@@ -388,6 +409,7 @@ impl VisualMachine {
             VisualInstructionSpec::Read { node_id, register } => {
                 let index = self.read_register(register)?;
                 self.value(index)?;
+                self.reads += 1;
                 self.operation = Some(VisualOperation {
                     node_id,
                     kind: "Read",
@@ -400,6 +422,7 @@ impl VisualMachine {
             VisualInstructionSpec::ReadPrevious { node_id, register } => {
                 let index = self.previous_index(register)?;
                 self.value(index)?;
+                self.reads += 1;
                 self.operation = Some(VisualOperation {
                     node_id,
                     kind: "Read",
@@ -502,6 +525,32 @@ impl VisualMachine {
                 }
                 self.values.swap(left_index, right_index);
                 self.original_indices.swap(left_index, right_index);
+                self.writes += 2;
+                self.swaps += 1;
+                self.operation = Some(VisualOperation {
+                    node_id,
+                    kind: "Swap",
+                    left_index,
+                    right_index: Some(right_index),
+                    ordering: None,
+                });
+                self.pc += 1;
+            }
+            VisualInstructionSpec::SwapRegisters {
+                node_id,
+                left_register,
+                right_register,
+            } => {
+                let left_index = self.read_register(left_register)?;
+                let right_index = self.read_register(right_register)?;
+                self.value(left_index)?;
+                self.value(right_index)?;
+                if self.original_indices.is_empty() {
+                    self.original_indices = (0..self.values.len() as u32).collect();
+                }
+                self.values.swap(left_index, right_index);
+                self.original_indices.swap(left_index, right_index);
+                self.writes += 2;
                 self.swaps += 1;
                 self.operation = Some(VisualOperation {
                     node_id,
@@ -555,6 +604,7 @@ impl VisualMachine {
                 | VisualInstructionSpec::CompareGreater { .. }
                 | VisualInstructionSpec::CompareLessPrevious { .. }
                 | VisualInstructionSpec::SwapPrevious { .. }
+                | VisualInstructionSpec::SwapRegisters { .. }
                 | VisualInstructionSpec::ReturnIndex { .. } => {
                     return Ok(());
                 }
@@ -868,6 +918,11 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
                 register(*destination)?;
             }
             VisualInstructionSpec::SwapPrevious {
+                node_id,
+                left_register,
+                right_register,
+            }
+            | VisualInstructionSpec::SwapRegisters {
                 node_id,
                 left_register,
                 right_register,
@@ -2020,6 +2075,13 @@ mod tests {
         super::VisualMachine::from_json(&serde_json::to_string(&program).unwrap(), values).unwrap()
     }
 
+    fn reverse_visual_machine(values: &[i32]) -> super::VisualMachine {
+        let program =
+            atlas::visual_program::compile_reverse_visual_program(&atlas::ast::reverse_ast())
+                .unwrap();
+        super::VisualMachine::from_json(&serde_json::to_string(&program).unwrap(), values).unwrap()
+    }
+
     #[test]
     fn generated_minimum_machine_matches_native_and_preserves_first_tie() {
         use atlas_algorithms::minimum::minimum_by;
@@ -2225,6 +2287,52 @@ mod tests {
             assert_eq!(generated.values(), retained.values());
             assert_eq!(generated.original_indices(), retained.original_indices());
             assert_eq!(generated.comparisons, retained.comparisons);
+            assert_eq!(generated.swaps, retained.swaps);
+            assert_eq!(generated.steps, retained.steps);
+            assert!(generated.done);
+        }
+    }
+
+    #[test]
+    fn generated_reverse_matches_retained_stepper_operation_for_operation() {
+        for input in [
+            vec![],
+            vec![7],
+            vec![1, 2, 3, 4],
+            vec![1, 2, 3, 4, 5],
+            vec![5, -1, 5, 3, 0, -8, 3],
+        ] {
+            let mut retained = super::ReverseStepper::from_values(&input).unwrap();
+            let mut generated = reverse_visual_machine(&input);
+            let mut retained_operations = Vec::new();
+            let mut generated_operations = Vec::new();
+
+            while retained.step() {
+                let operation = retained.operation.unwrap();
+                retained_operations.push((
+                    operation.node_id.to_owned(),
+                    operation.operation.name(),
+                    operation.left_index,
+                    operation.right_index,
+                    operation.ordering,
+                ));
+            }
+            while generated.step_checked().unwrap() {
+                let operation = generated.operation.as_ref().unwrap();
+                generated_operations.push((
+                    operation.node_id.clone(),
+                    operation.kind,
+                    operation.left_index as u32,
+                    operation.right_index.map(|index| index as u32),
+                    operation.ordering,
+                ));
+            }
+
+            assert_eq!(generated_operations, retained_operations);
+            assert_eq!(generated.values(), retained.values());
+            assert_eq!(generated.original_indices(), retained.original_indices());
+            assert_eq!(generated.reads, retained.reads);
+            assert_eq!(generated.writes, retained.writes);
             assert_eq!(generated.swaps, retained.swaps);
             assert_eq!(generated.steps, retained.steps);
             assert!(generated.done);

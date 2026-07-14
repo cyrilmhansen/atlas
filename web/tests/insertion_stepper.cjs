@@ -9,6 +9,8 @@ const trace = bindings.trace_insertion_sort_i32(input);
 assert.deepEqual(Array.from(stepper.values), [2, 1, 2, 1]);
 assert.equal(stepper.steps, 0);
 assert.equal(stepper.done, false);
+assert.equal(stepper.outer_index, 1);
+assert.equal(stepper.current_index, 1);
 
 for (let index = 0; index < trace.event_count; index += 1) {
   assert.equal(stepper.step(), true);
@@ -28,6 +30,7 @@ assert.equal(stepper.swaps, 3);
 
 stepper.reset(Int32Array.from([3, 2, 1]));
 assert.equal(stepper.steps, 0);
+assert.equal(stepper.outer_index, 1);
 while (stepper.step()) {}
 assert.deepEqual(Array.from(stepper.values), [1, 2, 3]);
 

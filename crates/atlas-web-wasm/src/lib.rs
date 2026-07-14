@@ -435,6 +435,16 @@ impl InsertionSortStepper {
     }
 
     #[wasm_bindgen(getter)]
+    pub fn outer_index(&self) -> u32 {
+        self.outer_index as u32
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn current_index(&self) -> u32 {
+        self.current_index as u32
+    }
+
+    #[wasm_bindgen(getter)]
     pub fn done(&self) -> bool {
         self.phase == InsertionStepPhase::Complete
     }
@@ -990,6 +1000,21 @@ mod tests {
         assert_eq!(stepper.values().as_ref(), [4, 3, 2]);
         while stepper.step() {}
         assert_eq!(stepper.values().as_ref(), [2, 3, 4]);
+        assert!(stepper.done());
+    }
+
+    #[test]
+    fn insertion_stepper_exposes_nested_loop_context() {
+        let mut stepper = InsertionSortStepper::from_values(&[1, 2, 3]).unwrap();
+        assert_eq!((stepper.outer_index, stepper.current_index), (1, 1));
+
+        assert!(stepper.step());
+        assert!(stepper.step());
+        assert!(stepper.step());
+        assert_eq!((stepper.outer_index, stepper.current_index), (2, 2));
+
+        while stepper.step() {}
+        assert_eq!(stepper.outer_index, 3);
         assert!(stepper.done());
     }
 

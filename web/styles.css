@@ -98,7 +98,10 @@ h3 { margin: 0; font-size: 1rem; letter-spacing: 0; }
 .pseudo-line.is-operation { color: #ffd878; }
 .pseudo-line.is-return { color: #8fe0bd; }
 .pseudo-line.is-active { border-left-color: #ffd878; background: #26342f; color: white; }
+.pseudo-line.is-context { border-left-color: #54a8f5; background: #1c2a25; }
+.pseudo-line.is-active.is-context { border-left-color: #ffd878; }
 .trace-progress { color: var(--blue); font: 0.7rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+.execution-context { min-height: 18px; margin: -8px 0 8px; color: var(--green); font: 0.7rem ui-monospace, SFMono-Regular, Menlo, monospace; }
 .trace-sequence { min-height: 118px; display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 14px 2px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .trace-cell { flex: 1 0 42px; max-width: 70px; min-height: 66px; display: grid; place-items: center; align-content: center; gap: 5px; border: 2px solid #aeb9b3; background: #f7f9f7; font: 700 0.88rem ui-monospace, SFMono-Regular, Menlo, monospace; }
 .trace-cell small { color: var(--muted); font-size: 0.62rem; font-weight: 500; }
@@ -141,7 +144,7 @@ textarea { display: block; width: 100%; margin-top: 8px; padding: 12px; resize: 
 .input-actions { min-height: 48px; display: flex; justify-content: space-between; align-items: end; color: var(--muted); font-size: 0.82rem; }
 .primary-command { min-width: 94px; min-height: 38px; padding: 0 18px; border: 1px solid #056c4d; background: var(--green); color: white; cursor: pointer; font-weight: 750; }
 .primary-command:hover { background: #066c4e; }
-.primary-command:disabled { cursor: wait; opacity: 0.55; }
+.primary-command:disabled { cursor: default; opacity: 0.48; }
 .runtime-status { padding: 5px 8px; border: 1px solid #e0b85f; background: #fff4d7; color: #7d5911; font-size: 0.72rem; font-weight: 750; }
 .runtime-status.is-ready { border-color: #86c9ae; background: var(--green-soft); color: #075b43; }
 .runtime-status.is-error { border-color: #e0a394; background: var(--coral-soft); color: #8e2e1e; }

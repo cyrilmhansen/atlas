@@ -74,6 +74,11 @@ animation. Scale sizes 128 through 4096 retain the existing execution limit and
 show exact operation counts across multiple `n` values. Generated data remains
 ephemeral and is never promoted to DatasetSpec or registry evidence.
 
+DatasetSpec selection and generation execute immediately. Manual textarea edits
+instead enable `Apply edited input`; applying a valid edit refreshes both the
+observation and semantic-execution state and disables the button again. This
+explicit boundary avoids executing incomplete numeric tokens on every keystroke.
+
 Adjacent `is_sorted` is the first semantic-dynamics adapter. It calls the native
 algorithm and records each left read, right read and comparison at its comparator
 boundary. Every event exposes the exact node ID from
@@ -108,6 +113,13 @@ its independent analytical trace remains capped at 32. Scale execution through
 Playback delays form a factor-two series from `0.5x` through `8x`. Changing the
 selection while playing cancels the pending timeout and schedules the next WASM
 step immediately with the new delay.
+
+As a temporary presentation aid, insertion highlights its outer and inner
+`while` lines as secondary loop context and displays the current outer/current
+indices. These are live WASM stepper fields, not additional trace events or AST
+operation IDs. Reads, comparisons and swaps retain the primary exact-node
+highlight. A future control-flow model may replace this aid if control
+statements gain explicit AST identity across multiple algorithms.
 
 The Scale chart runs complete generated sequences at increasing sizes and plots
 deterministic comparisons or swaps. It illustrates profile-dependent operation

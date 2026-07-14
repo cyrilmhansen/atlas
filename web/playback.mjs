@@ -13,3 +13,9 @@ export function playbackDelay(value) {
   }
   return delay;
 }
+
+export function isInsertionLoopContext(controlId, mode, done) {
+  return mode === "stepper"
+    && !done
+    && (controlId === "insertion.outer-loop" || controlId === "insertion.inner-loop");
+}

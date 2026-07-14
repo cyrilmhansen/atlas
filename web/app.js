@@ -6,7 +6,7 @@ import init, {
   trace_is_sorted_i32,
 } from "./pkg/atlas_web.js";
 import { EXPLORE_MAX_LENGTH, generateSequence, randomSeed } from "./generator.mjs";
-import { PLAYBACK_SPEEDS, playbackDelay } from "./playback.mjs";
+import { PLAYBACK_SPEEDS, isInsertionLoopContext, playbackDelay } from "./playback.mjs";
 
 const algorithmUi = {
   is_sorted: {
@@ -53,7 +53,7 @@ const elements = Object.fromEntries(
     "sorted-result", "comparison-count", "inversion-index", "local-time",
     "runtime-context", "sequence-heading", "sequence-visual", "legend-text",
     "sequence-note", "dynamics-panel", "trace-ast-id", "pseudocode-code",
-    "trace-progress", "trace-sequence", "trace-event", "trace-slider",
+    "trace-progress", "execution-context", "trace-sequence", "trace-event", "trace-slider",
     "trace-reset", "trace-previous", "trace-play", "trace-next", "trace-speed",
     "generator-profile", "generator-size", "generator-seed", "generator-random-seed", "generate-button",
     "scale-panel", "scale-operation", "scale-chart", "scale-note",
@@ -103,7 +103,10 @@ function clearTrace(message) {
   elements["trace-slider"].max = "0";
   elements["trace-slider"].value = "0";
   elements["trace-sequence"].replaceChildren();
-  document.querySelectorAll(".pseudo-line").forEach((line) => line.classList.remove("is-active"));
+  elements["execution-context"].hidden = true;
+  document.querySelectorAll(".pseudo-line").forEach((line) => {
+    line.classList.remove("is-active", "is-context");
+  });
   updateTraceControls();
 }
 
@@ -119,7 +122,10 @@ function pseudocodeLine(sourceLine) {
     return { text: `${name} <- ${expression}`, indent, kind: "control" };
   }
   if (text.startsWith("while ") || text.startsWith("if ") || text === "end") {
-    return { text, indent, kind: "control" };
+    const controlId = text === "while index < length(values)"
+      ? "insertion.outer-loop"
+      : text === "while current > 0" ? "insertion.inner-loop" : undefined;
+    return { text, indent, kind: "control", controlId };
   }
   if (text.startsWith("return ")) return { text, indent, kind: "return" };
   return { text, indent, kind: "plain" };
@@ -143,6 +149,7 @@ function renderPseudocode(dynamics) {
     row.style.setProperty("--indent", String(line.indent));
     row.textContent = line.text;
     if (line.nodeId) row.dataset.nodeId = line.nodeId;
+    if (line.controlId) row.dataset.controlId = line.controlId;
     return row;
   }));
   elements["trace-ast-id"].textContent = dynamics.ast_id;
@@ -195,7 +202,22 @@ function renderTraceState() {
   }));
   document.querySelectorAll(".pseudo-line").forEach((line) => {
     line.classList.toggle("is-active", Boolean(event) && line.dataset.nodeId === event.nodeId);
+    line.classList.toggle(
+      "is-context",
+      isInsertionLoopContext(
+        line.dataset.controlId,
+        tracePlayback.mode,
+        Boolean(tracePlayback.stepper?.done),
+      ),
+    );
   });
+  const showsLoopContext = tracePlayback.mode === "stepper" && Boolean(tracePlayback.stepper);
+  elements["execution-context"].hidden = !showsLoopContext;
+  if (showsLoopContext) {
+    elements["execution-context"].textContent = tracePlayback.stepper.done
+      ? `outer index ${tracePlayback.stepper.outer_index} · loop complete`
+      : `outer index ${tracePlayback.stepper.outer_index} · current index ${tracePlayback.stepper.current_index}`;
+  }
   const atEnd = tracePlayback.mode === "stepper"
     ? Boolean(tracePlayback.stepper?.done)
     : Boolean(event) && tracePlayback.index === tracePlayback.events.length - 1;
@@ -348,6 +370,7 @@ function selectDataset(caseId) {
   elements["sequence-input"].value = dataset.values.join(", ");
   elements["dataset-context"].textContent = `${dataset.spec_id} for ${dataset.problem_id}; ${dataset.class}; seed ${dataset.seed}; sha256 ${dataset.content_digest_sha256}`;
   generatedInput = null;
+  setEditedInputPending(false);
 }
 
 function populateDatasets() {
@@ -380,6 +403,10 @@ function parseSequence() {
 function setRuntimeStatus(label, state) {
   elements["runtime-status"].textContent = label;
   elements["runtime-status"].className = `runtime-status${state ? ` is-${state}` : ""}`;
+}
+
+function setEditedInputPending(pending) {
+  elements["run-button"].disabled = !pending;
 }
 
 function refreshRandomSeed() {
@@ -559,6 +586,7 @@ function runObservation() {
     if (generatedInput && generatedInput.length > EXPLORE_MAX_LENGTH) renderScaleStudy(generatedInput);
     else elements["scale-panel"].hidden = true;
     setRuntimeStatus("Executed in WASM", "ready");
+    return true;
   } catch (error) {
     elements["sorted-result"].textContent = "Invalid input";
     elements["sorted-result"].className = "is-false";
@@ -567,6 +595,7 @@ function runObservation() {
     elements["local-time"].textContent = "-";
     elements["runtime-context"].textContent = error instanceof Error ? error.message : String(error);
     setRuntimeStatus("Input rejected", "error");
+    return false;
   }
 }
 
@@ -626,6 +655,7 @@ function generateFromControls() {
     const seed = Number(elements["generator-seed"].value);
     const values = generateSequence(profile, length, seed);
     generatedInput = { profile, length, seed };
+    setEditedInputPending(false);
     elements["dataset-select"].value = "";
     elements["sequence-input"].value = values.join(", ");
     const regime = length <= EXPLORE_MAX_LENGTH ? "Explore" : "Scale";
@@ -737,6 +767,7 @@ elements["sequence-input"].addEventListener("input", () => {
   generatedInput = null;
   clearTrace("Input edited; run the algorithm to initialize its semantic execution.");
   setRuntimeStatus("Ready to execute", "");
+  setEditedInputPending(true);
   try {
     const count = parseSequence().length;
     elements["input-count"].textContent = `${count} value${count === 1 ? "" : "s"}`;
@@ -794,7 +825,9 @@ elements["dynamics-panel"].addEventListener("keydown", (event) => {
     elements["trace-play"].click();
   }
 });
-elements["run-button"].addEventListener("click", runObservation);
+elements["run-button"].addEventListener("click", () => {
+  if (runObservation()) setEditedInputPending(false);
+});
 elements["catalog-search"].addEventListener("input", renderCatalog);
 
 const query = new URLSearchParams(window.location.search);

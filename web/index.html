@@ -70,6 +70,7 @@
               </div>
               <span id="trace-progress" class="trace-progress">Execution pending</span>
             </div>
+            <p id="execution-context" class="execution-context" hidden></p>
             <div id="trace-sequence" class="trace-sequence"></div>
             <p id="trace-event" class="trace-event">Run an Explore input to initialize semantic execution.</p>
             <input id="trace-slider" class="trace-slider" type="range" min="0" max="0" value="0" aria-label="Execution position">
@@ -144,7 +145,7 @@
             <p class="dataset-context" id="dataset-context">Dataset provenance pending.</p>
             <div class="input-actions">
               <span id="input-count">Pending</span>
-              <button id="run-button" class="primary-command" type="button">Execute input</button>
+              <button id="run-button" class="primary-command" type="button" disabled>Apply edited input</button>
             </div>
           </section>
 

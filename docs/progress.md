@@ -1,5 +1,28 @@
 # Progress log
 
+## 2026-07-14 - Temporary insertion loop context
+
+### Result
+
+- Accepted `control-context-A` as a temporary presentation aid without changing
+  the experimental AST or analytical trace.
+- Exposed live outer/current insertion indices from the WASM stepper.
+- Added a secondary highlight only to the two active `while` lines while exact
+  AST data operations retain the primary highlight.
+- Added an explicit boolean context helper after browser inspection caught
+  `classList.toggle` treating an undefined force as an unintended toggle.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm --locked --offline` (15 tests)
+- `scripts/check-web.sh`
+- Headless Chrome DOM: exactly two context lines, Play active, indices `1 / 1`
+
+### Limits
+
+- Loop conditions and assignments remain implicit state transitions rather than
+  independently identified AST operations.
+
 ## 2026-07-14 - Web playback and generation UX corrections
 
 ### Result
@@ -12,8 +35,8 @@
 - Separated the 64-element insertion stepper limit from the 32-element
   analytical-trace limit, fixing Play being disabled for a declared Explore
   size.
-- Renamed `Run` to `Execute input`, marks edited input as ready, and reports
-  `Executed in WASM` after the current textarea has run.
+- Renamed `Run` to `Apply edited input`, disabled it until manual typing occurs,
+  and reports `Executed in WASM` after the valid edit refreshes both panels.
 
 ### Verification
 

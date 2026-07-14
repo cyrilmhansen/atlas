@@ -221,6 +221,7 @@ function traceEventLabel(event) {
 
 function renderTraceState() {
   const event = tracePlayback.operation;
+  elements["trace-sequence"].classList.toggle("is-wrapped", tracePlayback.values.length > 16);
   elements["trace-sequence"].replaceChildren(...tracePlayback.values.map((value, index) => {
     const cell = document.createElement("div");
     cell.className = "trace-cell";

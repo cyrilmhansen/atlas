@@ -13,6 +13,8 @@
 - Derived the Minimum selector, labels, default dataset and highlighting from
   projected presentation metadata, then rendered and executed it through the
   shared Web controls.
+- Wrapped interactive state into responsive rows above 16 values on desktop,
+  while retaining one horizontally scrollable row on narrow mobile viewports.
 - Kept the three hand-written MVP 5 steppers as differential references.
 
 ### Verification
@@ -21,7 +23,8 @@
 - `scripts/check-web.sh` passed, including native equivalence, exact AST links,
   invalid-program rejection and aggregate execution over 4096 values.
 - Chrome headless renders at 390x844 and 1440x1000 showed the projected selector,
-  full pseudocode and non-overlapping execution state.
+  full pseudocode and non-overlapping execution state. A 32-value fixture
+  rendered as two rows of 16 at 1440 px and one scrollable row at 390 px.
 
 ### Limits
 

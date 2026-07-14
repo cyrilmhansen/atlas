@@ -1,5 +1,33 @@
 # Progress log
 
+## 2026-07-15 - Complete K-M2 dynamic-structure corpus batch
+
+### Result
+
+- Added 11 operation-specific problems and algorithms for union-find,
+  `BinaryHeap` and collision-aware `hashbrown::HashMap` behavior.
+- Added 12 tested implementation records, including a stable-deduplication
+  adapter discovered by the unchanged generic `qualify` command.
+- Kept worst-case, expected and amortized scopes distinct; sequence amortization
+  remains in the K-M2 report because schema 0.1 has no matching field.
+- Demonstrated caller-provided heap storage as an allocation-free qualified
+  construction without changing query code.
+
+### Verification
+
+- Upstream adapters cover persistent partition invariants, heap capacity and
+  ordering, forced hash collisions, replacement/removal and stable deduplication.
+- Registry acceptance covers 25 problems, 30 algorithms, 34 implementations and
+  a deterministic 89-entity SQLite projection.
+
+### Limits
+
+- Persistent state identity, borrowed lifetimes, amortized sequence bounds and
+  hasher threat models remain prose rather than typed schema properties.
+- No schema, AST, MIR, WASM, Explorer or composition capability was added.
+- K-M3 must test these pressures against streaming, randomized and numerical
+  cases before a public schema proposal.
+
 ## 2026-07-14 - Activate Phase 2 and adopt project vocabulary
 
 ### Result

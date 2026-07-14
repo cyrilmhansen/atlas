@@ -245,6 +245,198 @@ problems:
         - "unreachable nodes have infinite distance and no path"
       level: declared
       source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+  - id: disjoint_set.construct
+    input:
+      value: "element_count: usize"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "state: DisjointPartition<ElementId>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "state contains exactly element_count consecutively indexed singleton classes"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: disjoint_set.union
+    input:
+      value: "state: DisjointPartition<ElementId>; left: ElementId; right: ElementId"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    requires:
+      value:
+        - "left and right identify elements owned by state"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "state_after: DisjointPartition<ElementId>; merged: bool"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "state_after merges exactly the two prior classes when they were distinct"
+        - "merged is true if and only if two distinct classes were merged"
+        - "all other class memberships are preserved"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: disjoint_set.equivalent
+    input:
+      value: "state: DisjointPartition<ElementId>; left: ElementId; right: ElementId"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    requires:
+      value:
+        - "left and right identify elements owned by state"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "result: bool; state_after: SemanticallyEquivalent<input.state>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "result is true if and only if left and right belong to the same class"
+        - "representation-only path rewrites do not change partition membership"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: priority_queue.construct
+    input:
+      value: "storage: OwnedSequence<T>; order: TotalOrder<T>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "state: MaxPriorityQueue<T>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "state contains exactly the input elements"
+        - "subsequent maximum queries observe a greatest remaining element"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: priority_queue.push
+    input:
+      value: "state: MaxPriorityQueue<T>; item: T"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "state_after: MaxPriorityQueue<T>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "state_after contains item and every element previously in state"
+        - "the max-heap invariant is restored"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: priority_queue.pop_max
+    input:
+      value: "state: MaxPriorityQueue<T>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "state_after: MaxPriorityQueue<T>; result: Option<T>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "result is none if and only if state was empty"
+        - "otherwise result is a greatest prior element and exactly one occurrence is removed"
+        - "the max-heap invariant is restored"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: priority_queue.peek_max
+    input:
+      value: "state: MaxPriorityQueue<T>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "result: Option<Borrowed<T>>; state_after: Identical<input.state>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "result is none if and only if state is empty"
+        - "otherwise result borrows a greatest element without changing state"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: associative_map.construct
+    input:
+      value: "capacity: usize; hasher: BuildHasher"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "state: AssociativeMap<K, V>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "state is empty and can hold at least capacity entries without reallocating"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: associative_map.insert
+    input:
+      value: "state: AssociativeMap<K, V>; key: K; value: V"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    requires:
+      value:
+        - "equal keys produce equal hashes"
+        - "stored keys retain stable equality and hash behavior"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "state_after: AssociativeMap<K, V>; replaced: Option<V>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "state_after maps key to value even when distinct keys collide"
+        - "replaced contains the prior value if the key was already present"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: associative_map.lookup
+    input:
+      value: "state: AssociativeMap<K, V>; key: BorrowedKey<K>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    requires:
+      value:
+        - "borrowed and stored key forms have compatible equality and hash behavior"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "result: Option<Borrowed<V>>; state_after: Identical<input.state>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "result borrows the mapped value exactly when an equivalent key is present"
+        - "collisions with unequal keys do not change the result"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: associative_map.remove
+    input:
+      value: "state: AssociativeMap<K, V>; key: BorrowedKey<K>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    requires:
+      value:
+        - "borrowed and stored key forms have compatible equality and hash behavior"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    output:
+      value: "state_after: AssociativeMap<K, V>; result: Option<V>"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    ensures:
+      value:
+        - "result contains and removes the prior mapped value exactly when the key was present"
+        - "allocated capacity remains available for reuse"
+        - "colliding unequal keys and values remain present"
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
 
 algorithms:
   - id: sort.merge.top_down
@@ -699,6 +891,240 @@ algorithms:
       value: "Theta(V), excluding the input graph"
       level: declared
       source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+  - id: disjoint_set.rank_path_halving.construct
+    solves: disjoint_set.construct
+    name:
+      value: "singleton parent-forest construction"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(n)"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    auxiliary_memory:
+      value: "O(n) persistent parent and rank storage"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: disjoint_set.rank_path_halving.union
+    solves: disjoint_set.union
+    name:
+      value: "union by rank with path-halving lookup"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(log n) for one operation"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    auxiliary_memory:
+      value: "O(1) per operation, excluding persistent state"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: disjoint_set.parent_forest.equivalent
+    solves: disjoint_set.equivalent
+    name:
+      value: "immutable representative comparison"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(log n) for one query"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    auxiliary_memory:
+      value: "O(1) per query, excluding persistent state"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: priority_queue.binary_heap.heapify
+    solves: priority_queue.construct
+    name:
+      value: "bottom-up binary max-heap construction"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    in_place:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/binary_heap/index.html"
+    auxiliary_memory:
+      value: "O(1) excluding consumed caller-provided sequence storage"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: priority_queue.binary_heap.push
+    solves: priority_queue.push
+    name:
+      value: "binary max-heap sift-up insertion"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    in_place:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(n) for one call when capacity growth reallocates"
+      level: declared
+      source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.push"
+    time_expected:
+      value: "O(1) averaged over input order and sufficiently many pushes"
+      level: declared
+      source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.push"
+    auxiliary_memory:
+      value: "O(n) transient storage when capacity growth reallocates"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: priority_queue.binary_heap.pop_max
+    solves: priority_queue.pop_max
+    name:
+      value: "binary max-heap root removal and sift-down"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    in_place:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(log n)"
+      level: declared
+      source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.pop"
+    auxiliary_memory:
+      value: "O(1) excluding persistent state"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: priority_queue.binary_heap.peek_max
+    solves: priority_queue.peek_max
+    name:
+      value: "binary max-heap root query"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(1)"
+      level: declared
+      source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.peek"
+    auxiliary_memory:
+      value: "O(1)"
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: associative_map.hashbrown.construct
+    solves: associative_map.construct
+    name:
+      value: "quadratic-probing SIMD hash-table reservation"
+      level: declared
+      source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(capacity)"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    auxiliary_memory:
+      value: "O(capacity) persistent table storage"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: associative_map.hashbrown.insert
+    solves: associative_map.insert
+    name:
+      value: "quadratic-probing SIMD hash-table insertion"
+      level: declared
+      source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.insert"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    in_place:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(n) under collisions or capacity growth"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_expected:
+      value: "O(1)"
+      level: declared
+      source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/index.html#performance"
+    auxiliary_memory:
+      value: "O(n) transient storage when capacity growth reallocates"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: associative_map.hashbrown.lookup
+    solves: associative_map.lookup
+    name:
+      value: "quadratic-probing SIMD hash-table lookup"
+      level: declared
+      source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.get"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(n) under collisions"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_expected:
+      value: "O(1)"
+      level: declared
+      source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/index.html#performance"
+    auxiliary_memory:
+      value: "O(1)"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+  - id: associative_map.hashbrown.remove
+    solves: associative_map.remove
+    name:
+      value: "quadratic-probing SIMD hash-table deletion"
+      level: declared
+      source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.remove"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    in_place:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_worst:
+      value: "O(n) under collisions"
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    time_expected:
+      value: "O(1)"
+      level: declared
+      source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/index.html#performance"
+    auxiliary_memory:
+      value: "O(1); allocated table capacity is retained"
+      level: declared
+      source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.remove"
 
 implementations:
   - id: sort.merge.rust.slice.v1
@@ -1767,5 +2193,221 @@ implementations:
         - "external_graph_adapters::petgraph_dijkstra_goal_none_returns_all_reachable_distances"
       level: tested
       source: "file:crates/atlas/tests/external_graph_adapters.rs"
+  - id: disjoint_set.construct.petgraph.0_8_3
+    implements: disjoint_set.rank_path_halving.construct
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "0.8.3", level: declared, source: "file:Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:phase2/k-m0-source-selection.md" }
+    target: { value: "Rust target with alloc; tested on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["petgraph 0.8.3 with default features disabled"], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "petgraph::unionfind::UnionFind::new", level: declared, source: "docs:https://docs.rs/petgraph/0.8.3/petgraph/unionfind/struct.UnionFind.html#method.new" }
+    signature: { value: "fn new(n: usize) -> UnionFind<K>", level: declared, source: "docs:https://docs.rs/petgraph/0.8.3/petgraph/unionfind/struct.UnionFind.html#method.new" }
+    effects:
+      value: { mutates: [], io: none, blocking: false, allocation: "allocates parent and rank vectors of n elements" }
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    tests:
+      value: ["external_dynamic_structure_adapters::petgraph_union_find_preserves_partition_across_interleaved_operations"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: disjoint_set.union.petgraph.0_8_3
+    implements: disjoint_set.rank_path_halving.union
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "0.8.3", level: declared, source: "file:Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:phase2/k-m0-source-selection.md" }
+    target: { value: "Rust target with alloc; tested on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["petgraph 0.8.3 with default features disabled"], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "petgraph::unionfind::UnionFind::union", level: declared, source: "docs:https://docs.rs/petgraph/0.8.3/petgraph/unionfind/struct.UnionFind.html#method.union" }
+    signature: { value: "fn union(&mut self, x: K, y: K) -> bool", level: declared, source: "docs:https://docs.rs/petgraph/0.8.3/petgraph/unionfind/struct.UnionFind.html#method.union" }
+    effects:
+      value: { mutates: [state.parent, state.rank], io: none, blocking: false, allocation: none }
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    tests:
+      value: ["external_dynamic_structure_adapters::petgraph_union_find_preserves_partition_across_interleaved_operations"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: disjoint_set.equivalent.petgraph.0_8_3
+    implements: disjoint_set.parent_forest.equivalent
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "0.8.3", level: declared, source: "file:Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:phase2/k-m0-source-selection.md" }
+    target: { value: "Rust target with alloc; tested on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["petgraph 0.8.3 with default features disabled"], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "petgraph::unionfind::UnionFind::equiv", level: declared, source: "docs:https://docs.rs/petgraph/0.8.3/petgraph/unionfind/struct.UnionFind.html#method.equiv" }
+    signature: { value: "fn equiv(&self, x: K, y: K) -> bool", level: declared, source: "docs:https://docs.rs/petgraph/0.8.3/petgraph/unionfind/struct.UnionFind.html#method.equiv" }
+    effects:
+      value: { mutates: [], io: none, blocking: false, allocation: none }
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    tests:
+      value: ["external_dynamic_structure_adapters::petgraph_union_find_preserves_partition_across_interleaved_operations"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: priority_queue.construct.rust.std_vec.1_85
+    implements: priority_queue.binary_heap.heapify
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "Rust 1.85 API baseline", level: declared, source: "file:Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:https://github.com/rust-lang/rust" }
+    target: { value: "Rust target with alloc; tested with rustc 1.96.0 on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["Rust standard library BinaryHeap"], level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "BinaryHeap::from(Vec<T>)", level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html" }
+    signature: { value: "fn from(vec: Vec<T>) -> BinaryHeap<T>", level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html" }
+    effects:
+      value: { mutates: [input.storage], io: none, blocking: false, allocation: none }
+      level: inferred
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    tests:
+      value: ["external_dynamic_structure_adapters::binary_heap_operations_preserve_max_heap_behavior_and_capacity"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: priority_queue.push.rust.std.1_85
+    implements: priority_queue.binary_heap.push
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "Rust 1.85 API baseline", level: declared, source: "file:Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:https://github.com/rust-lang/rust" }
+    target: { value: "Rust target with alloc; tested with rustc 1.96.0 on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["Rust standard library BinaryHeap"], level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "BinaryHeap::push", level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.push" }
+    signature: { value: "fn push(&mut self, item: T)", level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.push" }
+    effects:
+      value: { mutates: [state.storage], io: none, blocking: false, allocation: "may grow and reallocate state storage when capacity is exhausted" }
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    tests:
+      value: ["external_dynamic_structure_adapters::binary_heap_operations_preserve_max_heap_behavior_and_capacity"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: priority_queue.pop_max.rust.std.1_85
+    implements: priority_queue.binary_heap.pop_max
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "Rust 1.85 API baseline", level: declared, source: "file:Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:https://github.com/rust-lang/rust" }
+    target: { value: "Rust target with alloc; tested with rustc 1.96.0 on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["Rust standard library BinaryHeap"], level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "BinaryHeap::pop", level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.pop" }
+    signature: { value: "fn pop(&mut self) -> Option<T>", level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.pop" }
+    effects:
+      value: { mutates: [state.storage], io: none, blocking: false, allocation: none }
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    tests:
+      value: ["external_dynamic_structure_adapters::binary_heap_operations_preserve_max_heap_behavior_and_capacity"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: priority_queue.peek_max.rust.std.1_85
+    implements: priority_queue.binary_heap.peek_max
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "Rust 1.85 API baseline", level: declared, source: "file:Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:https://github.com/rust-lang/rust" }
+    target: { value: "Rust target with alloc; tested with rustc 1.96.0 on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["Rust standard library BinaryHeap"], level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "BinaryHeap::peek", level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.peek" }
+    signature: { value: "fn peek(&self) -> Option<&T>", level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html#method.peek" }
+    effects:
+      value: { mutates: [], io: none, blocking: false, allocation: none }
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    tests:
+      value: ["external_dynamic_structure_adapters::binary_heap_operations_preserve_max_heap_behavior_and_capacity"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: associative_map.construct.hashbrown.0_17_1
+    implements: associative_map.hashbrown.construct
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "0.17.1", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:https://docs.rs/crate/hashbrown/0.17.1" }
+    target: { value: "Rust target with alloc and default-hasher; tested on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["hashbrown 0.17.1 with default-hasher"], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "hashbrown::HashMap::with_capacity_and_hasher", level: declared, source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.with_capacity_and_hasher" }
+    signature: { value: "fn with_capacity_and_hasher(capacity: usize, hasher: S) -> HashMap<K, V, S>", level: declared, source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.with_capacity_and_hasher" }
+    effects:
+      value: { mutates: [], io: none, blocking: false, allocation: "allocates capacity for at least the requested number of entries when capacity is nonzero" }
+      level: declared
+      source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.with_capacity_and_hasher"
+    tests:
+      value: ["external_dynamic_structure_adapters::hashbrown_map_resolves_collisions_for_insert_get_and_remove"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: associative_map.insert.hashbrown.0_17_1
+    implements: associative_map.hashbrown.insert
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "0.17.1", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:https://docs.rs/crate/hashbrown/0.17.1" }
+    target: { value: "Rust target with alloc and default-hasher; tested on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["hashbrown 0.17.1 with default-hasher"], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "hashbrown::HashMap::insert", level: declared, source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.insert" }
+    signature: { value: "fn insert(&mut self, key: K, value: V) -> Option<V>", level: declared, source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.insert" }
+    effects:
+      value: { mutates: [state.table], io: none, blocking: false, allocation: "may grow and reallocate table storage when capacity is exhausted" }
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    tests:
+      value: ["external_dynamic_structure_adapters::hashbrown_map_resolves_collisions_for_insert_get_and_remove"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: associative_map.lookup.hashbrown.0_17_1
+    implements: associative_map.hashbrown.lookup
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "0.17.1", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:https://docs.rs/crate/hashbrown/0.17.1" }
+    target: { value: "Rust target with alloc and default-hasher; tested on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["hashbrown 0.17.1 with default-hasher"], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "hashbrown::HashMap::get", level: declared, source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.get" }
+    signature: { value: "fn get<Q>(&self, key: &Q) -> Option<&V>", level: declared, source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.get" }
+    effects:
+      value: { mutates: [], io: none, blocking: false, allocation: none }
+      level: declared
+      source: "docs:phase2/k-m2-dynamic-structures.md"
+    tests:
+      value: ["external_dynamic_structure_adapters::hashbrown_map_resolves_collisions_for_insert_get_and_remove"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: associative_map.remove.hashbrown.0_17_1
+    implements: associative_map.hashbrown.remove
+    language: { value: rust, level: declared, source: "docs:phase2/k-m2-dynamic-structures.md" }
+    version: { value: "0.17.1", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:https://docs.rs/crate/hashbrown/0.17.1" }
+    target: { value: "Rust target with alloc and default-hasher; tested on a std host", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["hashbrown 0.17.1 with default-hasher"], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "hashbrown::HashMap::remove", level: declared, source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.remove" }
+    signature: { value: "fn remove<Q>(&mut self, key: &Q) -> Option<V>", level: declared, source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.remove" }
+    effects:
+      value: { mutates: [state.table], io: none, blocking: false, allocation: none }
+      level: declared
+      source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.remove"
+    tests:
+      value: ["external_dynamic_structure_adapters::hashbrown_map_resolves_collisions_for_insert_get_and_remove"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: deduplicate.hashbrown_adapter.rust.vec.v1
+    implements: deduplicate.hash.stable
+    language: { value: rust, level: declared, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    version: { value: "0.1.0", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT", level: declared, source: "file:Cargo.toml" }
+    target: { value: "Rust target with std; integration adapter only", level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    dependencies: { value: ["hashbrown 0.17.1 with default-hasher"], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "external_dynamic_structure_adapters::hashbrown_stable_deduplicate", level: declared, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    signature: { value: "fn hashbrown_stable_deduplicate(values: &[i32]) -> Vec<i32>", level: declared, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs" }
+    effects:
+      value: { mutates: [], io: none, blocking: false, allocation: "allocates an output Vec and a hashbrown HashSet sized for the input" }
+      level: declared
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+    tests:
+      value: ["external_dynamic_structure_adapters::hashbrown_adapter_stably_deduplicates_without_atlas_algorithm_code"]
+      level: tested
+      source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
 
 executions: []

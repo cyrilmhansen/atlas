@@ -19,13 +19,13 @@ audit, three-program vocabulary and active external-corpus phase are recorded in
 
 ## Active slice
 
-K-M1 is complete. The registry now contains four separate external graph
-contracts and algorithms: incremental BFS traversal, materialized unweighted
-shortest paths, nonnegative shortest distances and a nonnegative shortest-path
-tree. Two petgraph 0.8.3 implementation records are tested through a thin
-default-feature-disabled dev adapter. Algs4 remains documentary under its GPL
-boundary. No public projection relation, graph-specific query flag, AST
-capability or runtime instrumentation was added. K-M2 is the next gate.
+K-M2 is complete. The registry separates construction, mutation and query
+contracts for petgraph union-find, standard-library binary heaps and
+collision-aware hashbrown maps. Tested adapters preserve persistent invariants,
+caller-provided storage and forced-collision behavior. The unchanged `qualify`
+query discovers a new stable-deduplication implementation. Amortized cost scope
+and typed state continuity remain documented schema losses. K-M3 streaming and
+approximation is the next gate; it is not yet implemented.
 
 ## Latest closed slice
 
@@ -84,9 +84,9 @@ subsequent MVP.
 
 Current corpus progress:
 
-- Problems: 14 total (10 at MVP 1 baseline)
-- Algorithms: 19 total (15 at MVP 1 baseline)
-- Implementations: 22 total (20 at MVP 1 baseline)
+- Problems: 25 total (10 at MVP 1 baseline)
+- Algorithms: 30 total (15 at MVP 1 baseline)
+- Implementations: 34 total (20 at MVP 1 baseline)
 
 Current MIR adapter progress: scalar arithmetic and trace imports, mutable even
 partition, adjacent `is_sorted`, minimum/maximum selection, reverse, and stable

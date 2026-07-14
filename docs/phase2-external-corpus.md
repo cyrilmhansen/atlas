@@ -167,6 +167,12 @@ Acceptance:
 
 ### K-M2 - Dynamic-structure corpus batch
 
+Status: complete. Eleven operation-specific contracts and twelve tested
+implementation records cover petgraph union-find, standard-library binary heaps,
+hashbrown collision handling and generic candidate discovery. Cost-scope and
+persistent-state losses are recorded in
+`docs/phase2/k-m2-dynamic-structures.md`; schema 0.1 remains unchanged.
+
 Import union-find, heap and collision-aware hash-table operations. Treat a data
 structure with persistent invariants as a family of problems and algorithms,
 not automatically as one opaque implementation.

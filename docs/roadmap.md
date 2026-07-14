@@ -9,7 +9,7 @@ decision record differ.
 MVP 1 through MVP 6 are closed. No subsequent MVP is active. GitHub CI runs the
 reproducible MVP 2 acceptance gate, all workspace targets, the RV64 LP64 probe
 and the MIR RV64 generator probe on pushes and pull requests. The project has a
-Git-authoritative YAML registry (14 problems, 19 algorithms and 22
+Git-authoritative YAML registry (25 problems, 30 algorithms and 34
 implementations), a rebuildable SQLite projection, deterministic datasets and
 reproducible local observations, plus five bounded composition scenarios with
 compiled Rust orchestration. The current counts include the 10/15/20 MVP 1
@@ -43,7 +43,15 @@ K-M1 is complete. It imports separate petgraph/algs4 BFS traversal/path and
 Dijkstra distance/path-tree contracts, plus two real petgraph 0.8.3
 implementations exercised through a thin test adapter. Output projections,
 numeric domains and graph constraints remain recorded limitations rather than
-new schema fields or graph-specific query flags. K-M2 is next.
+new schema fields or graph-specific query flags.
+
+K-M2 is complete. It represents union-find, binary-heap and collision-aware
+hash-table construction, mutation and queries as explicit state transitions.
+The batch demonstrates generic candidate discovery and allocation qualification
+without query changes. It also independently reproduces two model pressures:
+amortized sequence costs and typed persistent-state continuity. Both remain
+documented rather than silently forced into schema 0.1. K-M3 streaming and
+approximation is next.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

@@ -50,9 +50,9 @@ fn accepts_the_committed_registry() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../registry/atlas.yaml");
     let registry = load_registry(&path).expect("committed registry must be valid");
 
-    assert_eq!(registry.problems.len(), 14);
-    assert_eq!(registry.algorithms.len(), 19);
-    assert_eq!(registry.implementations.len(), 22);
+    assert_eq!(registry.problems.len(), 25);
+    assert_eq!(registry.algorithms.len(), 30);
+    assert_eq!(registry.implementations.len(), 34);
     assert!(registry.executions.is_empty());
     let linear_search = registry
         .algorithms
@@ -95,7 +95,7 @@ fn accepts_the_committed_registry() {
         .iter()
         .filter(|implementation| implementation.version.value == "0.1.0")
         .collect::<Vec<_>>();
-    assert_eq!(atlas_implementations.len(), 20);
+    assert_eq!(atlas_implementations.len(), 21);
     assert!(
         atlas_implementations
             .iter()
@@ -145,6 +145,41 @@ fn committed_registry_keeps_exact_graph_contracts_separate() {
         .find(|algorithm| algorithm.id == "graph.dijkstra.shortest_path_tree")
         .expect("Dijkstra shortest-path tree must be present");
     assert_eq!(dijkstra_tree.solves, "graph.nonnegative_shortest_path_tree");
+}
+
+#[test]
+fn committed_registry_keeps_dynamic_operations_and_cost_scopes_separate() {
+    let registry = parse(VALID_REGISTRY);
+
+    let union = registry
+        .algorithms
+        .iter()
+        .find(|algorithm| algorithm.id == "disjoint_set.rank_path_halving.union")
+        .expect("union operation must be present");
+    assert_eq!(union.solves, "disjoint_set.union");
+    assert!(union.time_expected.is_none());
+
+    let heap_push = registry
+        .algorithms
+        .iter()
+        .find(|algorithm| algorithm.id == "priority_queue.binary_heap.push")
+        .expect("heap push operation must be present");
+    assert_eq!(
+        heap_push.time_worst.value,
+        "O(n) for one call when capacity growth reallocates"
+    );
+    assert_eq!(
+        heap_push.time_expected.as_ref().unwrap().value,
+        "O(1) averaged over input order and sufficiently many pushes"
+    );
+
+    let lookup = registry
+        .implementations
+        .iter()
+        .find(|implementation| implementation.id == "associative_map.lookup.hashbrown.0_17_1")
+        .expect("hashbrown lookup implementation must be present");
+    assert!(lookup.effects.value.mutates.is_empty());
+    assert_eq!(lookup.effects.value.allocation, "none");
 }
 
 #[test]
@@ -409,7 +444,7 @@ fn cli_accepts_an_explicit_registry_path() {
         "stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(String::from_utf8_lossy(&output.stdout).contains("Validated 14 problem(s)"));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Validated 25 problem(s)"));
 }
 
 #[test]
@@ -694,6 +729,36 @@ fn cli_qualifies_stable_non_allocating_sort_implementations() {
     assert!(stdout.contains("stable\ttrue\ttested\t"));
     assert!(stdout.contains("allocation\tnone\tdeclared\t"));
     assert!(!stdout.contains("implementation\tsort.merge.rust.slice.v1\n"));
+}
+
+#[test]
+fn cli_discovers_new_manifest_candidates_without_query_code_changes() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+
+    let deduplicate = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["qualify", "sequence.deduplicate", "--stable"])
+        .current_dir(&workspace)
+        .output()
+        .expect("atlas binary must run");
+    assert!(deduplicate.status.success());
+    let deduplicate_stdout = String::from_utf8(deduplicate.stdout).expect("UTF-8 CLI output");
+    assert!(
+        deduplicate_stdout.contains("implementation\tdeduplicate.hashbrown_adapter.rust.vec.v1\n")
+    );
+
+    let heap = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "priority_queue.construct",
+            "--allocation",
+            "none",
+        ])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+    assert!(heap.status.success());
+    let heap_stdout = String::from_utf8(heap.stdout).expect("UTF-8 CLI output");
+    assert!(heap_stdout.contains("implementation\tpriority_queue.construct.rust.std_vec.1_85\n"));
 }
 
 #[test]
@@ -1325,7 +1390,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
     let first = run();
     assert!(first.status.success());
     let first_stdout = String::from_utf8(first.stdout).expect("UTF-8 CLI output");
-    assert!(first_stdout.contains("Indexed 55 entities, 41 relations,"));
+    assert!(first_stdout.contains("Indexed 89 entities, 64 relations,"));
     let first_digest = first_stdout
         .lines()
         .find(|line| line.starts_with("Logical SHA-256: "))
@@ -1357,7 +1422,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(entities, 55);
+    assert_eq!(entities, 89);
     assert_eq!(stale, 0);
     drop(connection);
     fs::remove_file(database).unwrap();

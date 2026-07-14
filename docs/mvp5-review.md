@@ -3,7 +3,7 @@
 Review date: 2026-07-14. This records the extended reproducible local-artifact
 audit authorized by DEC-053 through DEC-059. Editable generation,
 operation-growth views and bounded incremental semantic dynamics are complete;
-this document is now a closure candidate, not a closure decision.
+DEC-060 accepts this audit and closes MVP 5 at the demonstrated boundary.
 
 ## Demonstrated boundary
 
@@ -93,10 +93,10 @@ c4691ff81b22508fb3cac0285fe64018a29356a2c36c80bf66d64a46f802f05a  pkg/atlas_web_
 | Validate the bundle in CI | Complete | `Run MVP 5 Web acceptance slice` workflow step |
 | Keep publication explicit | Complete | no deployment workflow or external publication |
 
-## Closure impact
+## Closure record
 
-Closing MVP 5 would preserve the current artifact as a reproducible local
+DEC-060 preserves the current artifact as a reproducible local
 demonstration, without promoting its private projection or WASM facade to stable
 contracts. Publication, problem-specific datasets for all workloads, explicit
 control-flow AST identity and any broader browser runtime should be selected in
-a separately activated scope.
+a separately activated scope. No subsequent MVP is active.

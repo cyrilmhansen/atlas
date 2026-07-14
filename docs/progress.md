@@ -1,5 +1,28 @@
 # Progress log
 
+## 2026-07-14 - MVP 5 closure
+
+### Result
+
+- Accepted `close-mvp5-A` as DEC-060 and closed MVP 5 at the reproducible local
+  interactive artifact.
+- Preserved the three curated incremental WASM demonstrations, editable seeded
+  data and separated theory/count/timing views as the completed scope.
+- Left the private projection, WASM facade, pseudocode and stepper shapes
+  explicitly unstabilized; no subsequent MVP was activated.
+
+### Verification
+
+- The closure audit records 232 passing Rust tests and the complete Web
+  acceptance gate.
+- The ten-file bundle remains byte-identical between the working tree and a
+  clean Git archive at `75ceb69`.
+
+### Limits
+
+- Publication, broader datasets, explicit control-flow AST identity and a
+  general browser runtime require a separately accepted scope.
+
 ## 2026-07-14 - Extended bundle reproducibility audit
 
 ### Result
@@ -23,7 +46,8 @@
 
 ### Limits
 
-- Formal MVP 5 closure remains a human decision; publication remains excluded.
+- At this checkpoint, formal MVP 5 closure still required a human decision;
+  publication was excluded.
 
 ## 2026-07-14 - Incremental WASM reverse dynamics
 

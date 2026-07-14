@@ -323,7 +323,7 @@ the memory model or measurement surface.
 
 ## MVP 5 public interactive artifact
 
-Status: active under DEC-056, constrained by DEC-053 through DEC-055. No public
+Status: closed under DEC-060 at the extended DEC-058/DEC-059 boundary. No public
 projection format, deployment target or general browser runtime is active.
 
 The recommended distribution is a static, reproducible website that can be
@@ -413,9 +413,10 @@ Current status:
   parser-equivalent pseudocode and a stepper checked against native mutation,
   exact structural counts and involution. The three curated dynamics adapters
   are complete. The extended clean-archive gate reproduces all ten files byte
-  for byte at `75ceb69`; MVP 5 is ready for a formal closure decision.
-- External publication remains excluded. Formal closure is reconsidered after
-  the dynamics and operation-growth gates, without promoting a public trace API.
+  for byte at `75ceb69`.
+- DEC-060 formally closes MVP 5 without promoting a public trace API, stable Web
+  contract or deployment target. External publication remains excluded and no
+  subsequent MVP is active.
 
 Resource limits must be part of the local execution boundary: maximum input
 length, analytical-trace cap, step budget, cancellation and no network access from

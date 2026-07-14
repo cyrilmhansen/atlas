@@ -1,16 +1,16 @@
 # MVP status
 
-- Active MVP: **MVP 5**
-- Status: MVP 1 through MVP 4 closed; MVP 5 closure-ready under DEC-058/DEC-059
+- Active MVP: **none**
+- Status: MVP 1 through MVP 5 closed
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
 - MVP 4: closed locally under DEC-052
-- MVP 5: active under DEC-056
+- MVP 5: closed under DEC-060
 
 ## Current slice
 
-MVP 1 through MVP 4 are closed locally. MVP 5 is active under DEC-056 as a
+MVP 1 through MVP 5 are closed locally. MVP 5 preserves a
 locally openable static catalog with three curated Rust/WASM algorithms and
 separated theoretical, counted and locally timed characteristics. Publication,
 a stable Web format, advanced trace playback and MIR-in-browser execution remain
@@ -38,8 +38,9 @@ complete. Insertion has equivalent typed AST/pseudocode and a stateful WASM
 stepper under DEC-059. Reverse now adds typed AST/pseudocode and a symmetric-pair
 stepper checked directly against native mutation, counters and involution. All
 three browser paths retain current state rather than a presentation trace. The
-extended ten-file bundle is byte-identical from a clean Git archive. Formal MVP
-5 closure remains a human decision.
+extended ten-file bundle is byte-identical from a clean Git archive. DEC-060
+closes this scope without stabilizing its private Web interfaces or activating a
+subsequent MVP.
 
 Current corpus progress:
 

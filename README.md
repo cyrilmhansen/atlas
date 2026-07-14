@@ -16,14 +16,16 @@ The current MVP 1 corpus contains 10 problems, 15 algorithms, and 20 tested Rust
 implementations. Schema hardening, local evidence integrity, deterministic
 indexing, the acceptance gate, and the local Git baseline are complete.
 
-MVP 5 is active under DEC-056. Its static Web slice projects the complete
+MVP 5 is closed under DEC-060. Its static Web artifact projects the complete
 registry and executes adjacent `is_sorted`, stable insertion sort and symmetric
 in-place reverse locally through a private `wasm-bindgen` facade. Its dataset
 selector is generated from deterministic DatasetSpec cases rather than UI
-fixtures. DEC-058 adds editable seeded generation, operation-growth views and a
+fixtures. DEC-058 adds editable seeded generation, operation-growth views and
 AST-linked incremental WASM execution for `is_sorted`, insertion sort and
 reverse. Analytical traces remain test-only. See `docs/mvp5-web.md` for the
-exact authority, counter, dynamics and timing boundaries.
+exact authority, counter, dynamics and timing boundaries. Its projection and
+WASM interfaces remain private, the site is not published, and no subsequent
+MVP is active.
 
 ## Project map
 

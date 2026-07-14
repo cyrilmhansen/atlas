@@ -243,6 +243,22 @@ packet. Recurrent conditioned-cost, persistent-state, randomness/error and
 staged-output losses justify an ontology review, but no public schema choice has
 been made.
 
+K-M4-W is a closed source-repair addendum. Two new isolated imports use the
+open Pébay 2008 and Chan-Golub-LeVeque 1979 reports to normalize incremental
+second central moments under a source-neutral identity. They strongly agree on
+the recurrence, `M2` state, guarded variance finalizers and distinct pairwise
+combination. They diverge on totalizing empty input and on whether a published
+proof is enough for Atlas level `proven`; both questions enter the ontology
+review. The frozen packet and comparison are in
+`docs/phase2/k-m4-w-source-packet.md` and
+`docs/phase2/k-m4-w-comparison.md`.
+
+For future packets, prefer official openly readable primary pages, including
+the ACM Digital Library when full text is available. Freeze a content digest
+and a readable archival alternative when practical. Open access permits
+inspection; it does not silently grant a software license or permission to copy
+an implementation.
+
 ### K-M5 - Manifest-driven candidate discovery
 
 Status: **planned, held behind the post-K-M4 ontology review**.

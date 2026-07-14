@@ -26,6 +26,11 @@ adjudicated and Welford remains deliberately unresolved because the packet did
 not expose its article body. Corpus growth is paused for the bounded ontology
 review required by the gate. K-M5 remains planned behind that review.
 
+K-M4-W is also complete. Open Pébay and Chan-Golub-LeVeque reports now support a
+neutral incremental second-central-moment import while Welford 1962 remains
+historical, not textually verified. The two imports agree strongly and add
+empty-state adaptation plus `proven` evidence semantics to the ontology review.
+
 ## Latest closed slice
 
 MVP 6 replaces algorithm-specific Web steppers and rendering branches with one

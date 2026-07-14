@@ -65,6 +65,13 @@ zero-size reservoir boundary exposed decision-changing differences. Welford
 remained unresolved because the packet lacked a readable article body. The
 accepted phase pause condition is therefore met.
 
+K-M4-W closes the algorithmic source-access gap with two open primary reports
+without rewriting K-M4 or claiming fidelity to unread Welford text. Independent
+imports converge on a neutral incremental second-moment identity, distinct
+pairwise combination and guarded variance finalizers. Empty-state totalization
+and the meaning of evidence level `proven` remain decision-relevant ontology
+questions.
+
 Next is a bounded ontology review, not more corpus or instrumentation. It must
 clarify generic problem identity and contextual evidence, synthesize recurrent
 model losses across families and present any public schema alternative as a

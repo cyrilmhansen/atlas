@@ -48,7 +48,9 @@ corpus fidelity, generic candidate discovery and agent consumption before any
 new runtime or presentation expansion. K-M4's independent dual import is
 complete and corpus growth is paused for its bounded ontology review. See
 `docs/phase2-external-corpus.md` and
-`docs/phase2/k-m4-dual-import-comparison.md`.
+`docs/phase2/k-m4-dual-import-comparison.md`. K-M4-W repairs the inaccessible
+online-moments source with two open primary reports while retaining a neutral
+algorithm identity.
 
 ## Project map
 
@@ -68,6 +70,7 @@ complete and corpus growth is paused for its bounded ontology review. See
 - `docs/phase2-external-corpus.md`: active external-corpus and agent-consumer phase;
 - `docs/phase2/k-m1-graph-corpus.md`: first external graph batch and model-friction report;
 - `docs/phase2/k-m4-dual-import-comparison.md`: independent normalization agreement and divergence gate;
+- `docs/phase2/k-m4-w-comparison.md`: open-access source repair for incremental second central moments;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

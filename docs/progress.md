@@ -1,5 +1,34 @@
 # Progress log
 
+## 2026-07-15 - Complete K-M4-W open-access source repair
+
+### Result
+
+- Froze open Pébay and Chan-Golub-LeVeque technical reports with exact pages and
+  observed PDF digests, without modifying the original K-M4 packet.
+- Obtained two independent imports of incremental second central moments.
+- Both imports use a source-neutral identity, retain `(count, mean, M2)`, keep
+  variance finalizers guarded and separate pairwise combination from singleton
+  update.
+- Preserved Welford 1962 as unresolved historical attribution rather than
+  assigning unread text to the algorithm.
+
+### Verification
+
+- Both retrieved PDFs matched the packet's SHA-256 values.
+- Both isolated worksheets passed local whitespace checks.
+- The comparison covers the five rubric dimensions and the three identical
+  selection requests.
+
+### Limits
+
+- The reports do not define an empty mean or guarantee IEEE-754 equality across
+  evaluation orders.
+- Importers diverged on totalizing empty input and on promoting a published
+  proof to Atlas evidence level `proven`.
+- These are ontology-review inputs; no schema, registry, AST, implementation or
+  runtime change was made.
+
 ## 2026-07-15 - Complete K-M4 independent dual import
 
 ### Result

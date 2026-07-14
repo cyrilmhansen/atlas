@@ -30,6 +30,18 @@ assert.equal(trace.event_ordering(8), 1);
 assert.equal(trace.event_node_id(9), undefined);
 trace.free();
 
+const immediate = bindings.trace_is_sorted_i32(Int32Array.from([5, -1, 5, 3]));
+assert.equal(immediate.sorted, false);
+assert.equal(immediate.first_inversion, 1);
+assert.equal(immediate.event_count, 3);
+immediate.free();
+
+const complete = bindings.trace_is_sorted_i32(Int32Array.from([7, 7, 7, 7]));
+assert.equal(complete.sorted, true);
+assert.equal(complete.first_inversion, undefined);
+assert.equal(complete.event_count, 9);
+complete.free();
+
 assert.throws(
   () => bindings.trace_is_sorted_i32(new Int32Array(65)),
   /exceeds the Atlas Explore limit of 64/,

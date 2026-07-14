@@ -517,4 +517,16 @@ mod tests {
             Err(MAX_TRACE_INPUT_LENGTH + 1)
         );
     }
+
+    #[test]
+    fn is_sorted_trace_distinguishes_complete_scan_from_early_stop() {
+        let complete = trace_is_sorted(&[7, 7, 7, 7]).unwrap();
+        assert!(complete.sorted);
+        assert_eq!(complete.events.len(), 9);
+
+        let stopped = trace_is_sorted(&[5, -1, 5, 3]).unwrap();
+        assert!(!stopped.sorted);
+        assert_eq!(stopped.first_inversion, Some(1));
+        assert_eq!(stopped.events.len(), 3);
+    }
 }

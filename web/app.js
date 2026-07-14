@@ -9,7 +9,7 @@ import { EXPLORE_MAX_LENGTH, generateSequence } from "./generator.mjs";
 const algorithmUi = {
   is_sorted: {
     id: "order.is_sorted.adjacent",
-    dataset: "sort.regression.duplicates",
+    dataset: "sort.degenerate.equal",
     boundary: "Read-only input; no output transport copy.",
     resultLabel: "Result",
     comparisonLabel: "Comparisons",
@@ -63,7 +63,9 @@ let projection;
 let wasmReady = false;
 let activeAlgorithm = "is_sorted";
 let generatedInput = null;
-const tracePlayback = { values: [], events: [], index: -1, timer: null };
+const tracePlayback = {
+  values: [], events: [], index: -1, sorted: null, firstInversion: null, timer: null,
+};
 
 function stopTracePlayback() {
   if (tracePlayback.timer !== null) window.clearInterval(tracePlayback.timer);
@@ -76,6 +78,8 @@ function clearTrace(message) {
   tracePlayback.values = [];
   tracePlayback.events = [];
   tracePlayback.index = -1;
+  tracePlayback.sorted = null;
+  tracePlayback.firstInversion = null;
   elements["trace-progress"].textContent = "No trace";
   elements["trace-event"].textContent = message;
   elements["trace-slider"].max = "0";
@@ -131,7 +135,11 @@ function traceEventLabel(event) {
     return `${event.nodeId}: read values[${event.leftIndex}] = ${tracePlayback.values[event.leftIndex]}`;
   }
   const symbols = ["<", "=", ">"];
-  return `${event.nodeId}: compare values[${event.leftIndex}] ${symbols[event.ordering + 1]} values[${event.rightIndex}]`;
+  const comparison = `${event.nodeId}: compare values[${event.leftIndex}] ${symbols[event.ordering + 1]} values[${event.rightIndex}]`;
+  if (tracePlayback.index !== tracePlayback.events.length - 1) return comparison;
+  return tracePlayback.sorted
+    ? `${comparison}; scan complete, return true.`
+    : `${comparison}; inversion at #${tracePlayback.firstInversion}, return false and stop early.`;
 }
 
 function renderTraceState() {
@@ -154,12 +162,17 @@ function renderTraceState() {
   document.querySelectorAll(".pseudo-line").forEach((line) => {
     line.classList.toggle("is-active", Boolean(event) && line.dataset.nodeId === event.nodeId);
   });
-  elements["trace-progress"].textContent = event
-    ? `Event ${tracePlayback.index + 1} / ${tracePlayback.events.length}`
-    : `Ready / ${tracePlayback.events.length} events`;
+  const atEnd = Boolean(event) && tracePlayback.index === tracePlayback.events.length - 1;
+  elements["trace-progress"].textContent = atEnd
+    ? `${tracePlayback.sorted ? "Complete" : "Early stop"} / ${tracePlayback.events.length} events`
+    : event
+      ? `Event ${tracePlayback.index + 1} / ${tracePlayback.events.length}`
+      : `Ready / ${tracePlayback.events.length} events`;
   elements["trace-event"].textContent = event
     ? traceEventLabel(event)
-    : "Initial immutable sequence; advance to the first semantic event.";
+    : tracePlayback.events.length === 0 && tracePlayback.sorted
+      ? "No adjacent pair exists; return true without a read or comparison."
+      : "Initial immutable sequence; advance to the first semantic event.";
   elements["trace-slider"].value = String(tracePlayback.index + 1);
   updateTraceControls();
 }
@@ -193,6 +206,8 @@ function prepareIsSortedTrace(values) {
     ordering: trace.event_ordering(index),
   }));
   tracePlayback.index = -1;
+  tracePlayback.sorted = trace.sorted;
+  tracePlayback.firstInversion = trace.first_inversion;
   elements["trace-slider"].max = String(tracePlayback.events.length);
   trace.free();
   renderTraceState();

@@ -79,7 +79,10 @@ boundary. Every event exposes the exact node ID from
 concordance against the AST. The browser renders the already tested textual
 pseudocode, active node, immutable sequence state, event detail, timeline and
 reset/previous/play/next controls. Inputs above 64 elements cannot produce this
-trace.
+trace. The initial demonstration uses the 12-element equal DatasetSpec case so
+the complete 33-event scan is visible. Inputs with an inversion still stop
+immediately as the native algorithm requires; the final event explicitly labels
+that early return instead of making the short trace look truncated.
 
 The Scale chart runs complete generated sequences at increasing sizes and plots
 deterministic comparisons or swaps. It illustrates profile-dependent operation

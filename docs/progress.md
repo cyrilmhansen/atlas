@@ -1,5 +1,22 @@
 # Progress log
 
+## 2026-07-14 - Explicit is-sorted trace termination
+
+### Result
+
+- Replaced the immediate-inversion default with the 12-element equal DatasetSpec
+  case, exposing a complete 33-event adjacent scan on first load.
+- Kept native early termination unchanged and labelled its final comparison as
+  an explicit `return false and stop early` state.
+- Distinguished complete, early-stop and zero-adjacent-pair terminal states in
+  the trace player and binding tests.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm --locked --offline`
+- `scripts/check-web.sh`
+- Browser DOM inspection for the 33-event default and 3-event early-stop case
+
 ## 2026-07-14 - Editable data and first semantic Web dynamics
 
 ### Result

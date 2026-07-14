@@ -1,0 +1,25 @@
+# Private experiment: structured pseudocode, not a public Atlas format.
+ast-version experimental-0
+ast-id ast.select.minimum.linear.v0
+algorithm select.minimum.linear
+parameter values | Sequence<T> | Sequence | Read
+parameter order | TotalOrder<T> | Comparator | Read
+effects mutates -
+effects allocations -
+effects copies -
+begin
+if length(values) = 0
+  return none
+end
+let minimum_index | 0
+let index | 1
+while index < length(values)
+  operation minimum.candidate.read | Read | values[index]
+  operation minimum.best.read | Read | values[minimum_index]
+  operation minimum.compare | Compare | order(values[index], values[minimum_index])
+  if candidate is less than minimum
+    let minimum_index | index
+  end
+  let index | index + 1
+end
+return some(values[minimum_index])

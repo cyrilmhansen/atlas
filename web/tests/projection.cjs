@@ -32,7 +32,7 @@ assert.equal(new Set(projection.datasets.map((dataset) => dataset.content_digest
 assert.deepEqual(projection.datasets[1].values, []);
 assert.deepEqual(projection.datasets[4].values, [5, -1, 5, 3, 0, -8, 3]);
 
-assert.equal(projection.dynamics.length, 3);
+assert.equal(projection.dynamics.length, 4);
 assert.equal(projection.dynamics[0].algorithm_id, "order.is_sorted.adjacent");
 assert.equal(projection.dynamics[0].ast_id, "ast.order.is_sorted.adjacent.v0");
 assert.equal(projection.dynamics[0].max_interactive_input_length, 64);
@@ -56,6 +56,16 @@ assert.equal(projection.dynamics[2].max_analytical_trace_input_length, 0);
 assert.match(
   projection.dynamics[2].pseudocode_source,
   /operation reverse\.symmetric\.swap \| Swap/,
+);
+assert.equal(projection.dynamics[3].algorithm_id, "select.minimum.linear");
+assert.equal(projection.dynamics[3].ast_id, "ast.select.minimum.linear.v0");
+assert.equal(projection.dynamics[3].program.format, "atlas-visual-bytecode-private-v0");
+assert.equal(projection.dynamics[3].program.instructions.length, 9);
+assert.equal(projection.dynamics[3].presentation.key, "minimum");
+assert.equal(projection.dynamics[3].presentation.primitive, "sequence");
+assert.match(
+  projection.dynamics[3].pseudocode_source,
+  /operation minimum\.compare \| Compare/,
 );
 
 const algorithm = projection.algorithms.find((item) => item.id === "order.is_sorted.adjacent");

@@ -9,4 +9,5 @@ pub mod index;
 mod pseudocode;
 pub mod registry;
 pub mod traces;
+pub mod visual_program;
 pub mod web_projection;

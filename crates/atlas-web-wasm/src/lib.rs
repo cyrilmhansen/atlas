@@ -3,6 +3,7 @@ use core::cmp::Ordering;
 use atlas_algorithms::insertion_sort::insertion_sort_by;
 use atlas_algorithms::is_sorted::is_sorted_by;
 use atlas_algorithms::reverse::reverse_in_place;
+use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 
 pub const MAX_INPUT_LENGTH: usize = 4_096;
@@ -20,6 +21,478 @@ const INSERTION_SWAP_NODE: &str = "insertion.adjacent.swap";
 const REVERSE_LEFT_READ_NODE: &str = "reverse.left.read";
 const REVERSE_RIGHT_READ_NODE: &str = "reverse.right.read";
 const REVERSE_SWAP_NODE: &str = "reverse.symmetric.swap";
+const VISUAL_PROGRAM_FORMAT: &str = "atlas-visual-bytecode-private-v0";
+const MAX_VISUAL_PROGRAM_LENGTH: usize = 32 * 1024;
+const MAX_VISUAL_INSTRUCTIONS: usize = 256;
+const MAX_VISUAL_REGISTERS: usize = 16;
+
+#[derive(Clone, Debug, Deserialize)]
+struct VisualProgramSpec {
+    format: String,
+    algorithm_id: String,
+    ast_id: String,
+    registers: Vec<VisualRegisterSpec>,
+    instructions: Vec<VisualInstructionSpec>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct VisualRegisterSpec {
+    name: String,
+    initial: usize,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(tag = "op", rename_all = "snake_case")]
+enum VisualInstructionSpec {
+    HaltIfEmpty,
+    BranchIndexLessThanLength {
+        register: usize,
+        when_true: usize,
+        when_false: usize,
+    },
+    Read {
+        node_id: String,
+        register: usize,
+    },
+    CompareLess {
+        node_id: String,
+        left_register: usize,
+        right_register: usize,
+    },
+    CopyIfLess {
+        target_register: usize,
+        source_register: usize,
+    },
+    Increment {
+        register: usize,
+    },
+    Jump {
+        target: usize,
+    },
+    ReturnOptionalIndex {
+        register: usize,
+    },
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct VisualOperation {
+    node_id: String,
+    kind: &'static str,
+    left_index: usize,
+    right_index: Option<usize>,
+    ordering: Option<i8>,
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Debug)]
+pub struct VisualMachine {
+    program: VisualProgramSpec,
+    values: Vec<i32>,
+    initial_registers: Vec<usize>,
+    registers: Vec<usize>,
+    pc: usize,
+    comparison_less: bool,
+    result_index: Option<usize>,
+    done: bool,
+    steps: u32,
+    comparisons: u32,
+    operation: Option<VisualOperation>,
+}
+
+#[wasm_bindgen]
+impl VisualMachine {
+    #[wasm_bindgen(constructor)]
+    pub fn new(program_json: &str, values: &[i32]) -> Result<VisualMachine, JsError> {
+        Self::from_json(program_json, values).map_err(|error| JsError::new(&error))
+    }
+
+    pub fn reset(&mut self, values: &[i32]) -> Result<(), JsError> {
+        self.reset_values(values)
+            .map_err(|error| JsError::new(&error))
+    }
+
+    pub fn step(&mut self) -> Result<bool, JsError> {
+        self.step_checked().map_err(|error| JsError::new(&error))
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn algorithm_id(&self) -> String {
+        self.program.algorithm_id.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn ast_id(&self) -> String {
+        self.program.ast_id.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn values(&self) -> Box<[i32]> {
+        self.values.clone().into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn original_indices(&self) -> Box<[u32]> {
+        (0..self.values.len() as u32)
+            .collect::<Vec<_>>()
+            .into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn done(&self) -> bool {
+        self.done
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn steps(&self) -> u32 {
+        self.steps
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn comparisons(&self) -> u32 {
+        self.comparisons
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn has_result(&self) -> bool {
+        self.result_index.is_some()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn result_index(&self) -> Option<u32> {
+        self.result_index.map(|index| index as u32)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn result_value(&self) -> Option<i32> {
+        self.result_index.map(|index| self.values[index])
+    }
+
+    pub fn register_value(&self, name: &str) -> Option<u32> {
+        self.program
+            .registers
+            .iter()
+            .position(|register| register.name == name)
+            .map(|index| self.registers[index] as u32)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_node_id(&self) -> Option<String> {
+        self.operation
+            .as_ref()
+            .map(|operation| operation.node_id.clone())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_kind(&self) -> Option<String> {
+        self.operation
+            .as_ref()
+            .map(|operation| operation.kind.to_owned())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_left_index(&self) -> Option<u32> {
+        self.operation
+            .as_ref()
+            .map(|operation| operation.left_index as u32)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_right_index(&self) -> Option<u32> {
+        self.operation
+            .as_ref()
+            .and_then(|operation| operation.right_index)
+            .map(|index| index as u32)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_ordering(&self) -> Option<i8> {
+        self.operation
+            .as_ref()
+            .and_then(|operation| operation.ordering)
+    }
+}
+
+impl VisualMachine {
+    fn from_json(program_json: &str, values: &[i32]) -> Result<Self, String> {
+        if program_json.len() > MAX_VISUAL_PROGRAM_LENGTH {
+            return Err("visual program exceeds the private 32 KiB limit".to_owned());
+        }
+        if values.len() > MAX_INPUT_LENGTH {
+            return Err(format!(
+                "visual machine input length {} exceeds the Atlas browser limit of {MAX_INPUT_LENGTH}",
+                values.len()
+            ));
+        }
+        let program: VisualProgramSpec = serde_json::from_str(program_json)
+            .map_err(|error| format!("invalid visual program JSON: {error}"))?;
+        validate_visual_program_spec(&program)?;
+        let initial_registers = program
+            .registers
+            .iter()
+            .map(|register| register.initial)
+            .collect::<Vec<_>>();
+        let mut machine = Self {
+            program,
+            values: values.to_vec(),
+            registers: initial_registers.clone(),
+            initial_registers,
+            pc: 0,
+            comparison_less: false,
+            result_index: None,
+            done: false,
+            steps: 0,
+            comparisons: 0,
+            operation: None,
+        };
+        machine.settle_control()?;
+        Ok(machine)
+    }
+
+    fn reset_values(&mut self, values: &[i32]) -> Result<(), String> {
+        if values.len() > MAX_INPUT_LENGTH {
+            return Err(format!(
+                "visual machine input length {} exceeds the Atlas browser limit of {MAX_INPUT_LENGTH}",
+                values.len()
+            ));
+        }
+        self.values.clear();
+        self.values.extend_from_slice(values);
+        self.registers.clone_from(&self.initial_registers);
+        self.pc = 0;
+        self.comparison_less = false;
+        self.result_index = None;
+        self.done = false;
+        self.steps = 0;
+        self.comparisons = 0;
+        self.operation = None;
+        self.settle_control()
+    }
+
+    fn step_checked(&mut self) -> Result<bool, String> {
+        if self.done {
+            return Ok(false);
+        }
+        let execution_budget = MAX_VISUAL_INSTRUCTIONS
+            .checked_mul(self.values.len().max(1))
+            .ok_or_else(|| "visual execution budget overflow".to_owned())?;
+        if self.steps as usize >= execution_budget {
+            return Err(format!(
+                "visual program exceeded its semantic-step budget of {execution_budget}"
+            ));
+        }
+        self.operation = None;
+        self.settle_control()?;
+        if self.done {
+            return Ok(false);
+        }
+        let instruction = self.program.instructions[self.pc].clone();
+        match instruction {
+            VisualInstructionSpec::Read { node_id, register } => {
+                let index = self.read_register(register)?;
+                self.value(index)?;
+                self.operation = Some(VisualOperation {
+                    node_id,
+                    kind: "Read",
+                    left_index: index,
+                    right_index: None,
+                    ordering: None,
+                });
+                self.pc += 1;
+            }
+            VisualInstructionSpec::CompareLess {
+                node_id,
+                left_register,
+                right_register,
+            } => {
+                let left_index = self.read_register(left_register)?;
+                let right_index = self.read_register(right_register)?;
+                let ordering = self.value(left_index)?.cmp(self.value(right_index)?);
+                self.comparison_less = ordering == Ordering::Less;
+                self.comparisons += 1;
+                self.operation = Some(VisualOperation {
+                    node_id,
+                    kind: "Compare",
+                    left_index,
+                    right_index: Some(right_index),
+                    ordering: Some(ordering_value(ordering)),
+                });
+                self.pc += 1;
+            }
+            _ => return Err("visual machine did not settle on a semantic instruction".to_owned()),
+        }
+        self.steps += 1;
+        self.settle_control()?;
+        Ok(true)
+    }
+
+    fn settle_control(&mut self) -> Result<(), String> {
+        for _ in 0..MAX_VISUAL_INSTRUCTIONS {
+            if self.done {
+                return Ok(());
+            }
+            let instruction = self
+                .program
+                .instructions
+                .get(self.pc)
+                .ok_or_else(|| format!("visual program counter {} is out of bounds", self.pc))?
+                .clone();
+            match instruction {
+                VisualInstructionSpec::Read { .. } | VisualInstructionSpec::CompareLess { .. } => {
+                    return Ok(());
+                }
+                VisualInstructionSpec::HaltIfEmpty => {
+                    self.pc += 1;
+                    if self.values.is_empty() {
+                        self.done = true;
+                        self.result_index = None;
+                    }
+                }
+                VisualInstructionSpec::BranchIndexLessThanLength {
+                    register,
+                    when_true,
+                    when_false,
+                } => {
+                    self.pc = if self.read_register(register)? < self.values.len() {
+                        when_true
+                    } else {
+                        when_false
+                    };
+                }
+                VisualInstructionSpec::CopyIfLess {
+                    target_register,
+                    source_register,
+                } => {
+                    if self.comparison_less {
+                        self.registers[target_register] = self.read_register(source_register)?;
+                    }
+                    self.pc += 1;
+                }
+                VisualInstructionSpec::Increment { register } => {
+                    self.registers[register] = self.registers[register]
+                        .checked_add(1)
+                        .ok_or_else(|| "visual register overflow".to_owned())?;
+                    self.pc += 1;
+                }
+                VisualInstructionSpec::Jump { target } => self.pc = target,
+                VisualInstructionSpec::ReturnOptionalIndex { register } => {
+                    let index = self.read_register(register)?;
+                    self.value(index)?;
+                    self.result_index = Some(index);
+                    self.done = true;
+                }
+            }
+        }
+        Err("visual program exceeded its control-step budget".to_owned())
+    }
+
+    fn read_register(&self, register: usize) -> Result<usize, String> {
+        self.registers
+            .get(register)
+            .copied()
+            .ok_or_else(|| format!("visual program references unknown register {register}"))
+    }
+
+    fn value(&self, index: usize) -> Result<&i32, String> {
+        self.values
+            .get(index)
+            .ok_or_else(|| format!("visual program reads out-of-bounds index {index}"))
+    }
+}
+
+fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), String> {
+    if program.format != VISUAL_PROGRAM_FORMAT {
+        return Err(format!(
+            "unsupported visual program format {:?}",
+            program.format
+        ));
+    }
+    if program.algorithm_id.is_empty() || program.ast_id.is_empty() {
+        return Err("visual program identity must not be empty".to_owned());
+    }
+    if program.registers.is_empty() || program.registers.len() > MAX_VISUAL_REGISTERS {
+        return Err(format!(
+            "visual program must declare between 1 and {MAX_VISUAL_REGISTERS} registers"
+        ));
+    }
+    if program.instructions.is_empty() || program.instructions.len() > MAX_VISUAL_INSTRUCTIONS {
+        return Err(format!(
+            "visual program must contain between 1 and {MAX_VISUAL_INSTRUCTIONS} instructions"
+        ));
+    }
+    let register_count = program.registers.len();
+    let instruction_count = program.instructions.len();
+    let register = |index: usize| {
+        (index < register_count)
+            .then_some(())
+            .ok_or_else(|| format!("visual program references unknown register {index}"))
+    };
+    let target = |index: usize| {
+        (index < instruction_count)
+            .then_some(())
+            .ok_or_else(|| format!("visual program references unknown target {index}"))
+    };
+    for instruction in &program.instructions {
+        match instruction {
+            VisualInstructionSpec::HaltIfEmpty => {}
+            VisualInstructionSpec::BranchIndexLessThanLength {
+                register: source,
+                when_true,
+                when_false,
+            } => {
+                register(*source)?;
+                target(*when_true)?;
+                target(*when_false)?;
+            }
+            VisualInstructionSpec::Read {
+                node_id,
+                register: source,
+            } => {
+                if node_id.is_empty() {
+                    return Err("visual read node ID must not be empty".to_owned());
+                }
+                register(*source)?;
+            }
+            VisualInstructionSpec::CompareLess {
+                node_id,
+                left_register,
+                right_register,
+            } => {
+                if node_id.is_empty() {
+                    return Err("visual compare node ID must not be empty".to_owned());
+                }
+                register(*left_register)?;
+                register(*right_register)?;
+            }
+            VisualInstructionSpec::CopyIfLess {
+                target_register,
+                source_register,
+            } => {
+                register(*target_register)?;
+                register(*source_register)?;
+            }
+            VisualInstructionSpec::Increment {
+                register: destination,
+            }
+            | VisualInstructionSpec::ReturnOptionalIndex {
+                register: destination,
+            } => {
+                register(*destination)?;
+            }
+            VisualInstructionSpec::Jump {
+                target: destination,
+            } => target(*destination)?,
+        }
+    }
+    if !program.instructions.iter().any(|instruction| {
+        matches!(
+            instruction,
+            VisualInstructionSpec::ReturnOptionalIndex { .. }
+        )
+    }) {
+        return Err("visual program has no return instruction".to_owned());
+    }
+    Ok(())
+}
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1104,6 +1577,105 @@ mod tests {
         observe_insertion_sort, observe_is_sorted, observe_reverse, trace_insertion_sort,
         trace_is_sorted,
     };
+
+    fn minimum_visual_machine(values: &[i32]) -> super::VisualMachine {
+        let program =
+            atlas::visual_program::compile_minimum_visual_program(&atlas::ast::minimum_ast())
+                .unwrap();
+        super::VisualMachine::from_json(&serde_json::to_string(&program).unwrap(), values).unwrap()
+    }
+
+    #[test]
+    fn generated_minimum_machine_matches_native_and_preserves_first_tie() {
+        use atlas_algorithms::minimum::minimum_by;
+
+        for input in [vec![7, -2, 4, -1, 9], vec![2, 1, 1, 3], vec![42], vec![]] {
+            let native = minimum_by(&input, i32::cmp).copied();
+            let mut machine = minimum_visual_machine(&input);
+            while machine.step_checked().unwrap() {}
+
+            assert_eq!(machine.result_value(), native);
+            assert_eq!(machine.has_result(), native.is_some());
+            if input == [2, 1, 1, 3] {
+                assert_eq!(machine.result_index(), Some(1));
+            }
+            assert_eq!(machine.comparisons, input.len().saturating_sub(1) as u32);
+            assert_eq!(machine.steps, machine.comparisons * 3);
+        }
+    }
+
+    #[test]
+    fn generated_minimum_machine_emits_exact_ast_linked_operations() {
+        let mut machine = minimum_visual_machine(&[3, 1, 2]);
+        let mut operations = Vec::new();
+
+        while machine.step_checked().unwrap() {
+            let operation = machine.operation.as_ref().unwrap();
+            operations.push((operation.node_id.clone(), operation.kind));
+        }
+
+        assert_eq!(
+            operations,
+            [
+                ("minimum.candidate.read".to_owned(), "Read"),
+                ("minimum.best.read".to_owned(), "Read"),
+                ("minimum.compare".to_owned(), "Compare"),
+                ("minimum.candidate.read".to_owned(), "Read"),
+                ("minimum.best.read".to_owned(), "Read"),
+                ("minimum.compare".to_owned(), "Compare"),
+            ]
+        );
+        assert!(machine.done);
+        assert_eq!(machine.result_index, Some(1));
+    }
+
+    #[test]
+    fn visual_machine_rejects_unknown_formats_and_out_of_bounds_programs() {
+        let mut value = serde_json::to_value(
+            atlas::visual_program::compile_minimum_visual_program(&atlas::ast::minimum_ast())
+                .unwrap(),
+        )
+        .unwrap();
+        value["format"] = "unknown".into();
+        assert!(
+            super::VisualMachine::from_json(&value.to_string(), &[1])
+                .unwrap_err()
+                .contains("unsupported visual program format")
+        );
+
+        value["format"] = super::VISUAL_PROGRAM_FORMAT.into();
+        value["instructions"][1]["when_true"] = 999.into();
+        assert!(
+            super::VisualMachine::from_json(&value.to_string(), &[1])
+                .unwrap_err()
+                .contains("unknown target")
+        );
+
+        let program =
+            atlas::visual_program::compile_minimum_visual_program(&atlas::ast::minimum_ast())
+                .unwrap();
+        let program = serde_json::to_string(&program).unwrap();
+        assert!(super::VisualMachine::from_json(&program, &[0; MAX_INPUT_LENGTH]).is_ok());
+        assert!(
+            super::VisualMachine::from_json(&program, &[0; MAX_INPUT_LENGTH + 1])
+                .unwrap_err()
+                .contains("browser limit")
+        );
+
+        let mut looping = serde_json::from_str::<serde_json::Value>(&program).unwrap();
+        looping["instructions"][3] = serde_json::json!({"op": "jump", "target": 2});
+        let input = [1, 2];
+        let mut machine = super::VisualMachine::from_json(&looping.to_string(), &input).unwrap();
+        for _ in 0..super::MAX_VISUAL_INSTRUCTIONS * input.len() {
+            assert!(machine.step_checked().unwrap());
+        }
+        assert!(
+            machine
+                .step_checked()
+                .unwrap_err()
+                .contains("semantic-step budget")
+        );
+    }
 
     #[test]
     fn matches_native_result_and_counts_adjacent_comparisons() {

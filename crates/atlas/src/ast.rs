@@ -444,8 +444,11 @@ fn e(source: &'static str) -> Expression {
     let index = |name| variable(name, ValueType::Index);
     match source {
         "0" => Expression::Integer(0),
+        "none" => Expression::NoneElement,
         "values" => values(),
-        "middle" | "boundary" | "index" | "current" | "left" | "right" => index(source),
+        "middle" | "boundary" | "index" | "current" | "left" | "right" | "minimum_index" => {
+            index(source)
+        }
         "length(values)" => Expression::Length(Box::new(values())),
         "floor(length(values) / 2)" => binary(
             Bin::Divide,
@@ -456,6 +459,11 @@ fn e(source: &'static str) -> Expression {
             Bin::LessThan,
             Expression::Length(Box::new(values())),
             Expression::Integer(2),
+        ),
+        "length(values) = 0" => binary(
+            Bin::Equal,
+            Expression::Length(Box::new(values())),
+            Expression::Integer(0),
         ),
         "left < right" => binary(Bin::LessThan, index("left"), index("right")),
         "index < length(values)" => binary(
@@ -496,6 +504,10 @@ fn e(source: &'static str) -> Expression {
         "predicate result is false" => {
             Expression::Not(Box::new(variable("predicate_result", ValueType::Bool)))
         }
+        "some(values[minimum_index])" => Expression::SomeElement(Box::new(Expression::Index {
+            sequence: Box::new(values()),
+            index: Box::new(index("minimum_index")),
+        })),
         "scratch[0..length(values)]" => Expression::Range {
             sequence: Box::new(variable("scratch", ValueType::Sequence)),
             start: Box::new(Expression::Integer(0)),
@@ -581,6 +593,12 @@ fn operation_operands(id: &str) -> Vec<Expression> {
                 values(),
                 binary(Bin::Subtract, index("current"), Expression::Integer(1)),
             ),
+        ],
+        "minimum.candidate.read" => vec![at(values(), index("index"))],
+        "minimum.best.read" => vec![at(values(), index("minimum_index"))],
+        "minimum.compare" => vec![
+            at(values(), index("index")),
+            at(values(), index("minimum_index")),
         ],
         "reverse.left.read" => vec![at(values(), index("left"))],
         "reverse.right.read" => vec![at(values(), index("right"))],
@@ -719,6 +737,88 @@ pub fn merge_sort_ast() -> AlgorithmAst {
             ),
             Statement::Return {
                 expression: e("values"),
+            },
+        ],
+    }
+}
+
+pub fn minimum_ast() -> AlgorithmAst {
+    use SemanticOperation as Op;
+    let values = || variable("values", ValueType::Sequence);
+    let index = |name| variable(name, ValueType::Index);
+    let at = |position| Expression::Index {
+        sequence: Box::new(values()),
+        index: Box::new(position),
+    };
+    AlgorithmAst {
+        ast_version: "experimental-0",
+        id: "ast.select.minimum.linear.v0",
+        algorithm_id: "select.minimum.linear",
+        parameters: vec![
+            Parameter {
+                name: "values",
+                data_type: "Sequence<T>",
+                value_type: ValueType::Sequence,
+                mode: ParameterMode::Read,
+            },
+            Parameter {
+                name: "order",
+                data_type: "TotalOrder<T>",
+                value_type: ValueType::Comparator,
+                mode: ParameterMode::Read,
+            },
+        ],
+        effects: EffectSummary {
+            mutates: vec![],
+            allocations: vec![],
+            copies: vec![],
+        },
+        body: vec![
+            Statement::If {
+                condition: e("length(values) = 0"),
+                then_branch: vec![Statement::Return {
+                    expression: e("none"),
+                }],
+                else_branch: vec![],
+            },
+            Statement::Let {
+                name: "minimum_index",
+                expression: e("0"),
+            },
+            Statement::Let {
+                name: "index",
+                expression: Expression::Integer(1),
+            },
+            Statement::While {
+                condition: e("index < length(values)"),
+                body: vec![
+                    operation("minimum.candidate.read", Op::Read, "values[index]"),
+                    operation("minimum.best.read", Op::Read, "values[minimum_index]"),
+                    operation(
+                        "minimum.compare",
+                        Op::Compare,
+                        "order(values[index], values[minimum_index])",
+                    ),
+                    Statement::If {
+                        condition: Expression::Call {
+                            function: "candidate_is_less",
+                            arguments: vec![at(index("index")), at(index("minimum_index"))],
+                            result_type: ValueType::Bool,
+                        },
+                        then_branch: vec![Statement::Let {
+                            name: "minimum_index",
+                            expression: index("index"),
+                        }],
+                        else_branch: vec![],
+                    },
+                    Statement::Let {
+                        name: "index",
+                        expression: e("index + 1"),
+                    },
+                ],
+            },
+            Statement::Return {
+                expression: e("some(values[minimum_index])"),
             },
         ],
     }
@@ -1046,13 +1146,14 @@ pub fn reverse_ast() -> AlgorithmAst {
 mod tests {
     use super::{
         SemanticOperation, Statement, insertion_sort_ast, is_sorted_ast, merge_sort_ast,
-        partition_ast, reverse_ast,
+        minimum_ast, partition_ast, reverse_ast,
     };
 
     #[test]
     fn both_models_are_valid_and_render_deterministically() {
         for ast in [
             merge_sort_ast(),
+            minimum_ast(),
             partition_ast(),
             is_sorted_ast(),
             insertion_sort_ast(),
@@ -1062,6 +1163,20 @@ mod tests {
             assert_eq!(ast.render(), ast.render());
             assert!(ast.render().contains("effects mutate="));
         }
+    }
+
+    #[test]
+    fn minimum_model_is_read_only_stable_on_ties_and_optional_for_empty_input() {
+        let ast = minimum_ast();
+
+        assert!(ast.validate().is_empty());
+        assert!(ast.effects.mutates.is_empty());
+        assert_eq!(
+            ast.operation_by_id("minimum.compare"),
+            Some(SemanticOperation::Compare)
+        );
+        assert!(ast.render().contains("return none"));
+        assert!(ast.render().contains("candidate_is_less"));
     }
 
     #[test]

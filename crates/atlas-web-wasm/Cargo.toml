@@ -10,6 +10,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 atlas-algorithms = { path = "../atlas-algorithms", default-features = false }
+serde.workspace = true
+serde_json.workspace = true
 wasm-bindgen.workspace = true
 
 [dev-dependencies]

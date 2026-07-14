@@ -27,8 +27,10 @@ exact authority, counter, dynamics and timing boundaries. Its projection and
 WASM interfaces remain private, the site is not published, and no subsequent
 MVP is active.
 
-MVP 6 is active under DEC-061. It will migrate the three curated demonstrations
-and two additional sequence algorithms to one private build-generated program,
+MVP 6 is active under DEC-061. Its first generated path compiles
+`sequence.minimum` from its exact reviewed AST to one private program executed
+by the common WASM visual machine. It will migrate the three curated
+demonstrations and even partition to the same build-generated program model,
 one bounded WASM visual machine and one derived presentation description under
 DEC-062/DEC-063. The current bytecode and presentation shapes are not public
 contracts.
@@ -44,6 +46,7 @@ contracts.
 - `docs/schema-0.1.md`: current public schema contract;
 - `docs/mir-integration.md`: exact MVP 4 MIR build and execution boundary;
 - `docs/mvp5-web.md`: static artifact build, authority and timing boundaries;
+- `docs/mvp6-visual-machine.md`: private generated-program and WASM-machine boundary;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

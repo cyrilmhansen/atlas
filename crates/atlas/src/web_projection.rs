@@ -2,9 +2,11 @@ use std::fmt;
 
 use serde::Serialize;
 
+use crate::ast::minimum_ast;
 use crate::datasets::{DatasetClass, GenerationError, SORT_DATASET_SPEC};
 use crate::index::ProjectionSummary;
 use crate::registry::{Algorithm, Claim, Implementation, Problem, Registry};
+use crate::visual_program::{VisualProgram, VisualProgramError, compile_minimum_visual_program};
 
 pub const WEB_PROJECTION_FORMAT: &str = "atlas-web-private-v0";
 
@@ -81,6 +83,23 @@ struct WebDynamics {
     pseudocode_source: &'static str,
     max_interactive_input_length: usize,
     max_analytical_trace_input_length: usize,
+    program: Option<VisualProgram>,
+    presentation: Option<WebPresentation>,
+}
+
+#[derive(Serialize)]
+struct WebPresentation {
+    key: &'static str,
+    selector_label: &'static str,
+    primitive: &'static str,
+    default_dataset: &'static str,
+    boundary: &'static str,
+    result_label: &'static str,
+    primary_counter_label: &'static str,
+    secondary_label: &'static str,
+    sequence_heading: &'static str,
+    legend: &'static str,
+    comparison_interest: &'static str,
 }
 
 #[derive(Serialize)]
@@ -96,7 +115,7 @@ impl<'a> WebProjection<'a> {
         summary: &'a ProjectionSummary,
         source_commit: &'a str,
         build: WebBuildEnvironment<'a>,
-    ) -> Result<Self, GenerationError> {
+    ) -> Result<Self, WebProjectionError> {
         let datasets = SORT_DATASET_SPEC
             .generate_all()?
             .into_iter()
@@ -136,6 +155,8 @@ impl<'a> WebProjection<'a> {
                     pseudocode_source: include_str!("../pseudocode/is_sorted.atlas-pseudo"),
                     max_interactive_input_length: 64,
                     max_analytical_trace_input_length: 64,
+                    program: None,
+                    presentation: None,
                 },
                 WebDynamics {
                     algorithm_id: "sort.insertion",
@@ -143,6 +164,8 @@ impl<'a> WebProjection<'a> {
                     pseudocode_source: include_str!("../pseudocode/insertion_sort.atlas-pseudo"),
                     max_interactive_input_length: 64,
                     max_analytical_trace_input_length: 32,
+                    program: None,
+                    presentation: None,
                 },
                 WebDynamics {
                     algorithm_id: "reverse.symmetric.in_place",
@@ -150,6 +173,29 @@ impl<'a> WebProjection<'a> {
                     pseudocode_source: include_str!("../pseudocode/reverse.atlas-pseudo"),
                     max_interactive_input_length: 64,
                     max_analytical_trace_input_length: 0,
+                    program: None,
+                    presentation: None,
+                },
+                WebDynamics {
+                    algorithm_id: "select.minimum.linear",
+                    ast_id: "ast.select.minimum.linear.v0",
+                    pseudocode_source: include_str!("../pseudocode/minimum.atlas-pseudo"),
+                    max_interactive_input_length: 64,
+                    max_analytical_trace_input_length: 0,
+                    program: Some(compile_minimum_visual_program(&minimum_ast())?),
+                    presentation: Some(WebPresentation {
+                        key: "minimum",
+                        selector_label: "Minimum",
+                        primitive: "sequence",
+                        default_dataset: "sort.regression.duplicates",
+                        boundary: "The generated program and current sequence stay in WASM; the selected result is copied for display.",
+                        result_label: "First minimum",
+                        primary_counter_label: "Comparisons",
+                        secondary_label: "Minimum index",
+                        sequence_heading: "Minimum selection",
+                        legend: "first minimum value",
+                        comparison_interest: "less",
+                    }),
                 },
             ],
         })
@@ -224,6 +270,7 @@ fn dataset_class_name(class: DatasetClass) -> &'static str {
 #[derive(Debug)]
 pub enum WebProjectionError {
     Dataset(GenerationError),
+    Program(VisualProgramError),
     Json(serde_json::Error),
 }
 
@@ -231,6 +278,7 @@ impl fmt::Display for WebProjectionError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Dataset(error) => write!(formatter, "cannot generate Web dataset: {error}"),
+            Self::Program(error) => write!(formatter, "cannot generate visual program: {error}"),
             Self::Json(error) => write!(formatter, "cannot serialize Web projection: {error}"),
         }
     }
@@ -241,6 +289,12 @@ impl std::error::Error for WebProjectionError {}
 impl From<GenerationError> for WebProjectionError {
     fn from(error: GenerationError) -> Self {
         Self::Dataset(error)
+    }
+}
+
+impl From<VisualProgramError> for WebProjectionError {
+    fn from(error: VisualProgramError) -> Self {
+        Self::Program(error)
     }
 }
 
@@ -350,6 +404,26 @@ mod tests {
                 .unwrap()
                 .contains("operation reverse.symmetric.swap | Swap")
         );
+        assert_eq!(
+            value["dynamics"][3]["algorithm_id"],
+            "select.minimum.linear"
+        );
+        assert_eq!(
+            value["dynamics"][3]["ast_id"],
+            "ast.select.minimum.linear.v0"
+        );
+        assert_eq!(
+            value["dynamics"][3]["program"]["format"],
+            "atlas-visual-bytecode-private-v0"
+        );
+        assert_eq!(
+            value["dynamics"][3]["program"]["instructions"]
+                .as_array()
+                .unwrap()
+                .len(),
+            9
+        );
+        assert_eq!(value["dynamics"][3]["presentation"]["key"], "minimum");
         assert!(first.contains("order.is_sorted.adjacent"));
     }
 }

@@ -2,6 +2,7 @@ import init, {
   InsertionSortStepper,
   IsSortedStepper,
   ReverseStepper,
+  VisualMachine,
   observe_insertion_sort_i32,
   observe_is_sorted_i32,
   observe_reverse_i32,
@@ -44,6 +45,44 @@ const algorithmUi = {
     moved: true,
   },
 };
+
+function hydrateGeneratedAlgorithms() {
+  for (const dynamics of projection.dynamics) {
+    const presentation = dynamics.presentation;
+    if (!presentation || !dynamics.program) continue;
+    algorithmUi[presentation.key] = {
+      id: dynamics.algorithm_id,
+      dataset: presentation.default_dataset,
+      boundary: presentation.boundary,
+      resultLabel: presentation.result_label,
+      comparisonLabel: presentation.primary_counter_label,
+      secondaryLabel: presentation.secondary_label,
+      sequenceHeading: presentation.sequence_heading,
+      legend: presentation.legend,
+      moved: false,
+      comparisonInterest: presentation.comparison_interest,
+      dynamics,
+      generated: true,
+    };
+    if (document.querySelector(`[data-algorithm="${presentation.key}"]`)) continue;
+    const option = document.createElement("button");
+    option.className = "algorithm-option";
+    option.type = "button";
+    option.dataset.algorithm = presentation.key;
+    option.setAttribute("aria-pressed", "false");
+    option.textContent = presentation.selector_label;
+    document.querySelector(".algorithm-selector").append(option);
+  }
+}
+
+function selectAlgorithm(key) {
+  activeAlgorithm = key;
+  document.querySelectorAll("[data-algorithm]").forEach((item) => {
+    const selected = item.dataset.algorithm === activeAlgorithm;
+    item.classList.toggle("is-active", selected);
+    item.setAttribute("aria-pressed", String(selected));
+  });
+}
 
 const elements = Object.fromEntries(
   [
@@ -162,6 +201,11 @@ function traceEventLabel(event) {
   }
   const symbols = ["<", "=", ">"];
   const comparison = `${event.nodeId}: compare values[${event.leftIndex}] ${symbols[event.ordering + 1]} values[${event.rightIndex}]`;
+  if (algorithmUi[tracePlayback.algorithm].comparisonInterest === "less") {
+    return event.ordering < 0
+      ? `${comparison}; candidate #${event.leftIndex} becomes the first minimum.`
+      : `${comparison}; retain the earlier minimum at #${event.rightIndex}.`;
+  }
   if (tracePlayback.algorithm === "insertion") {
     return event.ordering < 0
       ? `${comparison}; the current element must move left.`
@@ -183,9 +227,9 @@ function renderTraceState() {
     if (event?.operation === "Read" && index === event.leftIndex) cell.classList.add("is-read");
     if (event?.operation === "Compare"
       && (index === event.leftIndex || index === event.rightIndex)) {
-      const inversion = tracePlayback.algorithm === "insertion"
+      const inversion = algorithmUi[tracePlayback.algorithm].comparisonInterest === "less"
         ? event.ordering < 0
-        : event.ordering > 0;
+        : tracePlayback.algorithm === "insertion" ? event.ordering < 0 : event.ordering > 0;
       cell.classList.add(inversion
         ? "is-inversion"
         : "is-compare");
@@ -195,7 +239,7 @@ function renderTraceState() {
     const label = document.createElement("span");
     label.textContent = String(value);
     const position = document.createElement("small");
-    position.textContent = tracePlayback.algorithm !== "is_sorted"
+    position.textContent = algorithmUi[tracePlayback.algorithm].moved
       ? `from #${tracePlayback.originalIndices[index]}`
       : `#${index}`;
     cell.append(label, position);
@@ -236,7 +280,11 @@ function renderTraceState() {
   elements["trace-event"].textContent = event
     ? traceEventLabel(event)
     : atEnd
-      ? tracePlayback.algorithm === "is_sorted"
+      ? tracePlayback.algorithm === "minimum"
+        ? tracePlayback.stepper.has_result
+          ? `Return the first minimum, ${tracePlayback.stepper.result_value}, at #${tracePlayback.stepper.result_index}.`
+          : "Empty input has no minimum; return none."
+        : tracePlayback.algorithm === "is_sorted"
         ? "No adjacent pair exists; return true without a read or comparison."
         : tracePlayback.algorithm === "reverse"
           ? "No symmetric pair exists; the sequence is already complete."
@@ -262,7 +310,7 @@ function setTraceIndex(index) {
 function readStepperState() {
   const stepper = tracePlayback.stepper;
   tracePlayback.values = Array.from(stepper.values);
-  tracePlayback.originalIndices = tracePlayback.algorithm !== "is_sorted"
+  tracePlayback.originalIndices = algorithmUi[tracePlayback.algorithm].moved
     ? Array.from(stepper.original_indices)
     : [];
   tracePlayback.index = stepper.steps - 1;
@@ -288,9 +336,12 @@ function prepareStepper(values, algorithm) {
   tracePlayback.algorithm = algorithm;
   tracePlayback.input = [...values];
   const input = new Int32Array(values);
-  tracePlayback.stepper = algorithm === "insertion"
-    ? new InsertionSortStepper(input)
-    : algorithm === "reverse" ? new ReverseStepper(input) : new IsSortedStepper(input);
+  const ui = algorithmUi[algorithm];
+  tracePlayback.stepper = ui.generated
+    ? new VisualMachine(JSON.stringify(ui.dynamics.program), input)
+    : algorithm === "insertion"
+      ? new InsertionSortStepper(input)
+      : algorithm === "reverse" ? new ReverseStepper(input) : new IsSortedStepper(input);
   readStepperState();
   renderTraceState();
 }
@@ -416,6 +467,7 @@ function renderSequence(values, highlight = {}) {
       column.classList.add("is-inversion");
     }
     if (highlight.originalIndices && highlight.originalIndices[index] !== index) column.classList.add("is-moved");
+    if (highlight.selectedIndex === index) column.classList.add("is-selected");
     const bar = document.createElement("div");
     bar.className = "value-bar";
     bar.style.height = `${Math.max(8, Math.round((Math.abs(value) / scale) * 130))}px`;
@@ -548,12 +600,43 @@ function runReverse(values) {
   observation.free();
 }
 
+function completedVisualMachine(values) {
+  const ui = algorithmUi[activeAlgorithm];
+  const machine = new VisualMachine(
+    JSON.stringify(ui.dynamics.program),
+    new Int32Array(values),
+  );
+  while (machine.step()) {}
+  return machine;
+}
+
+function runGeneratedAlgorithm(values) {
+  const observation = completedVisualMachine(values);
+  const resultIndex = observation.result_index;
+  const resultValue = observation.result_value;
+  const expectedBit = observation.has_result ? ((resultIndex ?? 0) % 251) + 1 : 0;
+  const timing = measureLocalCall(
+    () => completedVisualMachine(values),
+    (sample) => sample.has_result ? ((sample.result_index ?? 0) % 251) + 1 : 0,
+    expectedBit,
+  );
+  elements["sorted-result"].textContent = observation.has_result ? String(resultValue) : "None";
+  elements["sorted-result"].className = observation.has_result ? "is-true" : "";
+  elements["comparison-count"].textContent = String(observation.comparisons);
+  elements["inversion-index"].textContent = resultIndex ?? "None";
+  renderSequence(values, { selectedIndex: resultIndex });
+  prepareStepper(values, activeAlgorithm);
+  displayTiming(timing, "generated-program construction and WASM execution");
+  observation.free();
+}
+
 function runObservation() {
   try {
     const values = parseSequence();
     elements["input-count"].textContent = `${values.length} value${values.length === 1 ? "" : "s"}`;
     if (!wasmReady) throw new Error("WebAssembly runtime is not ready");
-    if (activeAlgorithm === "is_sorted") runIsSorted(values);
+    if (algorithmUi[activeAlgorithm].generated) runGeneratedAlgorithm(values);
+    else if (activeAlgorithm === "is_sorted") runIsSorted(values);
     else if (activeAlgorithm === "insertion") runInsertionSort(values);
     else runReverse(values);
     if (generatedInput && generatedInput.length > EXPLORE_MAX_LENGTH) renderScaleStudy(generatedInput);
@@ -574,6 +657,9 @@ function runObservation() {
 
 function countSelectedOperation(values) {
   const input = new Int32Array(values);
+  if (algorithmUi[activeAlgorithm].generated) {
+    return [Math.max(values.length - 1, 0), algorithmUi[activeAlgorithm].comparisonLabel];
+  }
   if (activeAlgorithm === "is_sorted") {
     const observation = observe_is_sorted_i32(input);
     const count = observation.comparisons;
@@ -695,6 +781,7 @@ function applyProjection() {
   elements["sequence-heading"].textContent = ui.sequenceHeading;
   elements["legend-text"].textContent = ui.legend;
   elements["legend-text"].parentElement.classList.toggle("is-moved", ui.moved);
+  elements["legend-text"].parentElement.classList.toggle("is-selected", Boolean(ui.generated));
   const dynamics = projection.dynamics.find((item) => item.algorithm_id === algorithm.id);
   elements["dynamics-panel"].hidden = !dynamics;
   if (dynamics) {
@@ -705,18 +792,14 @@ function applyProjection() {
   renderCatalog();
 }
 
-document.querySelectorAll("[data-algorithm]").forEach((option) => {
-  option.addEventListener("click", () => {
-    activeAlgorithm = option.dataset.algorithm;
-    document.querySelectorAll("[data-algorithm]").forEach((item) => {
-      item.classList.toggle("is-active", item === option);
-      item.setAttribute("aria-pressed", String(item === option));
-    });
-    if (!projection) return;
-    selectDataset(algorithmUi[activeAlgorithm].dataset);
-    applyProjection();
-    runObservation();
-  });
+document.querySelector(".algorithm-selector").addEventListener("click", (event) => {
+  const option = event.target.closest("[data-algorithm]");
+  if (!option) return;
+  selectAlgorithm(option.dataset.algorithm);
+  if (!projection) return;
+  selectDataset(algorithmUi[activeAlgorithm].dataset);
+  applyProjection();
+  runObservation();
 });
 
 document.querySelectorAll("[data-view]").forEach((tab) => {
@@ -805,14 +888,6 @@ const query = new URLSearchParams(window.location.search);
 renderPlaybackSpeeds();
 syncSeedMode(true);
 const requestedAlgorithm = query.get("algorithm");
-if (requestedAlgorithm && algorithmUi[requestedAlgorithm]) {
-  activeAlgorithm = requestedAlgorithm;
-  document.querySelectorAll("[data-algorithm]").forEach((item) => {
-    const selected = item.dataset.algorithm === activeAlgorithm;
-    item.classList.toggle("is-active", selected);
-    item.setAttribute("aria-pressed", String(selected));
-  });
-}
 
 try {
   const [projectionResponse] = await Promise.all([
@@ -821,6 +896,8 @@ try {
   ]);
   if (!projectionResponse.ok) throw new Error(`cannot load registry projection (${projectionResponse.status})`);
   projection = await projectionResponse.json();
+  hydrateGeneratedAlgorithms();
+  if (requestedAlgorithm && algorithmUi[requestedAlgorithm]) selectAlgorithm(requestedAlgorithm);
   populateDatasets();
   applyProjection();
   wasmReady = true;

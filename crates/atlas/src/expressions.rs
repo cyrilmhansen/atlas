@@ -4,6 +4,7 @@ use std::collections::HashMap;
 pub enum ValueType {
     Bool,
     Element,
+    OptionalElement,
     Index,
     Ordering,
     Comparator,
@@ -31,6 +32,8 @@ pub enum Expression {
     },
     Integer(usize),
     Boolean(bool),
+    NoneElement,
+    SomeElement(Box<Expression>),
     Length(Box<Expression>),
     Index {
         sequence: Box<Expression>,
@@ -68,6 +71,7 @@ impl Expression {
             Self::Variable { value_type, .. } => Ok(*value_type),
             Self::Integer(_) | Self::Length(_) => Ok(ValueType::Index),
             Self::Boolean(_) | Self::Not(_) => Ok(ValueType::Bool),
+            Self::NoneElement | Self::SomeElement(_) => Ok(ValueType::OptionalElement),
             Self::Index { .. } => Ok(ValueType::Element),
             Self::Range { .. } => Ok(ValueType::Range),
             Self::Call { result_type, .. } => Ok(*result_type),
@@ -152,12 +156,16 @@ impl Expression {
                 expression.validate_into(variables, errors);
                 expect(expression, ValueType::Bool, "not operand", errors);
             }
+            Self::SomeElement(expression) => {
+                expression.validate_into(variables, errors);
+                expect(expression, ValueType::Element, "optional element", errors);
+            }
             Self::Call { arguments, .. } => {
                 for argument in arguments {
                     argument.validate_into(variables, errors);
                 }
             }
-            Self::Integer(_) | Self::Boolean(_) => {}
+            Self::Integer(_) | Self::Boolean(_) | Self::NoneElement => {}
         }
     }
 
@@ -166,6 +174,8 @@ impl Expression {
             Self::Variable { name, .. } => (*name).to_owned(),
             Self::Integer(value) => value.to_string(),
             Self::Boolean(value) => value.to_string(),
+            Self::NoneElement => "none".to_owned(),
+            Self::SomeElement(expression) => format!("some({})", expression.render()),
             Self::Length(sequence) => format!("length({})", sequence.render()),
             Self::Index { sequence, index } => {
                 format!("{}[{}]", sequence.render(), index.render())

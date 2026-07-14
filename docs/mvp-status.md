@@ -13,14 +13,17 @@
 
 MVP 6 replaces algorithm-specific Web steppers and rendering branches with one
 private generated program, one bounded WASM visual machine and one derived
-presentation description under DEC-061 through DEC-063. Its first reversible
-slice gives semantic execution the available viewport width and makes current
-state the first mobile content. This layout gate is complete; bytecode contract
-and lowering are the next slice.
+presentation description under DEC-061 through DEC-063. The viewport-width
+layout gate and the first generated execution are complete: `sequence.minimum`
+is compiled from its exact reviewed AST, executed by the common machine and
+rendered from projected presentation metadata. The three MVP 5 steppers remain
+as differential references. Even partition is the next mutating gate.
 
-The machine remains limited to one typed sequence, bounded scalars and
-structured control. Its generated program and presentation description are
-disposable build products, not schema, ABI, evidence or registry authority.
+The machine remains limited to one typed sequence, bounded indices and
+structured control; its current instruction subset is documented in
+`docs/mvp6-visual-machine.md`. Its generated program and presentation
+description are disposable build products, not schema, ABI, evidence or
+registry authority.
 
 ## Completed foundation
 

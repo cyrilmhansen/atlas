@@ -213,6 +213,7 @@ fn value_type(line: usize, value: &str) -> ParseResult<ValueType> {
         "Bool" => Ok(ValueType::Bool),
         "Comparator" => Ok(ValueType::Comparator),
         "Index" => Ok(ValueType::Index),
+        "OptionalElement" => Ok(ValueType::OptionalElement),
         "Predicate" => Ok(ValueType::Predicate),
         "Sequence" => Ok(ValueType::Sequence),
         _ => Err(ParseError::new(
@@ -253,6 +254,7 @@ fn expression(line: usize, value: &'static str) -> ParseResult<Expression> {
     match value {
         "true" => Ok(Expression::Boolean(true)),
         "false" => Ok(Expression::Boolean(false)),
+        "none" => Ok(Expression::NoneElement),
         "1" => Ok(Expression::Integer(1)),
         _ => known_expression(line, value),
     }
@@ -263,7 +265,9 @@ fn known_expression(line: usize, value: &'static str) -> ParseResult<Expression>
         "0",
         "values",
         "boundary",
+        "minimum_index",
         "length(values)",
+        "length(values) = 0",
         "left < right",
         "left + 1",
         "right - 1",
@@ -276,6 +280,7 @@ fn known_expression(line: usize, value: &'static str) -> ParseResult<Expression>
         "length(values) - 1 - left",
         "predicate result is true",
         "predicate result is false",
+        "some(values[minimum_index])",
     ];
     if KNOWN.contains(&value) {
         Ok(experimental_expression(value))
@@ -329,6 +334,22 @@ fn condition_expression(line: usize, value: &'static str) -> ParseResult<Express
             ],
             result_type: ValueType::Bool,
         })
+    } else if value == "candidate is less than minimum" {
+        let values = variable("values", ValueType::Sequence);
+        Ok(Expression::Call {
+            function: "candidate_is_less",
+            arguments: vec![
+                Expression::Index {
+                    sequence: Box::new(values.clone()),
+                    index: Box::new(variable("index", ValueType::Index)),
+                },
+                Expression::Index {
+                    sequence: Box::new(values),
+                    index: Box::new(variable("minimum_index", ValueType::Index)),
+                },
+            ],
+            result_type: ValueType::Bool,
+        })
     } else {
         expression(line, value)
     }
@@ -342,6 +363,7 @@ mod tests {
     const PARTITION: &str = include_str!("../pseudocode/partition.atlas-pseudo");
     const INSERTION: &str = include_str!("../pseudocode/insertion_sort.atlas-pseudo");
     const REVERSE: &str = include_str!("../pseudocode/reverse.atlas-pseudo");
+    const MINIMUM: &str = include_str!("../pseudocode/minimum.atlas-pseudo");
 
     #[test]
     fn editable_sources_match_the_rust_ast_builders() {
@@ -358,6 +380,7 @@ mod tests {
             Ok(crate::ast::insertion_sort_ast())
         );
         assert_eq!(Parser::new(REVERSE).parse(), Ok(crate::ast::reverse_ast()));
+        assert_eq!(Parser::new(MINIMUM).parse(), Ok(crate::ast::minimum_ast()));
     }
 
     #[test]

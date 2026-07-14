@@ -175,11 +175,13 @@ textarea { display: block; width: 100%; margin-top: 8px; padding: 12px; resize: 
 .legend { color: var(--muted); font-size: 0.74rem; }
 .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; background: var(--coral); }
 .legend.is-moved i { background: var(--yellow); }
+.legend.is-selected i { background: var(--green); }
 .sequence-visual { min-height: 210px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(30px, 1fr); align-items: end; gap: clamp(4px, 1vw, 12px); overflow-x: auto; padding: 20px 2px 0; border-top: 1px solid var(--line); }
 .value-column { min-width: 30px; height: 176px; display: grid; grid-template-rows: minmax(0, 1fr) 20px 16px; gap: 4px; align-items: end; text-align: center; color: var(--muted); font: 0.72rem ui-monospace, SFMono-Regular, Menlo, monospace; }
 .value-bar { width: 100%; min-height: 5px; background: var(--blue); border-top: 4px solid #164b83; }
 .value-column.is-inversion .value-bar { background: var(--coral); border-top-color: #8e2e1e; }
 .value-column.is-moved .value-bar { background: var(--yellow); border-top-color: #8b620f; }
+.value-column.is-selected .value-bar { background: var(--green); border-top-color: #064b37; }
 .value-column small { color: var(--muted); font-size: 0.62rem; }
 .empty-state { align-self: center; justify-self: center; color: var(--muted); }
 .sequence-note { margin: 8px 0 0; color: var(--muted); font-size: 0.7rem; }

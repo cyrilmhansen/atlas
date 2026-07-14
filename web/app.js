@@ -292,9 +292,16 @@ function renderTraceState() {
         ? `left index ${tracePlayback.stepper.left_index} · loop complete`
         : `left index ${tracePlayback.stepper.left_index} · right index ${tracePlayback.stepper.right_index}`;
     } else {
+      const generated = algorithmUi[tracePlayback.algorithm].generated;
+      const outerIndex = generated
+        ? tracePlayback.stepper.register_value("index")
+        : tracePlayback.stepper.outer_index;
+      const currentIndex = generated
+        ? tracePlayback.stepper.register_value("current")
+        : tracePlayback.stepper.current_index;
       elements["execution-context"].textContent = tracePlayback.stepper.done
-        ? `outer index ${tracePlayback.stepper.outer_index} · loop complete`
-        : `outer index ${tracePlayback.stepper.outer_index} · current index ${tracePlayback.stepper.current_index}`;
+        ? `outer index ${outerIndex} · loop complete`
+        : `outer index ${outerIndex} · current index ${currentIndex}`;
     }
   }
   const atEnd = Boolean(tracePlayback.stepper?.done);
@@ -583,11 +590,7 @@ function runIsSorted(values) {
   observation.free();
 }
 
-function runInsertionSort(values) {
-  const input = new Int32Array(values);
-  const observation = observe_insertion_sort_i32(input);
-  const output = Array.from(observation.values);
-  const originalIndices = Array.from(observation.original_indices);
+function stableSortIsCorrect(values, output, originalIndices) {
   const sorted = output.every((value, index) => index === 0 || output[index - 1] <= value);
   const sortedIndices = [...originalIndices].sort((left, right) => left - right);
   const permutation = originalIndices.length === values.length
@@ -597,7 +600,15 @@ function runInsertionSort(values) {
   const stable = output.every((value, index) => index === 0
     || output[index - 1] !== value
     || originalIndices[index - 1] < originalIndices[index]);
-  const correct = sorted && permutation && valuesMatchOrigins && stable;
+  return sorted && permutation && valuesMatchOrigins && stable;
+}
+
+function runInsertionSort(values) {
+  const input = new Int32Array(values);
+  const observation = observe_insertion_sort_i32(input);
+  const output = Array.from(observation.values);
+  const originalIndices = Array.from(observation.original_indices);
+  const correct = stableSortIsCorrect(values, output, originalIndices);
   const expectedBit = observation.comparisons & 1;
   const timing = measureLocalCall(
     () => observe_insertion_sort_i32(input),
@@ -652,6 +663,7 @@ function completedVisualMachine(values) {
 
 function visualResultBit(observation, ui) {
   if (ui.resultView === "sortedness") return observation.has_result ? 2 : 1;
+  if (ui.resultView === "stable_sorted") return (observation.comparisons % 251) + 1;
   return observation.has_result ? ((observation.result_index ?? 0) % 251) + 1 : 0;
 }
 
@@ -668,21 +680,32 @@ function runGeneratedAlgorithm(values) {
   );
   const partition = ui.resultView === "partition_boundary";
   const sortedness = ui.resultView === "sortedness";
-  elements["sorted-result"].textContent = partition
+  const stableSorted = ui.resultView === "stable_sorted";
+  const output = Array.from(observation.values);
+  const originalIndices = ui.moved ? Array.from(observation.original_indices) : undefined;
+  const correct = stableSorted
+    ? stableSortIsCorrect(values, output, originalIndices)
+    : undefined;
+  elements["sorted-result"].textContent = stableSorted
+    ? correct ? "Stable sorted" : "Correction failed"
+    : partition
     ? String(resultIndex)
     : sortedness
       ? observation.has_result ? "Not sorted" : "Sorted"
       : observation.has_result ? String(resultValue) : "None";
-  elements["sorted-result"].className = sortedness
+  elements["sorted-result"].className = stableSorted
+    ? correct ? "is-true" : "is-false"
+    : sortedness
     ? observation.has_result ? "is-false" : "is-true"
     : observation.has_result ? "is-true" : "";
   elements["comparison-count"].textContent = String(observation[ui.primaryCounter]);
   elements["inversion-index"].textContent = observation[ui.secondaryCounter] ?? "None";
-  const output = Array.from(observation.values);
-  renderSequence(output, partition
+  renderSequence(output, stableSorted
+    ? { originalIndices }
+    : partition
     ? {
       partitionBoundary: resultIndex,
-      originalIndices: ui.moved ? Array.from(observation.original_indices) : undefined,
+      originalIndices,
     }
     : sortedness ? { firstInversion: resultIndex } : { selectedIndex: resultIndex });
   prepareStepper(values, activeAlgorithm);

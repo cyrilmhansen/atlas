@@ -9,8 +9,9 @@ use crate::datasets::{
 use crate::index::ProjectionSummary;
 use crate::registry::{Algorithm, Claim, Implementation, Problem, Registry};
 use crate::visual_program::{
-    VisualProgram, VisualProgramError, compile_is_sorted_visual_program,
-    compile_minimum_visual_program, compile_partition_even_visual_program,
+    VisualProgram, VisualProgramError, compile_insertion_visual_program,
+    compile_is_sorted_visual_program, compile_minimum_visual_program,
+    compile_partition_even_visual_program,
 };
 
 pub const WEB_PROJECTION_FORMAT: &str = "atlas-web-private-v0";
@@ -202,8 +203,30 @@ impl<'a> WebProjection<'a> {
                     pseudocode_source: include_str!("../pseudocode/insertion_sort.atlas-pseudo"),
                     max_interactive_input_length: 64,
                     max_analytical_trace_input_length: 32,
-                    program: None,
-                    presentation: None,
+                    program: Some(compile_insertion_visual_program(
+                        &crate::ast::insertion_sort_ast(),
+                    )?),
+                    presentation: Some(WebPresentation {
+                        key: "insertion",
+                        selector_label: "Insertion sort",
+                        primitive: "sequence",
+                        default_dataset: "sort.regression.duplicates",
+                        dataset_problem_id: "sequence.sort",
+                        dataset_predicate: None,
+                        boundary: "The generated stable insertion program mutates values and lazily tracks origins in WASM; current state is copied for display.",
+                        result_label: "Correction + stability",
+                        primary_counter_label: "Comparisons",
+                        secondary_label: "Adjacent swaps",
+                        sequence_heading: "Stable sorted output",
+                        legend: "moved from original index",
+                        comparison_interest: "less",
+                        result_view: "stable_sorted",
+                        primary_counter: "comparisons",
+                        secondary_counter: "swaps",
+                        highlight: "original_indices",
+                        tracks_origins: true,
+                        predicate_label: None,
+                    }),
                 },
                 WebDynamics {
                     algorithm_id: "reverse.symmetric.in_place",
@@ -487,6 +510,18 @@ mod tests {
                 .unwrap()
                 .contains("operation insertion.adjacent.swap | Swap")
         );
+        assert_eq!(
+            value["dynamics"][1]["program"]["instructions"]
+                .as_array()
+                .unwrap()
+                .len(),
+            13
+        );
+        assert_eq!(
+            value["dynamics"][1]["presentation"]["result_view"],
+            "stable_sorted"
+        );
+        assert_eq!(value["dynamics"][1]["presentation"]["tracks_origins"], true);
         assert_eq!(
             value["dynamics"][2]["algorithm_id"],
             "reverse.symmetric.in_place"

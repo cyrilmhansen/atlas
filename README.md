@@ -28,12 +28,13 @@ WASM interfaces remain private, the site is not published, and no subsequent
 MVP is active.
 
 MVP 6 is active under DEC-061. Its generated paths compile `sequence.minimum`,
-even `sequence.partition` and adjacent `sequence.is_sorted` from their exact
-reviewed ASTs to private programs executed by the common WASM visual machine.
-The retained `is_sorted` stepper is an operation-for-operation differential
-oracle. Insertion and reverse remain to migrate to the same generated program
-model and derived presentation description under DEC-062/DEC-063. The current
-bytecode, predicate intrinsic and presentation shapes are not public contracts.
+even `sequence.partition`, adjacent `sequence.is_sorted` and stable insertion
+from their exact reviewed ASTs to private programs executed by the common WASM
+visual machine. The retained `is_sorted` and insertion steppers are
+operation-for-operation differential oracles. Reverse remains to migrate to the
+same generated program model and derived presentation description under
+DEC-062/DEC-063. The current bytecode, predicate intrinsic and presentation
+shapes are not public contracts.
 
 ## Project map
 

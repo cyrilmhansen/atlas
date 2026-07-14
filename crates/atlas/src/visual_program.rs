@@ -1,6 +1,8 @@
 use serde::Serialize;
 
-use crate::ast::{AlgorithmAst, SemanticOperation, is_sorted_ast, minimum_ast, partition_ast};
+use crate::ast::{
+    AlgorithmAst, SemanticOperation, insertion_sort_ast, is_sorted_ast, minimum_ast, partition_ast,
+};
 
 pub const VISUAL_PROGRAM_FORMAT: &str = "atlas-visual-bytecode-private-v0";
 
@@ -42,6 +44,15 @@ pub enum VisualInstruction {
         when_true: usize,
         when_false: usize,
     },
+    BranchIfLess {
+        when_true: usize,
+        when_false: usize,
+    },
+    BranchRegisterNonZero {
+        register: usize,
+        when_true: usize,
+        when_false: usize,
+    },
     SetRegisterToLength {
         register: usize,
     },
@@ -69,7 +80,15 @@ pub enum VisualInstruction {
         right_register: usize,
         left_previous: bool,
     },
+    CompareLessPrevious {
+        node_id: &'static str,
+        register: usize,
+    },
     CopyIfLess {
+        target_register: usize,
+        source_register: usize,
+    },
+    CopyRegister {
         target_register: usize,
         source_register: usize,
     },
@@ -329,6 +348,84 @@ pub fn compile_is_sorted_visual_program(
     Ok(program)
 }
 
+pub fn compile_insertion_visual_program(
+    ast: &AlgorithmAst,
+) -> Result<VisualProgram, VisualProgramError> {
+    let errors = ast.validate();
+    if !errors.is_empty() {
+        return Err(VisualProgramError(format!(
+            "cannot compile invalid AST: {}",
+            errors.join("; ")
+        )));
+    }
+    if ast != &insertion_sort_ast() {
+        return Err(VisualProgramError(
+            "insertion visual lowering accepts only the reviewed stable insertion AST shape"
+                .to_owned(),
+        ));
+    }
+
+    let program = VisualProgram {
+        format: VISUAL_PROGRAM_FORMAT,
+        algorithm_id: ast.algorithm_id,
+        ast_id: ast.id,
+        registers: vec![
+            VisualRegister {
+                name: "index",
+                initial: 1,
+            },
+            VisualRegister {
+                name: "current",
+                initial: 1,
+            },
+        ],
+        instructions: vec![
+            VisualInstruction::BranchIndexLessThanLength {
+                register: 0,
+                when_true: 1,
+                when_false: 12,
+            },
+            VisualInstruction::CopyRegister {
+                target_register: 1,
+                source_register: 0,
+            },
+            VisualInstruction::BranchRegisterNonZero {
+                register: 1,
+                when_true: 3,
+                when_false: 10,
+            },
+            VisualInstruction::Read {
+                node_id: "insertion.current.read",
+                register: 1,
+            },
+            VisualInstruction::ReadPrevious {
+                node_id: "insertion.previous.read",
+                register: 1,
+            },
+            VisualInstruction::CompareLessPrevious {
+                node_id: "insertion.adjacent.compare",
+                register: 1,
+            },
+            VisualInstruction::BranchIfLess {
+                when_true: 7,
+                when_false: 10,
+            },
+            VisualInstruction::SwapPrevious {
+                node_id: "insertion.adjacent.swap",
+                left_register: 1,
+                right_register: 1,
+            },
+            VisualInstruction::Decrement { register: 1 },
+            VisualInstruction::Jump { target: 2 },
+            VisualInstruction::Increment { register: 0 },
+            VisualInstruction::Jump { target: 0 },
+            VisualInstruction::ReturnNone,
+        ],
+    };
+    validate_visual_program(&program, ast)?;
+    Ok(program)
+}
+
 pub fn validate_visual_program(
     program: &VisualProgram,
     ast: &AlgorithmAst,
@@ -404,6 +501,22 @@ pub fn validate_visual_program(
                 target(*when_true)?;
                 target(*when_false)?;
             }
+            VisualInstruction::BranchIfLess {
+                when_true,
+                when_false,
+            } => {
+                target(*when_true)?;
+                target(*when_false)?;
+            }
+            VisualInstruction::BranchRegisterNonZero {
+                register: source,
+                when_true,
+                when_false,
+            } => {
+                register(*source)?;
+                target(*when_true)?;
+                target(*when_false)?;
+            }
             VisualInstruction::SetRegisterToLength {
                 register: destination,
             } => register(*destination)?,
@@ -448,7 +561,21 @@ pub fn validate_visual_program(
                 register(*right_register)?;
                 validate_node(ast, node_id, SemanticOperation::Compare)?;
             }
+            VisualInstruction::CompareLessPrevious {
+                node_id,
+                register: source,
+            } => {
+                register(*source)?;
+                validate_node(ast, node_id, SemanticOperation::Compare)?;
+            }
             VisualInstruction::CopyIfLess {
+                target_register,
+                source_register,
+            } => {
+                register(*target_register)?;
+                register(*source_register)?;
+            }
+            VisualInstruction::CopyRegister {
                 target_register,
                 source_register,
             } => {
@@ -509,11 +636,12 @@ fn validate_node(
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::{Statement, is_sorted_ast, minimum_ast, partition_ast};
+    use crate::ast::{Statement, insertion_sort_ast, is_sorted_ast, minimum_ast, partition_ast};
 
     use super::{
-        VisualInstruction, compile_is_sorted_visual_program, compile_minimum_visual_program,
-        compile_partition_even_visual_program, validate_visual_program,
+        VisualInstruction, compile_insertion_visual_program, compile_is_sorted_visual_program,
+        compile_minimum_visual_program, compile_partition_even_visual_program,
+        validate_visual_program,
     };
 
     #[test]
@@ -577,6 +705,25 @@ mod tests {
             instruction,
             VisualInstruction::CompareGreater {
                 node_id: "is-sorted.adjacent.compare",
+                ..
+            }
+        )));
+        validate_visual_program(&first, &ast).unwrap();
+    }
+
+    #[test]
+    fn insertion_lowering_is_deterministic_and_ast_linked() {
+        let ast = insertion_sort_ast();
+        let first = compile_insertion_visual_program(&ast).unwrap();
+        let second = compile_insertion_visual_program(&ast).unwrap();
+
+        assert_eq!(first, second);
+        assert_eq!(first.registers.len(), 2);
+        assert_eq!(first.instructions.len(), 13);
+        assert!(first.instructions.iter().any(|instruction| matches!(
+            instruction,
+            VisualInstruction::SwapPrevious {
+                node_id: "insertion.adjacent.swap",
                 ..
             }
         )));

@@ -6,8 +6,8 @@ protocol. DEC-061 through DEC-063 define its scope.
 
 ## Authority and generation
 
-The minimum, partition and `is_sorted` pseudocode sources parse to the same typed
-`AlgorithmAst` values as their Rust AST builders. Each specialized compiler
+The minimum, partition, `is_sorted` and insertion pseudocode sources parse to
+the same typed `AlgorithmAst` values as their Rust AST builders. Each specialized compiler
 accepts only its exact reviewed AST shape and emits
 `atlas-visual-bytecode-private-v0`. Bundle generation validates every register
 and jump target and checks that each semantic instruction names an existing AST
@@ -16,7 +16,8 @@ node with the matching operation kind.
 The generated program is embedded in the derived Web projection. The browser
 passes its JSON representation to `VisualMachine`; it is never read from the
 registry or retained as execution evidence. Native `minimum_by`,
-`partition_in_place` and `is_sorted_by` remain correction oracles.
+`partition_in_place` and `is_sorted_by`, plus the retained insertion stepper,
+remain correction oracles.
 
 ## Current machine
 
@@ -25,7 +26,7 @@ counter, the last comparison/predicate results, an optional result index and
 structural counters. Original indices are allocated lazily on the first swap;
 an unchanged identity is only produced when requested for display. Minimum uses
 two registers and nine instructions; even partition uses two registers and 19
-instructions.
+instructions; insertion uses two registers and 13 instructions.
 
 | Instruction | Effect |
 |---|---|
@@ -34,13 +35,17 @@ instructions.
 | `branch_index_less_than_index` | compares two index registers for two-pointer control |
 | `branch_predicate` | branches on the last intrinsic predicate result |
 | `branch_if_greater` | branches on an adjacent inversion comparison |
+| `branch_if_less` | branches on the last strict less-than comparison |
+| `branch_register_non_zero` | guards a checked previous-index operation |
 | `set_register_to_length` | initializes an index from sequence length |
 | `read` | bounds-checks one indexed read and exposes its exact AST node |
 | `read_previous` | reads the checked index immediately before a register |
 | `predicate_even` | evaluates `i32 is_even` and exposes its exact AST node |
 | `compare_less` | compares two indexed values and exposes its exact AST node |
 | `compare_greater` | compares direct/previous indices for an inversion |
+| `compare_less_previous` | compares a direct index with its predecessor |
 | `copy_if_less` | conditionally updates an index register |
+| `copy_register` | copies one validated index register to another |
 | `increment` / `decrement` | checked index movement |
 | `swap_previous` | mutates values and origins and exposes its exact AST node |
 | `jump` | transfers to a validated in-program target |
@@ -60,6 +65,9 @@ selected index, so the first minimum is retained. Empty input returns `None`.
 For the partition experiment, `predicate_even` is a provisional class-B
 intrinsic. It avoids introducing callbacks or a call ABI while exercising
 mutation. Dataset selection exposes and restricts the concrete predicate.
+Insertion copies the outer index into a current index, then uses strict adjacent
+comparisons and swaps. Equal values never move past one another; lazy origin
+tracking makes stability and permutation directly checkable.
 
 ## Bounds
 
@@ -81,14 +89,15 @@ input and keep sourced asymptotic claims separate.
 ## Validation and current limit
 
 Rust and Node tests cover empty, singleton, ordinary and tied-minimum cases,
-plus empty, all-matching, none-matching, mixed and alternating partitions.
+plus empty, all-matching, none-matching, mixed and alternating partitions and
+sorted, descending and duplicate-heavy insertion inputs.
 Native mutation, boundary, permutation, counters, exact operation order,
 AST-node identity, invalid targets and the 4096-element bound are checked. The
-three generated paths coexist with the three hand-written MVP 5 steppers. This
+four generated paths coexist with the three hand-written MVP 5 steppers. This
 differential period is intentional.
 
-The compilers remain specialized to three reviewed AST shapes. Adjacent
-`is_sorted` now uses a generated path while retaining its hand-written stepper
-as an operation-for-operation oracle. There is no general predicate, call,
-write-value or multi-region model. Stable insertion is the next differential
-gate and requires one explicit register-copy operation.
+The compilers remain specialized to four reviewed AST shapes. Adjacent
+`is_sorted` and stable insertion now use generated paths while retaining their
+hand-written steppers as operation-for-operation oracles. There is no general
+predicate, call, write-value or multi-region model. Symmetric reverse is the
+next and final differential migration gate.

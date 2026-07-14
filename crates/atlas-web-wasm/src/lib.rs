@@ -64,6 +64,15 @@ enum VisualInstructionSpec {
         when_true: usize,
         when_false: usize,
     },
+    BranchIfLess {
+        when_true: usize,
+        when_false: usize,
+    },
+    BranchRegisterNonZero {
+        register: usize,
+        when_true: usize,
+        when_false: usize,
+    },
     SetRegisterToLength {
         register: usize,
     },
@@ -91,7 +100,15 @@ enum VisualInstructionSpec {
         right_register: usize,
         left_previous: bool,
     },
+    CompareLessPrevious {
+        node_id: String,
+        register: usize,
+    },
     CopyIfLess {
+        target_register: usize,
+        source_register: usize,
+    },
+    CopyRegister {
         target_register: usize,
         source_register: usize,
     },
@@ -456,6 +473,21 @@ impl VisualMachine {
                 });
                 self.pc += 1;
             }
+            VisualInstructionSpec::CompareLessPrevious { node_id, register } => {
+                let left_index = self.read_register(register)?;
+                let right_index = self.previous_index(register)?;
+                let ordering = self.value(left_index)?.cmp(self.value(right_index)?);
+                self.comparison_less = ordering == Ordering::Less;
+                self.comparisons += 1;
+                self.operation = Some(VisualOperation {
+                    node_id,
+                    kind: "Compare",
+                    left_index,
+                    right_index: Some(right_index),
+                    ordering: Some(ordering_value(ordering)),
+                });
+                self.pc += 1;
+            }
             VisualInstructionSpec::SwapPrevious {
                 node_id,
                 left_register,
@@ -521,6 +553,7 @@ impl VisualMachine {
                 | VisualInstructionSpec::PredicateEven { .. }
                 | VisualInstructionSpec::CompareLess { .. }
                 | VisualInstructionSpec::CompareGreater { .. }
+                | VisualInstructionSpec::CompareLessPrevious { .. }
                 | VisualInstructionSpec::SwapPrevious { .. }
                 | VisualInstructionSpec::ReturnIndex { .. } => {
                     return Ok(());
@@ -577,6 +610,27 @@ impl VisualMachine {
                         when_false
                     };
                 }
+                VisualInstructionSpec::BranchIfLess {
+                    when_true,
+                    when_false,
+                } => {
+                    self.pc = if self.comparison_less {
+                        when_true
+                    } else {
+                        when_false
+                    };
+                }
+                VisualInstructionSpec::BranchRegisterNonZero {
+                    register,
+                    when_true,
+                    when_false,
+                } => {
+                    self.pc = if self.read_register(register)? != 0 {
+                        when_true
+                    } else {
+                        when_false
+                    };
+                }
                 VisualInstructionSpec::SetRegisterToLength { register } => {
                     self.registers[register] = self.values.len();
                     self.pc += 1;
@@ -588,6 +642,13 @@ impl VisualMachine {
                     if self.comparison_less {
                         self.registers[target_register] = self.read_register(source_register)?;
                     }
+                    self.pc += 1;
+                }
+                VisualInstructionSpec::CopyRegister {
+                    target_register,
+                    source_register,
+                } => {
+                    self.registers[target_register] = self.read_register(source_register)?;
                     self.pc += 1;
                 }
                 VisualInstructionSpec::Increment { register } => {
@@ -707,6 +768,22 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
                 target(*when_true)?;
                 target(*when_false)?;
             }
+            VisualInstructionSpec::BranchIfLess {
+                when_true,
+                when_false,
+            } => {
+                target(*when_true)?;
+                target(*when_false)?;
+            }
+            VisualInstructionSpec::BranchRegisterNonZero {
+                register: source,
+                when_true,
+                when_false,
+            } => {
+                register(*source)?;
+                target(*when_true)?;
+                target(*when_false)?;
+            }
             VisualInstructionSpec::SetRegisterToLength {
                 register: destination,
             } => register(*destination)?,
@@ -756,7 +833,23 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
                 register(*left_register)?;
                 register(*right_register)?;
             }
+            VisualInstructionSpec::CompareLessPrevious {
+                node_id,
+                register: source,
+            } => {
+                if node_id.is_empty() {
+                    return Err("visual compare node ID must not be empty".to_owned());
+                }
+                register(*source)?;
+            }
             VisualInstructionSpec::CopyIfLess {
+                target_register,
+                source_register,
+            } => {
+                register(*target_register)?;
+                register(*source_register)?;
+            }
+            VisualInstructionSpec::CopyRegister {
                 target_register,
                 source_register,
             } => {
@@ -1919,6 +2012,14 @@ mod tests {
         super::VisualMachine::from_json(&serde_json::to_string(&program).unwrap(), values).unwrap()
     }
 
+    fn insertion_visual_machine(values: &[i32]) -> super::VisualMachine {
+        let program = atlas::visual_program::compile_insertion_visual_program(
+            &atlas::ast::insertion_sort_ast(),
+        )
+        .unwrap();
+        super::VisualMachine::from_json(&serde_json::to_string(&program).unwrap(), values).unwrap()
+    }
+
     #[test]
     fn generated_minimum_machine_matches_native_and_preserves_first_tie() {
         use atlas_algorithms::minimum::minimum_by;
@@ -2082,6 +2183,51 @@ mod tests {
             assert_eq!(generated.result_index(), native.first_inversion);
             assert_eq!(generated.has_result(), !native.sorted);
             assert_eq!(generated.values, input);
+        }
+    }
+
+    #[test]
+    fn generated_insertion_matches_retained_stepper_operation_for_operation() {
+        for input in [
+            vec![],
+            vec![7],
+            vec![1, 2, 3, 4],
+            vec![4, 3, 2, 1],
+            vec![5, -1, 5, 3, 0, -8, 3],
+        ] {
+            let mut retained = super::InsertionSortStepper::from_values(&input).unwrap();
+            let mut generated = insertion_visual_machine(&input);
+            let mut retained_operations = Vec::new();
+            let mut generated_operations = Vec::new();
+
+            while retained.step() {
+                let operation = retained.operation.unwrap();
+                retained_operations.push((
+                    operation.node_id.to_owned(),
+                    operation.operation.name(),
+                    operation.left_index,
+                    operation.right_index,
+                    operation.ordering,
+                ));
+            }
+            while generated.step_checked().unwrap() {
+                let operation = generated.operation.as_ref().unwrap();
+                generated_operations.push((
+                    operation.node_id.clone(),
+                    operation.kind,
+                    operation.left_index as u32,
+                    operation.right_index.map(|index| index as u32),
+                    operation.ordering,
+                ));
+            }
+
+            assert_eq!(generated_operations, retained_operations);
+            assert_eq!(generated.values(), retained.values());
+            assert_eq!(generated.original_indices(), retained.original_indices());
+            assert_eq!(generated.comparisons, retained.comparisons);
+            assert_eq!(generated.swaps, retained.swaps);
+            assert_eq!(generated.steps, retained.steps);
+            assert!(generated.done);
         }
     }
 

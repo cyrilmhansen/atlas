@@ -51,6 +51,9 @@ assert.equal(projection.dynamics[1].algorithm_id, "sort.insertion");
 assert.equal(projection.dynamics[1].ast_id, "ast.sort.insertion.v0");
 assert.equal(projection.dynamics[1].max_interactive_input_length, 64);
 assert.equal(projection.dynamics[1].max_analytical_trace_input_length, 32);
+assert.equal(projection.dynamics[1].program.instructions.length, 13);
+assert.equal(projection.dynamics[1].presentation.result_view, "stable_sorted");
+assert.equal(projection.dynamics[1].presentation.tracks_origins, true);
 assert.match(
   projection.dynamics[1].pseudocode_source,
   /operation insertion\.adjacent\.swap \| Swap/,

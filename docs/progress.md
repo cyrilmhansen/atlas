@@ -1,5 +1,34 @@
 # Progress log
 
+## 2026-07-14 - Differential generated insertion migration
+
+### Result
+
+- Added a 13-instruction lowering of the exact stable-insertion AST, including
+  explicit register copy, previous-index guard, strict adjacent comparison and
+  swap mutation with lazy origin tracking.
+- Switched the existing insertion Web selector to the generated program and
+  derived presentation without adding an algorithm-specific page.
+- Retained the native observation and hand-written incremental stepper as
+  independent correction and operation-order oracles.
+- Preserved explicit loop context, stable duplicate order, permutation checks,
+  comparison/swap counts and responsive state rendering.
+
+### Verification
+
+- 55 `atlas` and 26 `atlas-web-wasm` library tests passed.
+- Rust and Node differential tests matched every visible operation, final value,
+  origin, counter and step across empty, singleton, sorted, descending and
+  duplicate-heavy inputs.
+- `scripts/check-web.sh` passed with the generated insertion path.
+
+### Limits
+
+- The retained hand-written insertion path remains intentionally available
+  during the differential period.
+- Symmetric reverse remains the final hand-written browser path and the next
+  migration gate.
+
 ## 2026-07-14 - Differential generated is-sorted migration
 
 ### Result

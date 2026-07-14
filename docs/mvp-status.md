@@ -19,9 +19,9 @@ layout gate and the first two generated executions are complete:
 reviewed ASTs, executed by the common machine and rendered from projected
 presentation metadata. Partition adds mutation, origin tracking, predicate and
 swap counters, and a visible boundary. The three MVP 5 steppers remain as
-differential references. Adjacent `is_sorted` now executes through its generated
-program in the browser and matches the retained stepper operation-for-operation;
-stable insertion is the next migration gate.
+differential references. Adjacent `is_sorted` and stable insertion now execute
+through generated programs in the browser and match their retained steppers
+operation-for-operation; symmetric reverse is the final migration gate.
 
 The machine remains limited to one typed sequence, bounded indices and
 structured control; its current instruction subset is documented in

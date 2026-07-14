@@ -17,6 +17,16 @@ audit, three-program vocabulary and active external-corpus phase are recorded in
 `docs/audits/2026-07-14-external-project-audit.md`,
 `docs/project-vocabulary.md` and `docs/phase2-external-corpus.md`.
 
+## Active slice
+
+K-M0 has selected the pinned `petgraph` 0.8.3 library documentation and the
+Algorithms, 4th Edition booksite for independent BFS, Dijkstra and union-find
+imports. A manual fidelity worksheet, five-dimensional equivalence rubric and
+pre-import schema/AST/composition baseline are recorded under `docs/phase2/`.
+No registry entity, dependency, public schema field, AST capability or runtime
+instrumentation has been added. The next gate is the independent import, not
+more protocol tooling.
+
 ## Latest closed slice
 
 MVP 6 replaces algorithm-specific Web steppers and rendering branches with one

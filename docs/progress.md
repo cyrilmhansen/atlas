@@ -2708,3 +2708,32 @@ scripts/check-mvp2.sh
 cargo test -p atlas-mir --locked --offline
 sh scripts/check-rv64-lp64-abi.sh
 ```
+
+## 2026-07-14 - K-M0 external-source import protocol
+
+### Result
+
+- Selected `petgraph` 0.8.3 and the Algorithms, 4th Edition booksite as two
+  independent source classes for BFS, Dijkstra and union-find.
+- Recorded license boundaries: compatible petgraph material may be considered
+  later; GPL algs4 code remains external study material during the pilot.
+- Added a manual source-fidelity worksheet and an equivalence rubric centered
+  on decision behavior rather than textual YAML agreement.
+- Froze the current schema, query/composition and sequence-oriented AST
+  capabilities at Phase 2 activation commit `3a2aa44`.
+
+### Limits
+
+- No independent import has started and no source claim has entered the
+  authoritative registry.
+- The protocol deliberately has no automated importer, score, dashboard or
+  per-field timing instrumentation.
+- The current composer still uses reviewed scenario-specific candidate IDs;
+  K-M5 will test whether manifest-driven discovery can replace that boundary.
+
+### Verification
+
+```sh
+git diff --check
+rg -n "petgraph|Algorithms, 4th Edition|Protocol revision" docs/phase2
+```

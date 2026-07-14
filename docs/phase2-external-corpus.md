@@ -103,6 +103,15 @@ so rather than claiming undifferentiated source fidelity.
 
 ### K-M0 - Import protocol and baseline
 
+Status: protocol materials prepared; independent imports not started.
+
+K-M0 working documents:
+
+- `docs/phase2/k-m0-source-selection.md`;
+- `docs/phase2/import-worksheet.md`;
+- `docs/phase2/import-equivalence-rubric.md`;
+- `docs/phase2/current-model-baseline.md`.
+
 Deliverables:
 
 - one bounded source-fidelity worksheet separating bibliographic, algorithmic,
@@ -347,6 +356,9 @@ Recommendation: **A**. Record friction before proposing an API.
 None should be decided solely from the current sequence corpus.
 
 ## First active milestone
+
+Current gate: source/licensing selection and the manual protocol are prepared;
+the independent imports have not started.
 
 1. Select sources and licensing boundaries for the graph pilot.
 2. Draft the import worksheet outside the public schema.

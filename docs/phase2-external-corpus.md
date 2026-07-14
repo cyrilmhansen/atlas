@@ -19,8 +19,10 @@ The primary unresolved product hypothesis is:
 > well enough for generic selection, composition and agent consumption?
 
 The phase began with a 10-problem, 15-algorithm and 20-implementation sequence
-corpus that was too small and homogeneous to answer that question. K-M1 has
-since added the first external graph batch without changing that diagnosis.
+corpus that was too small and homogeneous to answer that question. K-M1 through
+K-M3 added graph, dynamic-structure and streaming families. K-M4 has now tested
+independent normalization over six frozen subjects; its mixed gate result pauses
+corpus growth for a bounded ontology review.
 
 ## Accepted strategic trajectory
 
@@ -205,6 +207,11 @@ Acceptance:
 
 ### K-M4 - Independent dual-import experiment
 
+Status: **complete**. The frozen packet, twelve raw worksheets and adjudicated
+matrix are preserved in `docs/phase2/k-m4-source-packet.md`,
+`docs/phase2/imports/k-m4/` and
+`docs/phase2/k-m4-dual-import-comparison.md`.
+
 Two agents independently import the same six to ten source-selected algorithms
 using only the import protocol and current Atlas tools. Neither sees the other's
 work before submission.
@@ -229,7 +236,16 @@ change a selection, substitution or composition outcome, or when the same lossy
 mapping recurs in two structural families. Do not invent a numeric agreement
 score unless the manual pilot demonstrates that one answers a phase question.
 
+That pause condition is met. The two imports diverged on a generic problem
+boundary, version-specific cost evidence and Algorithm R's zero-size boundary;
+Welford remained unresolved because its article body was not readable from the
+packet. Recurrent conditioned-cost, persistent-state, randomness/error and
+staged-output losses justify an ontology review, but no public schema choice has
+been made.
+
 ### K-M5 - Manifest-driven candidate discovery
+
+Status: **planned, held behind the post-K-M4 ontology review**.
 
 Add at least one implementation whose compatibility is not named in a composer
 scenario. The existing query/composition path must discover, accept or reject it

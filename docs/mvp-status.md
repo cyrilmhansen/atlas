@@ -19,12 +19,12 @@ audit, three-program vocabulary and active external-corpus phase are recorded in
 
 ## Active slice
 
-K-M3 is complete. Exact bounded top-k, Welford moments, Vitter reservoir
-sampling and Bloom membership distinguish deterministic, randomized,
-seed-conditioned and one-sided approximate behavior. Tests retain bounded
-memory, numerical stress, seed replay and false-positive evidence without
-claiming distributional proof. K-M4 independent dual import is the next gate;
-it is not yet active.
+K-M4 independent dual import is complete. Two isolated importers produced six
+worksheets each from one frozen source packet. Three of five source-readable
+subjects converge operationally; three decision-changing divergences are
+adjudicated and Welford remains deliberately unresolved because the packet did
+not expose its article body. Corpus growth is paused for the bounded ontology
+review required by the gate. K-M5 remains planned behind that review.
 
 ## Latest closed slice
 

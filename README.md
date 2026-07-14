@@ -45,7 +45,10 @@ presentation shapes are not public contracts.
 Phase 2 is active under DEC-066 with Atlas Knowledge as the active work program,
 Atlas Execution Lab frozen and Atlas Explorer maintained. It tests external
 corpus fidelity, generic candidate discovery and agent consumption before any
-new runtime or presentation expansion. See `docs/phase2-external-corpus.md`.
+new runtime or presentation expansion. K-M4's independent dual import is
+complete and corpus growth is paused for its bounded ontology review. See
+`docs/phase2-external-corpus.md` and
+`docs/phase2/k-m4-dual-import-comparison.md`.
 
 ## Project map
 
@@ -64,6 +67,7 @@ new runtime or presentation expansion. See `docs/phase2-external-corpus.md`.
 - `docs/project-vocabulary.md`: accepted work-program and planning vocabulary;
 - `docs/phase2-external-corpus.md`: active external-corpus and agent-consumer phase;
 - `docs/phase2/k-m1-graph-corpus.md`: first external graph batch and model-friction report;
+- `docs/phase2/k-m4-dual-import-comparison.md`: independent normalization agreement and divergence gate;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

@@ -1,5 +1,36 @@
 # Progress log
 
+## 2026-07-15 - Complete K-M4 independent dual import
+
+### Result
+
+- Froze one six-subject source packet and obtained twelve independent worksheets
+  from two isolated importers with no human intervention during import.
+- Compared identity, semantics, taxonomy, operational decisions and documentary
+  differences without a textual-similarity or numeric agreement score.
+- Adjudicated decision-changing differences in heap problem identity, hashbrown
+  cost evidence and Algorithm R's zero-size boundary.
+- Preserved Welford as an unresolved bibliographic placeholder after both
+  importers independently refused to invent algorithmic facts from inaccessible
+  source text.
+- Made no public schema, registry, AST or runtime change.
+
+### Verification
+
+- Each importer ran whitespace checks only over its own six-file output.
+- The comparison preserves a minimal discriminant and cause classification for
+  every divergent or unresolved result.
+- Repository documentation and registry validation were checked after closure.
+
+### Limits
+
+- Importer-reported durations are available, but the orchestrator launch
+  timestamp was recorded after both local starts and is not presented as a
+  precise external elapsed-time measurement.
+- The Welford subject must be repeated from a frozen readable primary copy.
+- The phase pause threshold is met; K-M5 is held behind a bounded ontology review
+  and a class C decision if public schema changes are proposed.
+
 ## 2026-07-15 - Complete K-M3 streaming and approximation batch
 
 ### Result

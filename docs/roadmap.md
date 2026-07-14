@@ -57,8 +57,19 @@ K-M3 adds exact bounded top-k, numerically sensitive online moments,
 seed-reproducible reservoir sampling and one-sided Bloom membership. It confirms
 that randomness identity, seed-conditioned determinism, numerical error and
 probabilistic accuracy are decision-relevant properties absent from schema 0.1.
-K-M4 independent dual import is next; it should test normalization consistency
-before any public schema proposal.
+
+K-M4 independent dual import is complete. Two isolated importers produced twelve
+worksheets from one frozen six-subject packet. Three of five source-readable
+subjects converged operationally; heap identity, hashbrown cost evidence and the
+zero-size reservoir boundary exposed decision-changing differences. Welford
+remained unresolved because the packet lacked a readable article body. The
+accepted phase pause condition is therefore met.
+
+Next is a bounded ontology review, not more corpus or instrumentation. It must
+clarify generic problem identity and contextual evidence, synthesize recurrent
+model losses across families and present any public schema alternative as a
+class C decision. K-M5 manifest-driven candidate discovery remains the next
+falsification experiment after that review.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

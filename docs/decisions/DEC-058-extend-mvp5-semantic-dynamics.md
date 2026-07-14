@@ -34,3 +34,7 @@ the correction oracle.
   Their current aggregate counters must not be presented as execution traces.
 - No public trace schema, stable Web API, general state-machine renderer or MIR
   browser runtime is introduced.
+
+DEC-059 refines the insertion-sort implementation of this decision: its
+interactive presentation uses a stateful WASM stepper bounded to 32 elements,
+while its trace remains a validation/analysis oracle only.

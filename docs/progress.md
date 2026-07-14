@@ -1,5 +1,33 @@
 # Progress log
 
+## 2026-07-14 - Incremental WASM insertion dynamics
+
+### Result
+
+- Accepted DEC-059 (`stepper-WASM-A`) and separated interactive execution from
+  analytical traces.
+- Added typed `sort.insertion` AST and parser-equivalent private pseudocode with
+  exact read, comparison and adjacent-swap node IDs.
+- Added a stateful WASM insertion stepper that retains only current tagged data,
+  loop state and counters; the browser no longer consumes an insertion trace.
+- Made each step, mutation, active pseudocode operation and original element
+  index visible. Previous-step navigation resets and re-executes deterministically.
+- Kept the analytical trace bounded and private as a differential test oracle.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm --locked --offline` (13 tests)
+- `scripts/check-web.sh`, including the Node stepper/trace/native comparison
+- Headless Chrome insertion rendering and initial WASM-state DOM inspection
+
+### Limits
+
+- Insertion animation is bounded to 32 elements; Scale execution remains
+  aggregate and supports 4096 elements.
+- `is_sorted` presentation still materializes its bounded trace. Reverse has no
+  semantic dynamics adapter yet.
+- The extended clean-archive reproducibility gate remains pending.
+
 ## 2026-07-14 - Explicit is-sorted trace termination
 
 ### Result

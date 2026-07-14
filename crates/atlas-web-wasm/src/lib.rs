@@ -7,10 +7,15 @@ use wasm_bindgen::prelude::*;
 
 pub const MAX_INPUT_LENGTH: usize = 4_096;
 pub const MAX_TRACE_INPUT_LENGTH: usize = 64;
+pub const MAX_INSERTION_TRACE_INPUT_LENGTH: usize = 32;
 
 const LEFT_READ_NODE: &str = "is-sorted.left.read";
 const RIGHT_READ_NODE: &str = "is-sorted.right.read";
 const COMPARE_NODE: &str = "is-sorted.adjacent.compare";
+const INSERTION_CURRENT_READ_NODE: &str = "insertion.current.read";
+const INSERTION_PREVIOUS_READ_NODE: &str = "insertion.previous.read";
+const INSERTION_COMPARE_NODE: &str = "insertion.adjacent.compare";
+const INSERTION_SWAP_NODE: &str = "insertion.adjacent.swap";
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -74,6 +79,7 @@ pub fn observe_is_sorted(values: &[i32]) -> Result<IsSortedObservation, usize> {
 enum TraceOperation {
     Read,
     Compare,
+    Swap,
 }
 
 impl TraceOperation {
@@ -81,12 +87,13 @@ impl TraceOperation {
         match self {
             Self::Read => "Read",
             Self::Compare => "Compare",
+            Self::Swap => "Swap",
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct IsSortedTraceEvent {
+struct TraceEvent {
     node_id: &'static str,
     operation: TraceOperation,
     left_index: u32,
@@ -99,7 +106,7 @@ struct IsSortedTraceEvent {
 pub struct IsSortedTrace {
     sorted: bool,
     first_inversion: Option<u32>,
-    events: Vec<IsSortedTraceEvent>,
+    events: Vec<TraceEvent>,
 }
 
 #[wasm_bindgen]
@@ -169,14 +176,14 @@ pub fn trace_is_sorted(values: &[i32]) -> Result<IsSortedTrace, usize> {
     let sorted = is_sorted_by(values, |left, right| {
         let right_index = (events.len() / 3 + 1) as u32;
         let left_index = right_index - 1;
-        events.push(IsSortedTraceEvent {
+        events.push(TraceEvent {
             node_id: LEFT_READ_NODE,
             operation: TraceOperation::Read,
             left_index,
             right_index: None,
             ordering: None,
         });
-        events.push(IsSortedTraceEvent {
+        events.push(TraceEvent {
             node_id: RIGHT_READ_NODE,
             operation: TraceOperation::Read,
             left_index: right_index,
@@ -184,7 +191,7 @@ pub fn trace_is_sorted(values: &[i32]) -> Result<IsSortedTrace, usize> {
             ordering: None,
         });
         let ordering = left.cmp(right);
-        events.push(IsSortedTraceEvent {
+        events.push(TraceEvent {
             node_id: COMPARE_NODE,
             operation: TraceOperation::Compare,
             left_index,
@@ -288,6 +295,376 @@ pub fn observe_insertion_sort(values: &[i32]) -> Result<InsertionSortObservation
     })
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum InsertionStepPhase {
+    CurrentRead,
+    PreviousRead,
+    Compare,
+    Swap,
+    Complete,
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InsertionSortStepper {
+    tagged: Vec<TaggedValue>,
+    outer_index: usize,
+    current_index: usize,
+    phase: InsertionStepPhase,
+    comparisons: u32,
+    swaps: u32,
+    steps: u32,
+    operation: Option<TraceEvent>,
+}
+
+#[wasm_bindgen]
+impl InsertionSortStepper {
+    #[wasm_bindgen(constructor)]
+    pub fn new(values: &[i32]) -> Result<InsertionSortStepper, JsError> {
+        Self::from_values(values).map_err(|length| {
+            JsError::new(&format!(
+                "stepper input length {length} exceeds the Atlas insertion Explore limit of {MAX_INSERTION_TRACE_INPUT_LENGTH}"
+            ))
+        })
+    }
+
+    pub fn reset(&mut self, values: &[i32]) -> Result<(), JsError> {
+        *self = Self::new(values)?;
+        Ok(())
+    }
+
+    /// Executes one semantic AST operation, returning false only after completion.
+    pub fn step(&mut self) -> bool {
+        self.operation = None;
+        match self.phase {
+            InsertionStepPhase::CurrentRead => {
+                self.operation = Some(TraceEvent {
+                    node_id: INSERTION_CURRENT_READ_NODE,
+                    operation: TraceOperation::Read,
+                    left_index: self.current_index as u32,
+                    right_index: None,
+                    ordering: None,
+                });
+                self.phase = InsertionStepPhase::PreviousRead;
+            }
+            InsertionStepPhase::PreviousRead => {
+                self.operation = Some(TraceEvent {
+                    node_id: INSERTION_PREVIOUS_READ_NODE,
+                    operation: TraceOperation::Read,
+                    left_index: self.current_index as u32 - 1,
+                    right_index: None,
+                    ordering: None,
+                });
+                self.phase = InsertionStepPhase::Compare;
+            }
+            InsertionStepPhase::Compare => {
+                let previous = self.current_index - 1;
+                let ordering = self.tagged[self.current_index]
+                    .value
+                    .cmp(&self.tagged[previous].value);
+                self.comparisons += 1;
+                self.operation = Some(TraceEvent {
+                    node_id: INSERTION_COMPARE_NODE,
+                    operation: TraceOperation::Compare,
+                    left_index: self.current_index as u32,
+                    right_index: Some(previous as u32),
+                    ordering: Some(ordering_value(ordering)),
+                });
+                if ordering == Ordering::Less {
+                    self.phase = InsertionStepPhase::Swap;
+                } else {
+                    self.advance_outer_index();
+                }
+            }
+            InsertionStepPhase::Swap => {
+                let previous = self.current_index - 1;
+                self.tagged.swap(self.current_index, previous);
+                self.swaps += 1;
+                self.operation = Some(TraceEvent {
+                    node_id: INSERTION_SWAP_NODE,
+                    operation: TraceOperation::Swap,
+                    left_index: self.current_index as u32,
+                    right_index: Some(previous as u32),
+                    ordering: None,
+                });
+                self.current_index = previous;
+                if self.current_index == 0 {
+                    self.advance_outer_index();
+                } else {
+                    self.phase = InsertionStepPhase::CurrentRead;
+                }
+            }
+            InsertionStepPhase::Complete => return false,
+        }
+        self.steps += 1;
+        true
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn values(&self) -> Box<[i32]> {
+        self.tagged
+            .iter()
+            .map(|item| item.value)
+            .collect::<Vec<_>>()
+            .into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn original_indices(&self) -> Box<[u32]> {
+        self.tagged
+            .iter()
+            .map(|item| item.original_index)
+            .collect::<Vec<_>>()
+            .into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn comparisons(&self) -> u32 {
+        self.comparisons
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn swaps(&self) -> u32 {
+        self.swaps
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn steps(&self) -> u32 {
+        self.steps
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn done(&self) -> bool {
+        self.phase == InsertionStepPhase::Complete
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_node_id(&self) -> Option<String> {
+        self.operation.map(|operation| operation.node_id.to_owned())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_kind(&self) -> Option<String> {
+        self.operation
+            .map(|operation| operation.operation.name().to_owned())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_left_index(&self) -> Option<u32> {
+        self.operation.map(|operation| operation.left_index)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_right_index(&self) -> Option<u32> {
+        self.operation.and_then(|operation| operation.right_index)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_ordering(&self) -> Option<i8> {
+        self.operation.and_then(|operation| operation.ordering)
+    }
+}
+
+impl InsertionSortStepper {
+    fn from_values(values: &[i32]) -> Result<Self, usize> {
+        if values.len() > MAX_INSERTION_TRACE_INPUT_LENGTH {
+            return Err(values.len());
+        }
+        let tagged = values
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(original_index, value)| TaggedValue {
+                value,
+                original_index: original_index as u32,
+            })
+            .collect();
+        let phase = if values.len() < 2 {
+            InsertionStepPhase::Complete
+        } else {
+            InsertionStepPhase::CurrentRead
+        };
+        Ok(Self {
+            tagged,
+            outer_index: 1,
+            current_index: 1,
+            phase,
+            comparisons: 0,
+            swaps: 0,
+            steps: 0,
+            operation: None,
+        })
+    }
+
+    fn advance_outer_index(&mut self) {
+        self.outer_index += 1;
+        if self.outer_index >= self.tagged.len() {
+            self.phase = InsertionStepPhase::Complete;
+        } else {
+            self.current_index = self.outer_index;
+            self.phase = InsertionStepPhase::CurrentRead;
+        }
+    }
+}
+
+fn ordering_value(ordering: Ordering) -> i8 {
+    match ordering {
+        Ordering::Less => -1,
+        Ordering::Equal => 0,
+        Ordering::Greater => 1,
+    }
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InsertionSortTrace {
+    values: Vec<i32>,
+    original_indices: Vec<u32>,
+    comparisons: u32,
+    swaps: u32,
+    events: Vec<TraceEvent>,
+}
+
+#[wasm_bindgen]
+impl InsertionSortTrace {
+    #[wasm_bindgen(getter)]
+    pub fn values(&self) -> Box<[i32]> {
+        self.values.clone().into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn original_indices(&self) -> Box<[u32]> {
+        self.original_indices.clone().into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn comparisons(&self) -> u32 {
+        self.comparisons
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn swaps(&self) -> u32 {
+        self.swaps
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn event_count(&self) -> u32 {
+        self.events.len() as u32
+    }
+
+    pub fn event_node_id(&self, index: u32) -> Option<String> {
+        self.events
+            .get(index as usize)
+            .map(|event| event.node_id.to_owned())
+    }
+
+    pub fn event_operation(&self, index: u32) -> Option<String> {
+        self.events
+            .get(index as usize)
+            .map(|event| event.operation.name().to_owned())
+    }
+
+    pub fn event_left_index(&self, index: u32) -> Option<u32> {
+        self.events
+            .get(index as usize)
+            .map(|event| event.left_index)
+    }
+
+    pub fn event_right_index(&self, index: u32) -> Option<u32> {
+        self.events
+            .get(index as usize)
+            .and_then(|event| event.right_index)
+    }
+
+    pub fn event_ordering(&self, index: u32) -> Option<i8> {
+        self.events
+            .get(index as usize)
+            .and_then(|event| event.ordering)
+    }
+}
+
+#[wasm_bindgen]
+pub fn trace_insertion_sort_i32(values: &[i32]) -> Result<InsertionSortTrace, JsError> {
+    trace_insertion_sort(values).map_err(|length| {
+        JsError::new(&format!(
+            "trace input length {length} exceeds the Atlas insertion Explore limit of {MAX_INSERTION_TRACE_INPUT_LENGTH}"
+        ))
+    })
+}
+
+pub fn trace_insertion_sort(values: &[i32]) -> Result<InsertionSortTrace, usize> {
+    if values.len() > MAX_INSERTION_TRACE_INPUT_LENGTH {
+        return Err(values.len());
+    }
+
+    let mut tagged: Vec<_> = values
+        .iter()
+        .copied()
+        .enumerate()
+        .map(|(original_index, value)| TaggedValue {
+            value,
+            original_index: original_index as u32,
+        })
+        .collect();
+    let mut comparisons = 0_u32;
+    let mut swaps = 0_u32;
+    let mut events = Vec::new();
+    for index in 1..tagged.len() {
+        let mut current = index;
+        while current > 0 {
+            let previous = current - 1;
+            events.push(TraceEvent {
+                node_id: INSERTION_CURRENT_READ_NODE,
+                operation: TraceOperation::Read,
+                left_index: current as u32,
+                right_index: None,
+                ordering: None,
+            });
+            events.push(TraceEvent {
+                node_id: INSERTION_PREVIOUS_READ_NODE,
+                operation: TraceOperation::Read,
+                left_index: previous as u32,
+                right_index: None,
+                ordering: None,
+            });
+            let ordering = tagged[current].value.cmp(&tagged[previous].value);
+            comparisons += 1;
+            events.push(TraceEvent {
+                node_id: INSERTION_COMPARE_NODE,
+                operation: TraceOperation::Compare,
+                left_index: current as u32,
+                right_index: Some(previous as u32),
+                ordering: Some(match ordering {
+                    Ordering::Less => -1,
+                    Ordering::Equal => 0,
+                    Ordering::Greater => 1,
+                }),
+            });
+            if ordering != Ordering::Less {
+                break;
+            }
+            events.push(TraceEvent {
+                node_id: INSERTION_SWAP_NODE,
+                operation: TraceOperation::Swap,
+                left_index: current as u32,
+                right_index: Some(previous as u32),
+                ordering: None,
+            });
+            tagged.swap(current, previous);
+            swaps += 1;
+            current = previous;
+        }
+    }
+
+    Ok(InsertionSortTrace {
+        values: tagged.iter().map(|item| item.value).collect(),
+        original_indices: tagged.iter().map(|item| item.original_index).collect(),
+        comparisons,
+        swaps,
+        events,
+    })
+}
+
 #[wasm_bindgen]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReverseObservation {
@@ -349,10 +726,12 @@ pub fn observe_reverse(values: &[i32]) -> Result<ReverseObservation, usize> {
 #[cfg(test)]
 mod tests {
     use super::{
-        COMPARE_NODE, InsertionSortObservation, IsSortedObservation, LEFT_READ_NODE,
-        MAX_INPUT_LENGTH, MAX_TRACE_INPUT_LENGTH, RIGHT_READ_NODE, ReverseObservation,
-        TraceOperation, observe_insertion_sort, observe_is_sorted, observe_reverse,
-        trace_is_sorted,
+        COMPARE_NODE, INSERTION_COMPARE_NODE, INSERTION_CURRENT_READ_NODE,
+        INSERTION_PREVIOUS_READ_NODE, INSERTION_SWAP_NODE, InsertionSortObservation,
+        InsertionSortStepper, IsSortedObservation, LEFT_READ_NODE, MAX_INPUT_LENGTH,
+        MAX_INSERTION_TRACE_INPUT_LENGTH, MAX_TRACE_INPUT_LENGTH, RIGHT_READ_NODE,
+        ReverseObservation, TraceOperation, observe_insertion_sort, observe_is_sorted,
+        observe_reverse, trace_insertion_sort, trace_is_sorted,
     };
 
     #[test]
@@ -500,6 +879,7 @@ mod tests {
             let expected = match event.operation {
                 TraceOperation::Read => SemanticOperation::Read,
                 TraceOperation::Compare => SemanticOperation::Compare,
+                TraceOperation::Swap => SemanticOperation::Swap,
             };
             assert_eq!(ast.operation_by_id(event.node_id), Some(expected));
         }
@@ -528,5 +908,96 @@ mod tests {
         assert!(!stopped.sorted);
         assert_eq!(stopped.first_inversion, Some(1));
         assert_eq!(stopped.events.len(), 3);
+    }
+
+    #[test]
+    fn insertion_trace_matches_native_stable_result_and_exact_ast_operations() {
+        use atlas::ast::{SemanticOperation, insertion_sort_ast};
+
+        let input = [2, 1, 2, 1];
+        let trace = trace_insertion_sort(&input).unwrap();
+        let native = observe_insertion_sort(&input).unwrap();
+        assert_eq!(trace.values, native.values);
+        assert_eq!(trace.original_indices, native.original_indices);
+        assert_eq!(trace.comparisons, native.comparisons);
+        assert_eq!(trace.swaps, native.swaps);
+        assert_eq!(trace.events.len(), 18);
+
+        let ast = insertion_sort_ast();
+        for event in &trace.events {
+            let expected = match event.operation {
+                TraceOperation::Read => SemanticOperation::Read,
+                TraceOperation::Compare => SemanticOperation::Compare,
+                TraceOperation::Swap => SemanticOperation::Swap,
+            };
+            assert_eq!(ast.operation_by_id(event.node_id), Some(expected));
+        }
+        assert_eq!(trace.events[0].node_id, INSERTION_CURRENT_READ_NODE);
+        assert_eq!(trace.events[1].node_id, INSERTION_PREVIOUS_READ_NODE);
+        assert_eq!(trace.events[2].node_id, INSERTION_COMPARE_NODE);
+        assert_eq!(trace.events[3].node_id, INSERTION_SWAP_NODE);
+    }
+
+    #[test]
+    fn insertion_trace_snapshots_can_be_replayed_from_swaps() {
+        let input = [3, 1, 2, 1];
+        let trace = trace_insertion_sort(&input).unwrap();
+        let mut values = input.to_vec();
+        let mut original_indices: Vec<_> = (0..input.len() as u32).collect();
+
+        for event in &trace.events {
+            if event.operation == TraceOperation::Swap {
+                let right = event.right_index.unwrap() as usize;
+                values.swap(event.left_index as usize, right);
+                original_indices.swap(event.left_index as usize, right);
+            }
+        }
+
+        assert_eq!(values, trace.values);
+        assert_eq!(original_indices, trace.original_indices);
+    }
+
+    #[test]
+    fn insertion_stepper_executes_in_wasm_without_materializing_a_trace() {
+        let input = [3, 1, 2, 1];
+        let trace = trace_insertion_sort(&input).unwrap();
+        let native = observe_insertion_sort(&input).unwrap();
+        let mut stepper = InsertionSortStepper::from_values(&input).unwrap();
+
+        for expected in &trace.events {
+            assert!(stepper.step());
+            assert_eq!(stepper.operation, Some(*expected));
+        }
+
+        assert!(stepper.done());
+        assert!(!stepper.step());
+        assert_eq!(stepper.steps as usize, trace.events.len());
+        assert_eq!(stepper.values().as_ref(), native.values);
+        assert_eq!(stepper.original_indices().as_ref(), native.original_indices);
+        assert_eq!(stepper.comparisons, native.comparisons);
+        assert_eq!(stepper.swaps, native.swaps);
+    }
+
+    #[test]
+    fn insertion_stepper_reset_restarts_from_an_unexecuted_state() {
+        let mut stepper = InsertionSortStepper::from_values(&[2, 1]).unwrap();
+        assert!(stepper.step());
+        stepper = InsertionSortStepper::from_values(&[4, 3, 2]).unwrap();
+
+        assert_eq!(stepper.steps, 0);
+        assert_eq!(stepper.values().as_ref(), [4, 3, 2]);
+        while stepper.step() {}
+        assert_eq!(stepper.values().as_ref(), [2, 3, 4]);
+        assert!(stepper.done());
+    }
+
+    #[test]
+    fn insertion_trace_is_bounded_separately_from_scale_execution() {
+        assert!(trace_insertion_sort(&[0; MAX_INSERTION_TRACE_INPUT_LENGTH]).is_ok());
+        assert_eq!(
+            trace_insertion_sort(&[0; MAX_INSERTION_TRACE_INPUT_LENGTH + 1]),
+            Err(MAX_INSERTION_TRACE_INPUT_LENGTH + 1)
+        );
+        assert!(observe_insertion_sort(&vec![0; MAX_INPUT_LENGTH]).is_ok());
     }
 }

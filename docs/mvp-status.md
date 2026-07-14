@@ -34,8 +34,11 @@ operation-growth views and bounded semantic dynamics. Adjacent `is_sorted` is
 the first accepted trace adapter: its bounded native trace, exact AST-node
 links, pseudocode highlighting and playback controls are implemented. Seeded
 Explore/Scale generation and deterministic multi-size operation charts are also
-complete. Reverse and insertion remain aggregate/Scale-only, and the extended
-bundle reproducibility gate must be rerun before closure.
+complete. Insertion now has equivalent typed AST/pseudocode and a stateful WASM
+stepper under DEC-059: the browser retains current state rather than a trace,
+while differential tests retain the trace as an oracle. Reverse remains
+aggregate/Scale-only, and the extended bundle reproducibility gate must be
+rerun before closure.
 
 Current corpus progress:
 

@@ -1,0 +1,26 @@
+# Private experiment: structured pseudocode, not a public Atlas format.
+ast-version experimental-0
+ast-id ast.sort.insertion.v0
+algorithm sort.insertion
+parameter values | MutableSequence<T> | Sequence | ReadWrite
+parameter order | TotalOrder<T> | Comparator | Read
+effects mutates values
+effects allocations -
+effects copies -
+begin
+let index | 1
+while index < length(values)
+  let current | index
+  while current > 0
+    operation insertion.current.read | Read | values[current]
+    operation insertion.previous.read | Read | values[current - 1]
+    operation insertion.adjacent.compare | Compare | order(values[current], values[current - 1])
+    if current value is not less
+      break
+    end
+    operation insertion.adjacent.swap | Swap | values[current] <-> values[current - 1]
+    let current | current - 1
+  end
+  let index | index + 1
+end
+return values

@@ -269,6 +269,9 @@ fn known_expression(line: usize, value: &'static str) -> ParseResult<Expression>
         "right - 1",
         "index < length(values)",
         "index + 1",
+        "index",
+        "current > 0",
+        "current - 1",
         "predicate result is true",
         "predicate result is false",
     ];
@@ -303,6 +306,27 @@ fn condition_expression(line: usize, value: &'static str) -> ParseResult<Express
             arguments: vec![left, right],
             result_type: ValueType::Bool,
         })
+    } else if value == "current value is not less" {
+        let values = variable("values", ValueType::Sequence);
+        let current = variable("current", ValueType::Index);
+        Ok(Expression::Call {
+            function: "current_is_not_less",
+            arguments: vec![
+                Expression::Index {
+                    sequence: Box::new(values.clone()),
+                    index: Box::new(current.clone()),
+                },
+                Expression::Index {
+                    sequence: Box::new(values),
+                    index: Box::new(binary(
+                        crate::expressions::BinaryOperator::Subtract,
+                        current,
+                        Expression::Integer(1),
+                    )),
+                },
+            ],
+            result_type: ValueType::Bool,
+        })
     } else {
         expression(line, value)
     }
@@ -314,6 +338,7 @@ mod tests {
 
     const IS_SORTED: &str = include_str!("../pseudocode/is_sorted.atlas-pseudo");
     const PARTITION: &str = include_str!("../pseudocode/partition.atlas-pseudo");
+    const INSERTION: &str = include_str!("../pseudocode/insertion_sort.atlas-pseudo");
 
     #[test]
     fn editable_sources_match_the_rust_ast_builders() {
@@ -324,6 +349,10 @@ mod tests {
         assert_eq!(
             Parser::new(PARTITION).parse(),
             Ok(crate::ast::partition_ast())
+        );
+        assert_eq!(
+            Parser::new(INSERTION).parse(),
+            Ok(crate::ast::insertion_sort_ast())
         );
     }
 

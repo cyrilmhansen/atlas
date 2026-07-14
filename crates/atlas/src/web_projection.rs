@@ -128,12 +128,20 @@ impl<'a> WebProjection<'a> {
                 .map(WebImplementation::from)
                 .collect(),
             datasets,
-            dynamics: vec![WebDynamics {
-                algorithm_id: "order.is_sorted.adjacent",
-                ast_id: "ast.order.is_sorted.adjacent.v0",
-                pseudocode_source: include_str!("../pseudocode/is_sorted.atlas-pseudo"),
-                max_trace_input_length: 64,
-            }],
+            dynamics: vec![
+                WebDynamics {
+                    algorithm_id: "order.is_sorted.adjacent",
+                    ast_id: "ast.order.is_sorted.adjacent.v0",
+                    pseudocode_source: include_str!("../pseudocode/is_sorted.atlas-pseudo"),
+                    max_trace_input_length: 64,
+                },
+                WebDynamics {
+                    algorithm_id: "sort.insertion",
+                    ast_id: "ast.sort.insertion.v0",
+                    pseudocode_source: include_str!("../pseudocode/insertion_sort.atlas-pseudo"),
+                    max_trace_input_length: 32,
+                },
+            ],
         })
     }
 }
@@ -298,6 +306,15 @@ mod tests {
                 .as_str()
                 .unwrap()
                 .contains("operation is-sorted.adjacent.compare | Compare")
+        );
+        assert_eq!(value["dynamics"][1]["algorithm_id"], "sort.insertion");
+        assert_eq!(value["dynamics"][1]["ast_id"], "ast.sort.insertion.v0");
+        assert_eq!(value["dynamics"][1]["max_trace_input_length"], 32);
+        assert!(
+            value["dynamics"][1]["pseudocode_source"]
+                .as_str()
+                .unwrap()
+                .contains("operation insertion.adjacent.swap | Swap")
         );
         assert!(first.contains("order.is_sorted.adjacent"));
     }

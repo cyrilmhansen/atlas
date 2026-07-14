@@ -358,9 +358,9 @@ decision before publication.
 4. Display input, output, checked invariants and deterministic operation counts
    such as comparisons, reads, writes, swaps, copies and requested auxiliary
    storage.
-5. Offer step/run/reset controls only where a semantic trace already exists or
-   a separately tested trace adapter is added. Trace events must identify their
-   exact algorithm or AST operation rather than UI animation frames.
+5. Offer step/run/reset controls through a stateful incremental WASM executor.
+   Its current operation must identify the exact algorithm or AST node. Keep
+   bounded traces as validation/analysis instruments rather than UI timelines.
 6. Optionally display wall-clock duration as a local browser observation with
    dataset, repetitions, browser, target, timer resolution and warnings. It
    must remain visually and semantically separate from complexity claims and
@@ -379,7 +379,7 @@ stability and operation counters without exposing a general plugin system.
 | 1. Static catalog | generated entity pages/search data from the validated registry | exact entity counts, links, provenance and commit digest |
 | 2. Local execution | one small `wasm32` crate exposing curated typed functions | browser results equal native correction fixtures and dataset digests |
 | 3. Characteristics | sourced `O(...)` claims plus deterministic operation counters | theoretical, counted and timed properties remain distinct |
-| 4. Semantic dynamics | bounded trace player for algorithms with validated events | replay is deterministic and every event maps to a declared operation |
+| 4. Semantic dynamics | bounded incremental WASM execution for algorithms with validated operations | replay is deterministic, current operations map to declared AST nodes, and analytical traces remain optional test oracles |
 | 5. Distribution | reproducible static bundle and optional GitHub Pages workflow | clean checkout rebuilds the same logical content; deployment is explicit |
 
 Current status:
@@ -404,13 +404,17 @@ Current status:
 - That first gate is complete: Explore provides pseudocode-linked playback up to
   64 elements, while Scale plots exact comparisons/swaps through 4096 elements
   without treating browser timing as complexity evidence.
-- Reverse and insertion still need separately validated AST/trace adapters. The
-  extended clean-archive bundle manifest must then be recorded again.
+- Insertion adds a typed AST, parser-equivalent pseudocode and a stateful WASM
+  stepper under DEC-059. It retains only the current tagged sequence and is
+  checked operation-by-operation against the analytical trace and finally
+  against native stable insertion. Reverse still needs a separately validated
+  interactive adapter. The extended clean-archive bundle manifest must then be
+  recorded again.
 - External publication remains excluded. Formal closure is reconsidered after
   the dynamics and operation-growth gates, without promoting a public trace API.
 
 Resource limits must be part of the local execution boundary: maximum input
-length, trace-event cap, step budget, cancellation and no network access from
+length, analytical-trace cap, step budget, cancellation and no network access from
 algorithm execution. Custom input is ephemeral and must not be presented as
 registry evidence. Accessibility, keyboard operation and small-screen layout
 are acceptance requirements for a public artifact, not deferred decoration.

@@ -105,6 +105,7 @@ h3 { margin: 0; font-size: 1rem; letter-spacing: 0; }
 .trace-cell.is-read { border-color: var(--blue); background: #e5f0fb; }
 .trace-cell.is-compare { border-color: var(--green); background: var(--green-soft); }
 .trace-cell.is-inversion { border-color: var(--coral); background: var(--coral-soft); }
+.trace-cell.is-swap { border-color: #b77900; background: #fff1c7; }
 .trace-event { min-height: 42px; margin: 10px 0 4px; color: var(--muted); font: 0.72rem/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
 .trace-slider { width: 100%; accent-color: var(--green); }
 .trace-controls { display: flex; align-items: end; gap: 8px; margin-top: 10px; }

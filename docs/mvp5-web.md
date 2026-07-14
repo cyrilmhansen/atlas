@@ -84,6 +84,24 @@ the complete 33-event scan is visible. Inputs with an inversion still stop
 immediately as the native algorithm requires; the final event explicitly labels
 that early return instead of making the short trace look truncated.
 
+Insertion sort uses the incremental model accepted in DEC-059. Its typed AST
+and private textual pseudocode describe the same adjacent stable insertion used
+by the native implementation. A stateful WASM stepper executes one read,
+comparison or swap per `step()` call and retains only the current tagged
+sequence, loop state and counters. The browser never receives a precomputed
+insertion trace or a collection of snapshots. It displays the active exact AST
+node and each element's original index, making both mutation and equal-value
+stability visible.
+
+The pauseable stepper is necessarily a separate implementation of the insertion
+control flow: the generic native Rust function cannot yield and retain its call
+frame at each semantic operation. Rust and Node tests compare every step with
+the bounded analytical trace, then compare the final values, original indices,
+comparisons and swaps with the native implementation. Previous-step and slider
+navigation reset the WASM state and deterministically re-execute to the chosen
+position. The 32-element insertion Explore bound keeps this replay bounded;
+Scale execution through 4096 elements remains aggregate and trace-free.
+
 The Scale chart runs complete generated sequences at increasing sizes and plots
 deterministic comparisons or swaps. It illustrates profile-dependent operation
 growth only. It neither derives asymptotic complexity nor replaces the sourced
@@ -101,8 +119,10 @@ algorithm-only timing nor portable benchmark evidence.
 - Projection JSON and generated bindings are ignored build products.
 - MIR and target code are not executed in the browser; native Rust/WASM remains
   the dynamics and correction path.
-- Reverse and insertion expose Scale counts but do not yet have validated
-  pseudocode/AST trace adapters.
+- Reverse exposes Scale counts but does not yet have a validated pseudocode or
+  interactive execution adapter.
+- `is_sorted` still materializes a bounded analytical trace for presentation;
+  migrating it to the incremental WASM model is a later internal improvement.
 
 ## Reproducible bundle gate
 

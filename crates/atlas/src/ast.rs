@@ -445,7 +445,7 @@ fn e(source: &'static str) -> Expression {
     match source {
         "0" => Expression::Integer(0),
         "values" => values(),
-        "middle" | "boundary" | "index" => index(source),
+        "middle" | "boundary" | "index" | "current" => index(source),
         "length(values)" => Expression::Length(Box::new(values())),
         "floor(length(values) / 2)" => binary(
             Bin::Divide,
@@ -463,9 +463,11 @@ fn e(source: &'static str) -> Expression {
             index("index"),
             Expression::Length(Box::new(values())),
         ),
+        "current > 0" => binary(Bin::LessThan, Expression::Integer(0), index("current")),
         "left + 1" => binary(Bin::Add, index("left"), Expression::Integer(1)),
         "index + 1" => binary(Bin::Add, index("index"), Expression::Integer(1)),
         "index - 1" => binary(Bin::Subtract, index("index"), Expression::Integer(1)),
+        "current - 1" => binary(Bin::Subtract, index("current"), Expression::Integer(1)),
         "right - 1" => binary(Bin::Subtract, index("right"), Expression::Integer(1)),
         "left maximum <= right minimum" => Expression::Call {
             function: "runs_are_ordered",
@@ -549,6 +551,18 @@ fn operation_operands(id: &str) -> Vec<Expression> {
                 binary(Bin::Subtract, index("index"), Expression::Integer(1)),
             ),
             at(values(), index("index")),
+        ],
+        "insertion.current.read" => vec![at(values(), index("current"))],
+        "insertion.previous.read" => vec![at(
+            values(),
+            binary(Bin::Subtract, index("current"), Expression::Integer(1)),
+        )],
+        "insertion.adjacent.compare" | "insertion.adjacent.swap" => vec![
+            at(values(), index("current")),
+            at(
+                values(),
+                binary(Bin::Subtract, index("current"), Expression::Integer(1)),
+            ),
         ],
         id if id.ends_with(".assert") => vec![Expression::Call {
             function: "invariant",
@@ -878,17 +892,121 @@ pub fn is_sorted_ast() -> AlgorithmAst {
     }
 }
 
+pub fn insertion_sort_ast() -> AlgorithmAst {
+    use SemanticOperation as Op;
+    AlgorithmAst {
+        ast_version: "experimental-0",
+        id: "ast.sort.insertion.v0",
+        algorithm_id: "sort.insertion",
+        parameters: vec![
+            Parameter {
+                name: "values",
+                data_type: "MutableSequence<T>",
+                value_type: ValueType::Sequence,
+                mode: ParameterMode::ReadWrite,
+            },
+            Parameter {
+                name: "order",
+                data_type: "TotalOrder<T>",
+                value_type: ValueType::Comparator,
+                mode: ParameterMode::Read,
+            },
+        ],
+        effects: EffectSummary {
+            mutates: vec!["values"],
+            allocations: vec![],
+            copies: vec![],
+        },
+        body: vec![
+            Statement::Let {
+                name: "index",
+                expression: Expression::Integer(1),
+            },
+            Statement::While {
+                condition: e("index < length(values)"),
+                body: vec![
+                    Statement::Let {
+                        name: "current",
+                        expression: e("index"),
+                    },
+                    Statement::While {
+                        condition: e("current > 0"),
+                        body: vec![
+                            operation("insertion.current.read", Op::Read, "values[current]"),
+                            operation("insertion.previous.read", Op::Read, "values[current - 1]"),
+                            operation(
+                                "insertion.adjacent.compare",
+                                Op::Compare,
+                                "order(values[current], values[current - 1])",
+                            ),
+                            Statement::If {
+                                condition: Expression::Call {
+                                    function: "current_is_not_less",
+                                    arguments: operation_operands("insertion.adjacent.compare"),
+                                    result_type: ValueType::Bool,
+                                },
+                                then_branch: vec![Statement::Break],
+                                else_branch: vec![],
+                            },
+                            operation(
+                                "insertion.adjacent.swap",
+                                Op::Swap,
+                                "values[current] <-> values[current - 1]",
+                            ),
+                            Statement::Let {
+                                name: "current",
+                                expression: e("current - 1"),
+                            },
+                        ],
+                    },
+                    Statement::Let {
+                        name: "index",
+                        expression: e("index + 1"),
+                    },
+                ],
+            },
+            Statement::Return {
+                expression: e("values"),
+            },
+        ],
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{SemanticOperation, Statement, is_sorted_ast, merge_sort_ast, partition_ast};
+    use super::{
+        SemanticOperation, Statement, insertion_sort_ast, is_sorted_ast, merge_sort_ast,
+        partition_ast,
+    };
 
     #[test]
     fn both_models_are_valid_and_render_deterministically() {
-        for ast in [merge_sort_ast(), partition_ast(), is_sorted_ast()] {
+        for ast in [
+            merge_sort_ast(),
+            partition_ast(),
+            is_sorted_ast(),
+            insertion_sort_ast(),
+        ] {
             assert!(ast.validate().is_empty());
             assert_eq!(ast.render(), ast.render());
             assert!(ast.render().contains("effects mutate="));
         }
+    }
+
+    #[test]
+    fn insertion_model_exposes_stable_adjacent_swaps_without_allocation() {
+        let ast = insertion_sort_ast();
+        assert!(ast.validate().is_empty());
+        assert_eq!(ast.effects.mutates, ["values"]);
+        assert!(ast.effects.allocations.is_empty());
+        assert_eq!(
+            ast.operation_by_id("insertion.adjacent.compare"),
+            Some(SemanticOperation::Compare)
+        );
+        assert_eq!(
+            ast.operation_by_id("insertion.adjacent.swap"),
+            Some(SemanticOperation::Swap)
+        );
     }
 
     #[test]

@@ -1,5 +1,33 @@
 # Progress log
 
+## 2026-07-15 - Complete K-M3 streaming and approximation batch
+
+### Result
+
+- Added six contracts and six tested adapters for bounded top-k, online moments,
+  reservoir sampling and Bloom approximate membership.
+- Distinguished exact, floating-sensitive, randomized, seed-conditioned and
+  one-sided approximate guarantees without changing schema 0.1.
+- Recorded primary paper provenance and declared every translation from paper
+  semantics to the test-only Rust adapters.
+- Raised the corpus to 31 problems, 36 algorithms and 40 implementations.
+
+### Verification
+
+- Five focused tests cover exact top-k bounds, two-pass moment agreement,
+  large-offset rounding, seed replay and Bloom false-positive behavior.
+- Registry tests preserve numerical requirements, randomized identity and
+  approximation guarantees; the SQLite projection contains 107 entities and 76
+  relations.
+
+### Limits
+
+- Tests do not prove pseudo-random distribution quality, Bloom hash independence
+  or a universal floating-point error bound.
+- Seed identity, probability/error guarantees and floating environment remain
+  text rather than generically queryable schema properties.
+- K-M4 dual import should precede a public schema proposal.
+
 ## 2026-07-15 - Complete K-M2 dynamic-structure corpus batch
 
 ### Result

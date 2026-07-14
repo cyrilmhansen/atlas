@@ -437,6 +437,121 @@ problems:
         - "colliding unequal keys and values remain present"
       level: tested
       source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: stream.top_k
+    input:
+      value: "stream: FiniteStream<T>; capacity: usize; order: TotalOrder<T>"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    output:
+      value: "result: Sequence<T>"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    ensures:
+      value:
+        - "result contains exactly min(capacity, stream length) input occurrences"
+        - "no omitted occurrence is greater than a retained occurrence"
+        - "capacity zero produces an empty result"
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+  - id: stream.population_moments
+    input:
+      value: "stream: FiniteStream<FiniteF64>"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    requires:
+      value:
+        - "stream length is representable by the implementation count and its floating conversion"
+        - "intermediate deltas, products and sums remain finite"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    output:
+      value: "count: u64; mean: f64; population_variance: Option<f64>"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    ensures:
+      value:
+        - "count equals the number of consumed values"
+        - "population_variance is none exactly for an empty stream"
+        - "over exact real arithmetic, mean and population_variance equal the corresponding stream moments"
+      level: declared
+      source: "docs:https://doi.org/10.1080/00401706.1962.10490022"
+  - id: stream.uniform_sample_without_replacement
+    input:
+      value: "stream: FiniteStream<T>; capacity: usize; random_source: UniformIndependentDraws"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    requires:
+      value:
+        - "each requested random integer is uniform over its stated range and independent of prior draws"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    output:
+      value: "result: Sequence<T>"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    ensures:
+      value:
+        - "result contains min(capacity, stream length) distinct input positions"
+        - "each input position has equal probability of appearing in result"
+        - "a fixed random draw sequence produces a fixed result"
+      level: declared
+      source: "docs:https://dl.acm.org/doi/10.1145/3147.3165"
+  - id: approximate_membership.construct
+    input:
+      value: "bit_count: PositiveUsize; hash_count: PositiveU32; hashes: HashFamily<T>"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    output:
+      value: "state: ApproximateMembershipFilter<T>"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    ensures:
+      value:
+        - "state contains exactly bit_count cleared bits and retains hash_count and hashes"
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+  - id: approximate_membership.insert
+    input:
+      value: "state: ApproximateMembershipFilter<T>; item: T"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    requires:
+      value:
+        - "the configured hashes are deterministic and return valid bit positions"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    output:
+      value: "state_after: ApproximateMembershipFilter<T>"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    ensures:
+      value:
+        - "every bit selected for item is set"
+        - "no previously set bit is cleared"
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+  - id: approximate_membership.query
+    input:
+      value: "state: ApproximateMembershipFilter<T>; item: T; inserted_count: usize"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    requires:
+      value:
+        - "the same hash family is used for insertion and query"
+        - "the false-positive estimate assumes independent uniform hash positions"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    output:
+      value: "result: DefinitelyAbsent | PossiblyPresent; state_after: Identical<input.state>"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    ensures:
+      value:
+        - "an inserted item is never reported DefinitelyAbsent"
+        - "PossiblyPresent may be a false positive but never claims exact membership"
+        - "under the stated hash model, the false-positive probability is approximately (1 - exp(-hash_count * inserted_count / bit_count))^hash_count"
+      level: declared
+      source: "docs:https://dl.acm.org/doi/10.1145/362686.362692"
 
 algorithms:
   - id: sort.merge.top_down
@@ -1125,6 +1240,123 @@ algorithms:
       value: "O(1); allocated table capacity is retained"
       level: declared
       source: "docs:https://docs.rs/hashbrown/0.17.1/hashbrown/struct.HashMap.html#method.remove"
+  - id: stream.top_k.min_heap
+    solves: stream.top_k
+    name:
+      value: "bounded top-k with a minimum heap"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    time_worst:
+      value: "O(n log k)"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    auxiliary_memory:
+      value: "O(k) persistent retained elements"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+  - id: stream.moments.welford
+    solves: stream.population_moments
+    name:
+      value: "Welford online mean and corrected sum of squares"
+      level: declared
+      source: "docs:https://doi.org/10.1080/00401706.1962.10490022"
+    requires:
+      value:
+        - "floating-point rounding, overflow and conditioning may prevent exact real-arithmetic equality"
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    time_worst:
+      value: "O(n)"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    auxiliary_memory:
+      value: "O(1)"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+  - id: stream.sample.reservoir_r
+    solves: stream.uniform_sample_without_replacement
+    name:
+      value: "Vitter reservoir sampling Algorithm R"
+      level: declared
+      source: "docs:https://dl.acm.org/doi/10.1145/3147.3165"
+    deterministic:
+      value: false
+      level: declared
+      source: "docs:https://dl.acm.org/doi/10.1145/3147.3165"
+    time_worst:
+      value: "O(n)"
+      level: declared
+      source: "docs:https://dl.acm.org/doi/10.1145/3147.3165"
+    auxiliary_memory:
+      value: "O(k) reservoir storage"
+      level: declared
+      source: "docs:https://dl.acm.org/doi/10.1145/3147.3165"
+  - id: approximate_membership.bloom.construct
+    solves: approximate_membership.construct
+    name:
+      value: "Bloom bit-field construction"
+      level: declared
+      source: "docs:https://dl.acm.org/doi/10.1145/362686.362692"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    time_worst:
+      value: "O(m)"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    auxiliary_memory:
+      value: "O(m) persistent bits"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+  - id: approximate_membership.bloom.insert
+    solves: approximate_membership.insert
+    name:
+      value: "Bloom multi-hash bit insertion"
+      level: declared
+      source: "docs:https://dl.acm.org/doi/10.1145/362686.362692"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    in_place:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    time_worst:
+      value: "O(h)"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    auxiliary_memory:
+      value: "O(1) excluding persistent filter state"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+  - id: approximate_membership.bloom.query
+    solves: approximate_membership.query
+    name:
+      value: "Bloom multi-hash approximate membership query"
+      level: declared
+      source: "docs:https://dl.acm.org/doi/10.1145/362686.362692"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    time_worst:
+      value: "O(h)"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
+    auxiliary_memory:
+      value: "O(1) excluding persistent filter state"
+      level: inferred
+      source: "docs:phase2/k-m3-streaming-approximation.md"
 
 implementations:
   - id: sort.merge.rust.slice.v1
@@ -2409,5 +2641,115 @@ implementations:
       value: ["external_dynamic_structure_adapters::hashbrown_adapter_stably_deduplicates_without_atlas_algorithm_code"]
       level: tested
       source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs"
+  - id: stream.top_k.rust.std_binary_heap.v1
+    implements: stream.top_k.min_heap
+    language: { value: rust, level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    version: { value: "0.1.0", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT", level: declared, source: "file:Cargo.toml" }
+    target: { value: "Rust target with std; integration adapter only", level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    dependencies: { value: ["Rust standard library BinaryHeap"], level: declared, source: "docs:https://doc.rust-lang.org/1.85.0/std/collections/struct.BinaryHeap.html" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "external_streaming_adapters::bounded_top_k", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    signature: { value: "fn bounded_top_k(values: &[i32], k: usize) -> Vec<i32>", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    effects:
+      value: { mutates: [retained_heap], io: none, blocking: false, allocation: "allocates at most k retained heap elements and at most k output elements" }
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+    tests:
+      value: ["external_streaming_adapters::bounded_top_k_is_exact_and_never_exceeds_its_budget"]
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+  - id: stream.moments.welford.rust.f64.v1
+    implements: stream.moments.welford
+    language: { value: rust, level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    version: { value: "0.1.0", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT", level: declared, source: "file:Cargo.toml" }
+    target: { value: "Rust target with IEEE-754 binary64 f64; integration adapter only", level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    dependencies: { value: [], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "external_streaming_adapters::OnlineMoments::update", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    signature: { value: "fn update(&mut self, value: f64)", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    effects:
+      value: { mutates: [state.count, state.mean, state.m2], io: none, blocking: false, allocation: none }
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+    tests:
+      value:
+        - "external_streaming_adapters::online_moments_match_two_pass_population_statistics"
+        - "external_streaming_adapters::online_moments_remain_accurate_for_large_offset_small_spread"
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+  - id: stream.sample.reservoir_r.rust.splitmix64.v1
+    implements: stream.sample.reservoir_r
+    language: { value: rust, level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    version: { value: "0.1.0", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT", level: declared, source: "file:Cargo.toml" }
+    target: { value: "Rust target with std; integration adapter only", level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    dependencies: { value: [], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "external_streaming_adapters::reservoir_sample", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    signature: { value: "fn reservoir_sample(values: &[i32], capacity: usize, seed: u64) -> Vec<i32>", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    effects:
+      value: { mutates: [random_state], io: none, blocking: false, allocation: "allocates at most capacity reservoir elements" }
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+    tests:
+      value: ["external_streaming_adapters::reservoir_sample_is_seed_reproducible_and_bounded"]
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+  - id: approximate_membership.construct.rust.bitvec.v1
+    implements: approximate_membership.bloom.construct
+    language: { value: rust, level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    version: { value: "0.1.0", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT", level: declared, source: "file:Cargo.toml" }
+    target: { value: "Rust target with std; integration adapter only", level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    dependencies: { value: [], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "external_streaming_adapters::BloomFilter::new", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    signature: { value: "fn new(bit_count: usize, hash_count: u32) -> BloomFilter", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    effects:
+      value: { mutates: [], io: none, blocking: false, allocation: "allocates exactly bit_count persistent filter bits plus Vec metadata" }
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+    tests:
+      value: ["external_streaming_adapters::bloom_filter_has_no_false_negatives_and_can_return_false_positives"]
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+  - id: approximate_membership.insert.rust.bitvec.v1
+    implements: approximate_membership.bloom.insert
+    language: { value: rust, level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    version: { value: "0.1.0", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT", level: declared, source: "file:Cargo.toml" }
+    target: { value: "Rust target with std; integration adapter only", level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    dependencies: { value: [], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "external_streaming_adapters::BloomFilter::insert", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    signature: { value: "fn insert(&mut self, value: u64)", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    effects:
+      value: { mutates: [state.bits], io: none, blocking: false, allocation: none }
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+    tests:
+      value: ["external_streaming_adapters::bloom_filter_has_no_false_negatives_and_can_return_false_positives"]
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+  - id: approximate_membership.query.rust.bitvec.v1
+    implements: approximate_membership.bloom.query
+    language: { value: rust, level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    version: { value: "0.1.0", level: declared, source: "file:crates/atlas/Cargo.toml" }
+    license: { value: "MIT", level: declared, source: "file:Cargo.toml" }
+    target: { value: "Rust target with std; integration adapter only", level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    dependencies: { value: [], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "external_streaming_adapters::BloomFilter::might_contain", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    signature: { value: "fn might_contain(&self, value: u64) -> bool", level: declared, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    effects:
+      value: { mutates: [], io: none, blocking: false, allocation: none }
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+    tests:
+      value: ["external_streaming_adapters::bloom_filter_has_no_false_negatives_and_can_return_false_positives"]
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
 
 executions: []

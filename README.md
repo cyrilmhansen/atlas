@@ -12,11 +12,12 @@ DEC-050 adds a private read-only `is_sorted` guest import and DEC-051 adds
 checked `reverse` mutation. Latency, executable allocation footprint and
 multi-region memory remain separate work.
 
-The authoritative registry now contains 25 problems, 30 algorithms, and 34
+The authoritative registry now contains 31 problems, 36 algorithms, and 40
 implementations: the 10/15/20 MVP 1 sequence baseline plus the first external
 graph and dynamic-structure batches. The latter separates union-find, binary
 heap and collision-aware hash-table operations and adds tested petgraph,
-standard-library and hashbrown boundaries. Schema hardening, local evidence
+standard-library and hashbrown boundaries. A streaming batch adds bounded
+top-k, online moments, reservoir sampling and Bloom membership. Schema hardening, local evidence
 integrity, deterministic indexing, the acceptance gate, and the local Git
 baseline are complete.
 

@@ -50,9 +50,9 @@ fn accepts_the_committed_registry() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../registry/atlas.yaml");
     let registry = load_registry(&path).expect("committed registry must be valid");
 
-    assert_eq!(registry.problems.len(), 25);
-    assert_eq!(registry.algorithms.len(), 30);
-    assert_eq!(registry.implementations.len(), 34);
+    assert_eq!(registry.problems.len(), 31);
+    assert_eq!(registry.algorithms.len(), 36);
+    assert_eq!(registry.implementations.len(), 40);
     assert!(registry.executions.is_empty());
     let linear_search = registry
         .algorithms
@@ -95,7 +95,7 @@ fn accepts_the_committed_registry() {
         .iter()
         .filter(|implementation| implementation.version.value == "0.1.0")
         .collect::<Vec<_>>();
-    assert_eq!(atlas_implementations.len(), 21);
+    assert_eq!(atlas_implementations.len(), 27);
     assert!(
         atlas_implementations
             .iter()
@@ -180,6 +180,49 @@ fn committed_registry_keeps_dynamic_operations_and_cost_scopes_separate() {
         .expect("hashbrown lookup implementation must be present");
     assert!(lookup.effects.value.mutates.is_empty());
     assert_eq!(lookup.effects.value.allocation, "none");
+}
+
+#[test]
+fn committed_registry_distinguishes_exact_randomized_and_approximate_streams() {
+    let registry = parse(VALID_REGISTRY);
+
+    let top_k = registry
+        .algorithms
+        .iter()
+        .find(|algorithm| algorithm.id == "stream.top_k.min_heap")
+        .expect("bounded top-k must be present");
+    assert!(top_k.deterministic.value);
+    assert_eq!(
+        top_k.auxiliary_memory.value,
+        "O(k) persistent retained elements"
+    );
+
+    let reservoir = registry
+        .algorithms
+        .iter()
+        .find(|algorithm| algorithm.id == "stream.sample.reservoir_r")
+        .expect("reservoir sampling must be present");
+    assert!(!reservoir.deterministic.value);
+
+    let moments = registry
+        .problems
+        .iter()
+        .find(|problem| problem.id == "stream.population_moments")
+        .expect("online moments must be present");
+    assert_eq!(moments.requires.as_ref().unwrap().value.len(), 2);
+
+    let bloom_query = registry
+        .problems
+        .iter()
+        .find(|problem| problem.id == "approximate_membership.query")
+        .expect("Bloom query must be present");
+    assert!(
+        bloom_query
+            .ensures
+            .value
+            .iter()
+            .any(|claim| claim.contains("false-positive probability"))
+    );
 }
 
 #[test]
@@ -444,7 +487,7 @@ fn cli_accepts_an_explicit_registry_path() {
         "stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(String::from_utf8_lossy(&output.stdout).contains("Validated 25 problem(s)"));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Validated 31 problem(s)"));
 }
 
 #[test]
@@ -1390,7 +1433,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
     let first = run();
     assert!(first.status.success());
     let first_stdout = String::from_utf8(first.stdout).expect("UTF-8 CLI output");
-    assert!(first_stdout.contains("Indexed 89 entities, 64 relations,"));
+    assert!(first_stdout.contains("Indexed 107 entities, 76 relations,"));
     let first_digest = first_stdout
         .lines()
         .find(|line| line.starts_with("Logical SHA-256: "))
@@ -1422,7 +1465,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(entities, 89);
+    assert_eq!(entities, 107);
     assert_eq!(stale, 0);
     drop(connection);
     fs::remove_file(database).unwrap();

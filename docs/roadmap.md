@@ -9,7 +9,7 @@ decision record differ.
 MVP 1 through MVP 6 are closed. No subsequent MVP is active. GitHub CI runs the
 reproducible MVP 2 acceptance gate, all workspace targets, the RV64 LP64 probe
 and the MIR RV64 generator probe on pushes and pull requests. The project has a
-Git-authoritative YAML registry (25 problems, 30 algorithms and 34
+Git-authoritative YAML registry (31 problems, 36 algorithms and 40
 implementations), a rebuildable SQLite projection, deterministic datasets and
 reproducible local observations, plus five bounded composition scenarios with
 compiled Rust orchestration. The current counts include the 10/15/20 MVP 1
@@ -51,7 +51,14 @@ The batch demonstrates generic candidate discovery and allocation qualification
 without query changes. It also independently reproduces two model pressures:
 amortized sequence costs and typed persistent-state continuity. Both remain
 documented rather than silently forced into schema 0.1. K-M3 streaming and
-approximation is next.
+approximation is complete.
+
+K-M3 adds exact bounded top-k, numerically sensitive online moments,
+seed-reproducible reservoir sampling and one-sided Bloom membership. It confirms
+that randomness identity, seed-conditioned determinism, numerical error and
+probabilistic accuracy are decision-relevant properties absent from schema 0.1.
+K-M4 independent dual import is next; it should test normalization consistency
+before any public schema proposal.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

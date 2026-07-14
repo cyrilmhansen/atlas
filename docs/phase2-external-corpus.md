@@ -187,6 +187,11 @@ Acceptance:
 
 ### K-M3 - Streaming and approximation corpus batch
 
+Status: complete. Exact bounded top-k, Welford online moments, Vitter reservoir
+sampling and Bloom approximate membership add six contracts and six tested
+adapters. Numerical, random and probabilistic modeling losses are recorded in
+`docs/phase2/k-m3-streaming-approximation.md`; schema 0.1 remains unchanged.
+
 Import exact and approximate bounded-state algorithms, including at least one
 randomized and one numerically sensitive example.
 

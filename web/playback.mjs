@@ -14,8 +14,10 @@ export function playbackDelay(value) {
   return delay;
 }
 
-export function isInsertionLoopContext(controlId, mode, done) {
-  return mode === "stepper"
-    && !done
-    && (controlId === "insertion.outer-loop" || controlId === "insertion.inner-loop");
+export function isLoopContext(controlId, algorithm, done) {
+  if (done) return false;
+  if (algorithm === "insertion") {
+    return controlId === "insertion.outer-loop" || controlId === "insertion.inner-loop";
+  }
+  return algorithm === "reverse" && controlId === "reverse.loop";
 }

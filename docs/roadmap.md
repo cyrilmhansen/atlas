@@ -409,9 +409,10 @@ Current status:
 - Insertion adds a typed AST, parser-equivalent pseudocode and a stateful WASM
   stepper under DEC-059. It retains only the current tagged sequence and is
   checked operation-by-operation against the analytical trace and finally
-  against native stable insertion. Reverse still needs a separately validated
-  interactive adapter. The extended clean-archive bundle manifest must then be
-  recorded again.
+  against native stable insertion. Reverse adds a typed symmetric-pair AST,
+  parser-equivalent pseudocode and a stepper checked against native mutation,
+  exact structural counts and involution. The three curated dynamics adapters
+  are complete; the extended clean-archive bundle manifest must now be recorded.
 - External publication remains excluded. Formal closure is reconsidered after
   the dynamics and operation-growth gates, without promoting a public trace API.
 

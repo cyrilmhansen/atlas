@@ -1,12 +1,13 @@
 import init, {
   InsertionSortStepper,
   IsSortedStepper,
+  ReverseStepper,
   observe_insertion_sort_i32,
   observe_is_sorted_i32,
   observe_reverse_i32,
 } from "./pkg/atlas_web.js";
 import { EXPLORE_MAX_LENGTH, generateSequence, randomSeed } from "./generator.mjs";
-import { PLAYBACK_SPEEDS, isInsertionLoopContext, playbackDelay } from "./playback.mjs";
+import { PLAYBACK_SPEEDS, isLoopContext, playbackDelay } from "./playback.mjs";
 
 const algorithmUi = {
   is_sorted: {
@@ -34,7 +35,7 @@ const algorithmUi = {
   reverse: {
     id: "reverse.symmetric.in_place",
     dataset: "sort.regression.duplicates",
-    boundary: "Algorithm is in-place; the Web observation copies output for display.",
+    boundary: "The incremental algorithm state stays in WASM; each displayed state copies current values and origins only.",
     resultLabel: "Correction + involution",
     comparisonLabel: "Semantic reads / writes",
     secondaryLabel: "Symmetric swaps",
@@ -118,7 +119,9 @@ function pseudocodeLine(sourceLine) {
   if (text.startsWith("while ") || text.startsWith("if ") || text === "end") {
     const controlId = text === "while index < length(values)"
       ? "insertion.outer-loop"
-      : text === "while current > 0" ? "insertion.inner-loop" : undefined;
+      : text === "while current > 0"
+        ? "insertion.inner-loop"
+        : text === "while left < floor(length(values) / 2)" ? "reverse.loop" : undefined;
     return { text, indent, kind: "control", controlId };
   }
   if (text.startsWith("return ")) return { text, indent, kind: "return" };
@@ -154,7 +157,8 @@ function traceEventLabel(event) {
     return `${event.nodeId}: read values[${event.leftIndex}] = ${tracePlayback.values[event.leftIndex]}`;
   }
   if (event.operation === "Swap") {
-    return `${event.nodeId}: swap adjacent positions #${event.leftIndex} and #${event.rightIndex}; the WASM state is now updated.`;
+    const relation = tracePlayback.algorithm === "reverse" ? "symmetric" : "adjacent";
+    return `${event.nodeId}: swap ${relation} positions #${event.leftIndex} and #${event.rightIndex}; the WASM state is now updated.`;
   }
   const symbols = ["<", "=", ">"];
   const comparison = `${event.nodeId}: compare values[${event.leftIndex}] ${symbols[event.ordering + 1]} values[${event.rightIndex}]`;
@@ -191,7 +195,7 @@ function renderTraceState() {
     const label = document.createElement("span");
     label.textContent = String(value);
     const position = document.createElement("small");
-    position.textContent = tracePlayback.algorithm === "insertion"
+    position.textContent = tracePlayback.algorithm !== "is_sorted"
       ? `from #${tracePlayback.originalIndices[index]}`
       : `#${index}`;
     cell.append(label, position);
@@ -201,19 +205,26 @@ function renderTraceState() {
     line.classList.toggle("is-active", Boolean(event) && line.dataset.nodeId === event.nodeId);
     line.classList.toggle(
       "is-context",
-      isInsertionLoopContext(
+      isLoopContext(
         line.dataset.controlId,
-        tracePlayback.algorithm === "insertion" ? "stepper" : null,
+        tracePlayback.algorithm,
         Boolean(tracePlayback.stepper?.done),
       ),
     );
   });
-  const showsLoopContext = tracePlayback.algorithm === "insertion" && Boolean(tracePlayback.stepper);
+  const showsLoopContext = ["insertion", "reverse"].includes(tracePlayback.algorithm)
+    && Boolean(tracePlayback.stepper);
   elements["execution-context"].hidden = !showsLoopContext;
   if (showsLoopContext) {
-    elements["execution-context"].textContent = tracePlayback.stepper.done
-      ? `outer index ${tracePlayback.stepper.outer_index} · loop complete`
-      : `outer index ${tracePlayback.stepper.outer_index} · current index ${tracePlayback.stepper.current_index}`;
+    if (tracePlayback.algorithm === "reverse") {
+      elements["execution-context"].textContent = tracePlayback.stepper.done
+        ? `left index ${tracePlayback.stepper.left_index} · loop complete`
+        : `left index ${tracePlayback.stepper.left_index} · right index ${tracePlayback.stepper.right_index}`;
+    } else {
+      elements["execution-context"].textContent = tracePlayback.stepper.done
+        ? `outer index ${tracePlayback.stepper.outer_index} · loop complete`
+        : `outer index ${tracePlayback.stepper.outer_index} · current index ${tracePlayback.stepper.current_index}`;
+    }
   }
   const atEnd = Boolean(tracePlayback.stepper?.done);
   const stoppedEarly = tracePlayback.algorithm === "is_sorted"
@@ -227,7 +238,9 @@ function renderTraceState() {
     : atEnd
       ? tracePlayback.algorithm === "is_sorted"
         ? "No adjacent pair exists; return true without a read or comparison."
-        : "No insertion step is required; the sequence is already complete."
+        : tracePlayback.algorithm === "reverse"
+          ? "No symmetric pair exists; the sequence is already complete."
+          : "No insertion step is required; the sequence is already complete."
       : "Initial WASM state; advance to execute the first semantic operation.";
   elements["trace-slider"].value = String(tracePlayback.index + 1);
   updateTraceControls();
@@ -249,7 +262,7 @@ function setTraceIndex(index) {
 function readStepperState() {
   const stepper = tracePlayback.stepper;
   tracePlayback.values = Array.from(stepper.values);
-  tracePlayback.originalIndices = tracePlayback.algorithm === "insertion"
+  tracePlayback.originalIndices = tracePlayback.algorithm !== "is_sorted"
     ? Array.from(stepper.original_indices)
     : [];
   tracePlayback.index = stepper.steps - 1;
@@ -274,9 +287,10 @@ function prepareStepper(values, algorithm) {
   }
   tracePlayback.algorithm = algorithm;
   tracePlayback.input = [...values];
+  const input = new Int32Array(values);
   tracePlayback.stepper = algorithm === "insertion"
-    ? new InsertionSortStepper(new Int32Array(values))
-    : new IsSortedStepper(new Int32Array(values));
+    ? new InsertionSortStepper(input)
+    : algorithm === "reverse" ? new ReverseStepper(input) : new IsSortedStepper(input);
   readStepperState();
   renderTraceState();
 }
@@ -509,7 +523,6 @@ function runInsertionSort(values) {
 }
 
 function runReverse(values) {
-  clearTrace("Interactive semantic execution is not exposed for this algorithm yet.");
   const input = new Int32Array(values);
   const observation = observe_reverse_i32(input);
   const output = Array.from(observation.values);
@@ -529,6 +542,7 @@ function runReverse(values) {
   elements["comparison-count"].textContent = `${observation.reads} / ${observation.writes}`;
   elements["inversion-index"].textContent = String(observation.swaps);
   renderSequence(output, { originalIndices: values.map((_, index) => values.length - 1 - index) });
+  prepareStepper(values, "reverse");
   displayTiming(timing, "JS/WASM reverse observation");
   restored.free();
   observation.free();

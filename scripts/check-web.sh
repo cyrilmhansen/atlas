@@ -21,6 +21,7 @@ node web/tests/is_sorted_stepper.cjs "$node_output/atlas_web.js"
 node web/tests/insertion_sort.cjs "$node_output/atlas_web.js"
 node web/tests/insertion_stepper.cjs "$node_output/atlas_web.js"
 node web/tests/reverse.cjs "$node_output/atlas_web.js"
+node web/tests/reverse_stepper.cjs "$node_output/atlas_web.js"
 node web/tests/generator.mjs
 node web/tests/playback.mjs
 node web/tests/scale_growth.mjs "$node_output/atlas_web.js"

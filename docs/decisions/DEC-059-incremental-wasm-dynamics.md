@@ -31,4 +31,5 @@ analytical trace remains limited to 32 elements.
 - The WASM class and Web projection remain private MVP interfaces, not a stable
   runtime protocol or public trace schema.
 - The existing `is_sorted` trace player was subsequently migrated to the same
-  execution model. Both traces are now restricted to tests and analysis.
+  execution model, and reverse added a stepper without a dedicated trace. The
+  existing traces are now restricted to tests and analysis.

@@ -272,6 +272,8 @@ fn known_expression(line: usize, value: &'static str) -> ParseResult<Expression>
         "index",
         "current > 0",
         "current - 1",
+        "left < floor(length(values) / 2)",
+        "length(values) - 1 - left",
         "predicate result is true",
         "predicate result is false",
     ];
@@ -339,6 +341,7 @@ mod tests {
     const IS_SORTED: &str = include_str!("../pseudocode/is_sorted.atlas-pseudo");
     const PARTITION: &str = include_str!("../pseudocode/partition.atlas-pseudo");
     const INSERTION: &str = include_str!("../pseudocode/insertion_sort.atlas-pseudo");
+    const REVERSE: &str = include_str!("../pseudocode/reverse.atlas-pseudo");
 
     #[test]
     fn editable_sources_match_the_rust_ast_builders() {
@@ -354,6 +357,7 @@ mod tests {
             Parser::new(INSERTION).parse(),
             Ok(crate::ast::insertion_sort_ast())
         );
+        assert_eq!(Parser::new(REVERSE).parse(), Ok(crate::ast::reverse_ast()));
     }
 
     #[test]

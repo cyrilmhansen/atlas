@@ -445,7 +445,7 @@ fn e(source: &'static str) -> Expression {
     match source {
         "0" => Expression::Integer(0),
         "values" => values(),
-        "middle" | "boundary" | "index" | "current" => index(source),
+        "middle" | "boundary" | "index" | "current" | "left" | "right" => index(source),
         "length(values)" => Expression::Length(Box::new(values())),
         "floor(length(values) / 2)" => binary(
             Bin::Divide,
@@ -464,11 +464,29 @@ fn e(source: &'static str) -> Expression {
             Expression::Length(Box::new(values())),
         ),
         "current > 0" => binary(Bin::LessThan, Expression::Integer(0), index("current")),
+        "left < floor(length(values) / 2)" => binary(
+            Bin::LessThan,
+            index("left"),
+            binary(
+                Bin::Divide,
+                Expression::Length(Box::new(values())),
+                Expression::Integer(2),
+            ),
+        ),
         "left + 1" => binary(Bin::Add, index("left"), Expression::Integer(1)),
         "index + 1" => binary(Bin::Add, index("index"), Expression::Integer(1)),
         "index - 1" => binary(Bin::Subtract, index("index"), Expression::Integer(1)),
         "current - 1" => binary(Bin::Subtract, index("current"), Expression::Integer(1)),
         "right - 1" => binary(Bin::Subtract, index("right"), Expression::Integer(1)),
+        "length(values) - 1 - left" => binary(
+            Bin::Subtract,
+            binary(
+                Bin::Subtract,
+                Expression::Length(Box::new(values())),
+                Expression::Integer(1),
+            ),
+            index("left"),
+        ),
         "left maximum <= right minimum" => Expression::Call {
             function: "runs_are_ordered",
             arguments: vec![values(), index("middle")],
@@ -564,6 +582,9 @@ fn operation_operands(id: &str) -> Vec<Expression> {
                 binary(Bin::Subtract, index("current"), Expression::Integer(1)),
             ),
         ],
+        "reverse.left.read" => vec![at(values(), index("left"))],
+        "reverse.right.read" => vec![at(values(), index("right"))],
+        "reverse.symmetric.swap" => vec![at(values(), index("left")), at(values(), index("right"))],
         id if id.ends_with(".assert") => vec![Expression::Call {
             function: "invariant",
             arguments: vec![values()],
@@ -972,11 +993,60 @@ pub fn insertion_sort_ast() -> AlgorithmAst {
     }
 }
 
+pub fn reverse_ast() -> AlgorithmAst {
+    use SemanticOperation as Op;
+    AlgorithmAst {
+        ast_version: "experimental-0",
+        id: "ast.reverse.symmetric.in_place.v0",
+        algorithm_id: "reverse.symmetric.in_place",
+        parameters: vec![Parameter {
+            name: "values",
+            data_type: "MutableSequence<T>",
+            value_type: ValueType::Sequence,
+            mode: ParameterMode::ReadWrite,
+        }],
+        effects: EffectSummary {
+            mutates: vec!["values"],
+            allocations: vec![],
+            copies: vec![],
+        },
+        body: vec![
+            Statement::Let {
+                name: "left",
+                expression: e("0"),
+            },
+            Statement::While {
+                condition: e("left < floor(length(values) / 2)"),
+                body: vec![
+                    Statement::Let {
+                        name: "right",
+                        expression: e("length(values) - 1 - left"),
+                    },
+                    operation("reverse.left.read", Op::Read, "values[left]"),
+                    operation("reverse.right.read", Op::Read, "values[right]"),
+                    operation(
+                        "reverse.symmetric.swap",
+                        Op::Swap,
+                        "values[left] <-> values[right]",
+                    ),
+                    Statement::Let {
+                        name: "left",
+                        expression: e("left + 1"),
+                    },
+                ],
+            },
+            Statement::Return {
+                expression: e("values"),
+            },
+        ],
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         SemanticOperation, Statement, insertion_sort_ast, is_sorted_ast, merge_sort_ast,
-        partition_ast,
+        partition_ast, reverse_ast,
     };
 
     #[test]
@@ -986,6 +1056,7 @@ mod tests {
             partition_ast(),
             is_sorted_ast(),
             insertion_sort_ast(),
+            reverse_ast(),
         ] {
             assert!(ast.validate().is_empty());
             assert_eq!(ast.render(), ast.render());
@@ -1005,6 +1076,23 @@ mod tests {
         );
         assert_eq!(
             ast.operation_by_id("insertion.adjacent.swap"),
+            Some(SemanticOperation::Swap)
+        );
+    }
+
+    #[test]
+    fn reverse_model_exposes_symmetric_reads_and_swap_without_allocation() {
+        let ast = reverse_ast();
+        assert!(ast.validate().is_empty());
+        assert_eq!(ast.effects.mutates, ["values"]);
+        assert!(ast.effects.allocations.is_empty());
+        assert!(ast.effects.copies.is_empty());
+        assert_eq!(
+            ast.operation_by_id("reverse.left.read"),
+            Some(SemanticOperation::Read)
+        );
+        assert_eq!(
+            ast.operation_by_id("reverse.symmetric.swap"),
             Some(SemanticOperation::Swap)
         );
     }

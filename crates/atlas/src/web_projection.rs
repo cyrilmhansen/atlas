@@ -144,6 +144,13 @@ impl<'a> WebProjection<'a> {
                     max_interactive_input_length: 64,
                     max_analytical_trace_input_length: 32,
                 },
+                WebDynamics {
+                    algorithm_id: "reverse.symmetric.in_place",
+                    ast_id: "ast.reverse.symmetric.in_place.v0",
+                    pseudocode_source: include_str!("../pseudocode/reverse.atlas-pseudo"),
+                    max_interactive_input_length: 64,
+                    max_analytical_trace_input_length: 0,
+                },
             ],
         })
     }
@@ -326,6 +333,22 @@ mod tests {
                 .as_str()
                 .unwrap()
                 .contains("operation insertion.adjacent.swap | Swap")
+        );
+        assert_eq!(
+            value["dynamics"][2]["algorithm_id"],
+            "reverse.symmetric.in_place"
+        );
+        assert_eq!(
+            value["dynamics"][2]["ast_id"],
+            "ast.reverse.symmetric.in_place.v0"
+        );
+        assert_eq!(value["dynamics"][2]["max_interactive_input_length"], 64);
+        assert_eq!(value["dynamics"][2]["max_analytical_trace_input_length"], 0);
+        assert!(
+            value["dynamics"][2]["pseudocode_source"]
+                .as_str()
+                .unwrap()
+                .contains("operation reverse.symmetric.swap | Swap")
         );
         assert!(first.contains("order.is_sorted.adjacent"));
     }

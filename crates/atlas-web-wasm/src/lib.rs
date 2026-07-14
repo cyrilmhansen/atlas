@@ -17,6 +17,9 @@ const INSERTION_CURRENT_READ_NODE: &str = "insertion.current.read";
 const INSERTION_PREVIOUS_READ_NODE: &str = "insertion.previous.read";
 const INSERTION_COMPARE_NODE: &str = "insertion.adjacent.compare";
 const INSERTION_SWAP_NODE: &str = "insertion.adjacent.swap";
+const REVERSE_LEFT_READ_NODE: &str = "reverse.left.read";
+const REVERSE_RIGHT_READ_NODE: &str = "reverse.right.read";
+const REVERSE_SWAP_NODE: &str = "reverse.symmetric.swap";
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -844,6 +847,193 @@ pub fn trace_insertion_sort(values: &[i32]) -> Result<InsertionSortTrace, usize>
     })
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ReverseStepPhase {
+    LeftRead,
+    RightRead,
+    Swap,
+    Complete,
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReverseStepper {
+    values: Vec<i32>,
+    original_indices: Vec<u32>,
+    left_index: usize,
+    right_index: usize,
+    phase: ReverseStepPhase,
+    reads: u32,
+    writes: u32,
+    swaps: u32,
+    steps: u32,
+    operation: Option<TraceEvent>,
+}
+
+#[wasm_bindgen]
+impl ReverseStepper {
+    #[wasm_bindgen(constructor)]
+    pub fn new(values: &[i32]) -> Result<ReverseStepper, JsError> {
+        Self::from_values(values).map_err(|length| {
+            JsError::new(&format!(
+                "stepper input length {length} exceeds the Atlas Explore limit of {MAX_TRACE_INPUT_LENGTH}"
+            ))
+        })
+    }
+
+    pub fn reset(&mut self, values: &[i32]) -> Result<(), JsError> {
+        *self = Self::new(values)?;
+        Ok(())
+    }
+
+    pub fn step(&mut self) -> bool {
+        self.operation = None;
+        match self.phase {
+            ReverseStepPhase::LeftRead => {
+                self.reads += 1;
+                self.operation = Some(TraceEvent {
+                    node_id: REVERSE_LEFT_READ_NODE,
+                    operation: TraceOperation::Read,
+                    left_index: self.left_index as u32,
+                    right_index: None,
+                    ordering: None,
+                });
+                self.phase = ReverseStepPhase::RightRead;
+            }
+            ReverseStepPhase::RightRead => {
+                self.reads += 1;
+                self.operation = Some(TraceEvent {
+                    node_id: REVERSE_RIGHT_READ_NODE,
+                    operation: TraceOperation::Read,
+                    left_index: self.right_index as u32,
+                    right_index: None,
+                    ordering: None,
+                });
+                self.phase = ReverseStepPhase::Swap;
+            }
+            ReverseStepPhase::Swap => {
+                self.values.swap(self.left_index, self.right_index);
+                self.original_indices
+                    .swap(self.left_index, self.right_index);
+                self.writes += 2;
+                self.swaps += 1;
+                self.operation = Some(TraceEvent {
+                    node_id: REVERSE_SWAP_NODE,
+                    operation: TraceOperation::Swap,
+                    left_index: self.left_index as u32,
+                    right_index: Some(self.right_index as u32),
+                    ordering: None,
+                });
+                self.left_index += 1;
+                self.right_index = self.right_index.saturating_sub(1);
+                self.phase = if self.left_index >= self.right_index {
+                    ReverseStepPhase::Complete
+                } else {
+                    ReverseStepPhase::LeftRead
+                };
+            }
+            ReverseStepPhase::Complete => return false,
+        }
+        self.steps += 1;
+        true
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn values(&self) -> Box<[i32]> {
+        self.values.clone().into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn original_indices(&self) -> Box<[u32]> {
+        self.original_indices.clone().into_boxed_slice()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn reads(&self) -> u32 {
+        self.reads
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn writes(&self) -> u32 {
+        self.writes
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn swaps(&self) -> u32 {
+        self.swaps
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn steps(&self) -> u32 {
+        self.steps
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn left_index(&self) -> u32 {
+        self.left_index as u32
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn right_index(&self) -> u32 {
+        self.right_index as u32
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn done(&self) -> bool {
+        self.phase == ReverseStepPhase::Complete
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_node_id(&self) -> Option<String> {
+        self.operation.map(|operation| operation.node_id.to_owned())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_kind(&self) -> Option<String> {
+        self.operation
+            .map(|operation| operation.operation.name().to_owned())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_left_index(&self) -> Option<u32> {
+        self.operation.map(|operation| operation.left_index)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_right_index(&self) -> Option<u32> {
+        self.operation.and_then(|operation| operation.right_index)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation_ordering(&self) -> Option<i8> {
+        None
+    }
+}
+
+impl ReverseStepper {
+    fn from_values(values: &[i32]) -> Result<Self, usize> {
+        if values.len() > MAX_TRACE_INPUT_LENGTH {
+            return Err(values.len());
+        }
+        Ok(Self {
+            values: values.to_vec(),
+            original_indices: (0..values.len() as u32).collect(),
+            left_index: 0,
+            right_index: values.len().saturating_sub(1),
+            phase: if values.len() < 2 {
+                ReverseStepPhase::Complete
+            } else {
+                ReverseStepPhase::LeftRead
+            },
+            reads: 0,
+            writes: 0,
+            swaps: 0,
+            steps: 0,
+            operation: None,
+        })
+    }
+}
+
 #[wasm_bindgen]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReverseObservation {
@@ -909,7 +1099,8 @@ mod tests {
         INSERTION_PREVIOUS_READ_NODE, INSERTION_SWAP_NODE, InsertionSortObservation,
         InsertionSortStepper, IsSortedObservation, IsSortedStepper, LEFT_READ_NODE,
         MAX_INPUT_LENGTH, MAX_INSERTION_STEPPER_INPUT_LENGTH, MAX_INSERTION_TRACE_INPUT_LENGTH,
-        MAX_TRACE_INPUT_LENGTH, RIGHT_READ_NODE, ReverseObservation, TraceOperation,
+        MAX_TRACE_INPUT_LENGTH, REVERSE_LEFT_READ_NODE, REVERSE_RIGHT_READ_NODE, REVERSE_SWAP_NODE,
+        RIGHT_READ_NODE, ReverseObservation, ReverseStepper, TraceOperation,
         observe_insertion_sort, observe_is_sorted, observe_reverse, trace_insertion_sort,
         trace_is_sorted,
     };
@@ -1016,6 +1207,62 @@ mod tests {
                 })
             );
         }
+    }
+
+    #[test]
+    fn reverse_stepper_matches_native_ast_and_structural_counts() {
+        use atlas::ast::{SemanticOperation, reverse_ast};
+
+        let input = [1, 2, 3, 4, 5];
+        let native = observe_reverse(&input).unwrap();
+        let mut stepper = ReverseStepper::from_values(&input).unwrap();
+        let ast = reverse_ast();
+        let expected = [
+            (REVERSE_LEFT_READ_NODE, TraceOperation::Read),
+            (REVERSE_RIGHT_READ_NODE, TraceOperation::Read),
+            (REVERSE_SWAP_NODE, TraceOperation::Swap),
+            (REVERSE_LEFT_READ_NODE, TraceOperation::Read),
+            (REVERSE_RIGHT_READ_NODE, TraceOperation::Read),
+            (REVERSE_SWAP_NODE, TraceOperation::Swap),
+        ];
+
+        for (node_id, operation) in expected {
+            assert!(stepper.step());
+            assert_eq!(stepper.operation.unwrap().node_id, node_id);
+            assert_eq!(stepper.operation.unwrap().operation, operation);
+            let ast_operation = match operation {
+                TraceOperation::Read => SemanticOperation::Read,
+                TraceOperation::Swap => SemanticOperation::Swap,
+                TraceOperation::Compare => unreachable!(),
+            };
+            assert_eq!(ast.operation_by_id(node_id), Some(ast_operation));
+        }
+
+        assert!(stepper.done());
+        assert!(!stepper.step());
+        assert_eq!(stepper.values, native.values);
+        assert_eq!(stepper.reads, native.reads);
+        assert_eq!(stepper.writes, native.writes);
+        assert_eq!(stepper.swaps, native.swaps);
+        assert_eq!(stepper.steps, 6);
+        assert_eq!(stepper.original_indices, [4, 3, 2, 1, 0]);
+    }
+
+    #[test]
+    fn reverse_stepper_handles_zero_steps_and_is_an_involution() {
+        for input in [&[][..], &[7][..]] {
+            let mut stepper = ReverseStepper::from_values(input).unwrap();
+            assert!(stepper.done());
+            assert!(!stepper.step());
+            assert_eq!(stepper.steps, 0);
+        }
+
+        let input = [8, 3, -1, 4];
+        let mut first = ReverseStepper::from_values(&input).unwrap();
+        while first.step() {}
+        let mut second = ReverseStepper::from_values(&first.values).unwrap();
+        while second.step() {}
+        assert_eq!(second.values, input);
     }
 
     #[test]

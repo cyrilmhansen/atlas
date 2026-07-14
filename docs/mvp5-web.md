@@ -115,16 +115,26 @@ position. The 64-element insertion Explore bound keeps this replay bounded;
 its independent analytical trace remains capped at 32. Scale execution through
 4096 elements remains aggregate and trace-free.
 
+Reverse uses the same incremental boundary with no dedicated analytical trace.
+Its typed AST and parser-equivalent pseudocode expose a left read, right read
+and symmetric swap for each pair. The WASM stepper retains current values,
+original indices, pair indices and structural counters. Tests validate every
+current node and operation kind against `ast.reverse.symmetric.in_place.v0`,
+then compare final mutation, reads, writes and swaps with the native reference;
+a second stepped reversal must restore the input. Empty and singleton inputs
+complete without a semantic step. Interactive execution is bounded to 64
+elements and Scale remains aggregate through 4096.
+
 Playback delays form a factor-two series from `0.5x` through `8x`. Changing the
 selection while playing cancels the pending timeout and schedules the next WASM
 step immediately with the new delay.
 
 As a temporary presentation aid, insertion highlights its outer and inner
-`while` lines as secondary loop context and displays the current outer/current
-indices. These are live WASM stepper fields, not additional trace events or AST
-operation IDs. Reads, comparisons and swaps retain the primary exact-node
-highlight. A future control-flow model may replace this aid if control
-statements gain explicit AST identity across multiple algorithms.
+`while` lines and reverse highlights its symmetric-pair loop as secondary
+context. Their current loop indices are live WASM fields, not additional trace
+events or AST operation IDs. Reads, comparisons and swaps retain the primary
+exact-node highlight. A future control-flow model may replace this aid if
+control statements gain explicit AST identity across multiple algorithms.
 
 The Scale chart runs complete generated sequences at increasing sizes and plots
 deterministic comparisons or swaps. It illustrates profile-dependent operation
@@ -143,9 +153,9 @@ algorithm-only timing nor portable benchmark evidence.
 - Projection JSON and generated bindings are ignored build products.
 - MIR and target code are not executed in the browser; native Rust/WASM remains
   the dynamics and correction path.
-- Reverse exposes Scale counts but does not yet have a validated pseudocode or
-  interactive execution adapter.
-- Both interactive algorithms retain only their current WASM state; analytical
+- All three curated algorithms expose validated pseudocode-linked interactive
+  execution.
+- All interactive algorithms retain only their current WASM state; analytical
   traces are restricted to validation and analysis tests.
 
 ## Reproducible bundle gate

@@ -1,0 +1,18 @@
+# Private experiment: structured pseudocode, not a public Atlas format.
+ast-version experimental-0
+ast-id ast.reverse.symmetric.in_place.v0
+algorithm reverse.symmetric.in_place
+parameter values | MutableSequence<T> | Sequence | ReadWrite
+effects mutates values
+effects allocations -
+effects copies -
+begin
+let left | 0
+while left < floor(length(values) / 2)
+  let right | length(values) - 1 - left
+  operation reverse.left.read | Read | values[left]
+  operation reverse.right.read | Read | values[right]
+  operation reverse.symmetric.swap | Swap | values[left] <-> values[right]
+  let left | left + 1
+end
+return values

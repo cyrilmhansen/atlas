@@ -35,10 +35,10 @@ exact AST-node links, pseudocode highlighting and incremental WASM playback.
 Its bounded analytical trace is now test-only. Seeded
 Explore/Scale generation and deterministic multi-size operation charts are also
 complete. Insertion has equivalent typed AST/pseudocode and a stateful WASM
-stepper under DEC-059. Both browser paths retain current state rather than a
-trace, while differential tests retain traces as oracles. Reverse remains
-aggregate/Scale-only, and the extended bundle reproducibility gate must be
-rerun before closure.
+stepper under DEC-059. Reverse now adds typed AST/pseudocode and a symmetric-pair
+stepper checked directly against native mutation, counters and involution. All
+three browser paths retain current state rather than a presentation trace. The
+extended bundle reproducibility gate must be rerun before closure.
 
 Current corpus progress:
 

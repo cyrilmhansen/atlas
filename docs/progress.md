@@ -1,5 +1,32 @@
 # Progress log
 
+## 2026-07-14 - Incremental WASM reverse dynamics
+
+### Result
+
+- Added typed `reverse.symmetric.in_place` AST and parser-equivalent pseudocode
+  with exact left-read, right-read and symmetric-swap nodes.
+- Added a stateful WASM reverse stepper retaining current values, origins,
+  pair indices and structural counters without materializing a trace.
+- Checked 3 steps per symmetric pair, native-equivalent mutation and counts,
+  zero-step empty/singleton cases, and stepped involution.
+- Added pseudocode-linked Web playback through 64 elements and extended the
+  temporary loop context with live `left/right` indices.
+- Deliberately recorded no analytical reverse trace; AST/native differential
+  tests provide the required validation without extra instrumentation.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm --locked --offline` (19 tests)
+- `scripts/check-web.sh`, including the Node reverse stepper gate
+- Headless Chrome: reverse AST/pseudocode present, Play active, exactly one loop
+  context and initial pair `0 / 6`
+
+### Limits
+
+- Reverse control assignments remain implicit transitions, like insertion.
+- The extended clean-archive reproducibility gate remains pending.
+
 ## 2026-07-14 - Incremental WASM is-sorted dynamics
 
 ### Result
@@ -25,7 +52,6 @@
 
 - `is_sorted` and insertion remain separate pauseable implementations checked
   against the native generic algorithms.
-- Reverse still has aggregate execution only.
 
 ## 2026-07-14 - Temporary insertion loop context
 

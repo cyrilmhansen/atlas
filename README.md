@@ -21,9 +21,9 @@ registry and executes adjacent `is_sorted`, stable insertion sort and symmetric
 in-place reverse locally through a private `wasm-bindgen` facade. Its dataset
 selector is generated from deterministic DatasetSpec cases rather than UI
 fixtures. DEC-058 adds editable seeded generation, operation-growth views and a
-AST-linked incremental WASM execution for `is_sorted` and insertion sort. Their
-analytical traces remain test-only. See `docs/mvp5-web.md` for the exact
-authority, counter, dynamics and timing boundaries.
+AST-linked incremental WASM execution for `is_sorted`, insertion sort and
+reverse. Analytical traces remain test-only. See `docs/mvp5-web.md` for the
+exact authority, counter, dynamics and timing boundaries.
 
 ## Project map
 

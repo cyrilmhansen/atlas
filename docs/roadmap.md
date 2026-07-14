@@ -458,7 +458,7 @@ Planned stages:
 | 1. Program contract | **Complete for the current read-only and mutating subsets:** private validated instruction and state model | unsupported AST shapes fail before bundle generation |
 | 2. First generated execution | **Complete:** one `sequence.minimum` program and shared sequence renderer | exact AST nodes and native result agree |
 | 3. Mutating generality | **Complete:** even partition through the same program and machine | mutation, counters and partition invariant agree with native Rust |
-| 4. Differential migration | `is_sorted`, insertion and reverse generated paths | step and final-state equivalence with retained hand-written references |
+| 4. Differential migration | **In progress (1/3):** `is_sorted` generated; insertion and reverse pending | step and final-state equivalence with retained hand-written references |
 | 5. Consolidation | remove accepted per-algorithm browser/WASM paths at an explicit checkpoint | five algorithms, no per-algorithm export or `app.js` dispatch branch |
 
 Exit evidence must include a clean reproducible static bundle, native

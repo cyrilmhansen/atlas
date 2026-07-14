@@ -9,8 +9,8 @@ use crate::datasets::{
 use crate::index::ProjectionSummary;
 use crate::registry::{Algorithm, Claim, Implementation, Problem, Registry};
 use crate::visual_program::{
-    VisualProgram, VisualProgramError, compile_minimum_visual_program,
-    compile_partition_even_visual_program,
+    VisualProgram, VisualProgramError, compile_is_sorted_visual_program,
+    compile_minimum_visual_program, compile_partition_even_visual_program,
 };
 
 pub const WEB_PROJECTION_FORMAT: &str = "atlas-web-private-v0";
@@ -171,8 +171,30 @@ impl<'a> WebProjection<'a> {
                     pseudocode_source: include_str!("../pseudocode/is_sorted.atlas-pseudo"),
                     max_interactive_input_length: 64,
                     max_analytical_trace_input_length: 64,
-                    program: None,
-                    presentation: None,
+                    program: Some(compile_is_sorted_visual_program(
+                        &crate::ast::is_sorted_ast(),
+                    )?),
+                    presentation: Some(WebPresentation {
+                        key: "is_sorted",
+                        selector_label: "Is sorted",
+                        primitive: "sequence",
+                        default_dataset: "sort.degenerate.equal",
+                        dataset_problem_id: "sequence.sort",
+                        dataset_predicate: None,
+                        boundary: "The generated read-only program and current sequence stay in WASM; only current values and counters are copied for display.",
+                        result_label: "Result",
+                        primary_counter_label: "Comparisons",
+                        secondary_label: "First inversion",
+                        sequence_heading: "Sequence state",
+                        legend: "first decreasing pair",
+                        comparison_interest: "greater",
+                        result_view: "sortedness",
+                        primary_counter: "comparisons",
+                        secondary_counter: "result_index",
+                        highlight: "first_inversion",
+                        tracks_origins: false,
+                        predicate_label: None,
+                    }),
                 },
                 WebDynamics {
                     algorithm_id: "sort.insertion",
@@ -436,6 +458,21 @@ mod tests {
                 .as_str()
                 .unwrap()
                 .contains("operation is-sorted.adjacent.compare | Compare")
+        );
+        assert_eq!(
+            value["dynamics"][0]["program"]["format"],
+            "atlas-visual-bytecode-private-v0"
+        );
+        assert_eq!(
+            value["dynamics"][0]["program"]["instructions"]
+                .as_array()
+                .unwrap()
+                .len(),
+            9
+        );
+        assert_eq!(
+            value["dynamics"][0]["presentation"]["result_view"],
+            "sortedness"
         );
         assert_eq!(value["dynamics"][1]["algorithm_id"], "sort.insertion");
         assert_eq!(value["dynamics"][1]["ast_id"], "ast.sort.insertion.v0");

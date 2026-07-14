@@ -233,7 +233,9 @@ function traceEventLabel(event) {
       : `${comparison}; this insertion position is stable.`;
   }
   if (event.ordering > 0) {
-    return `${comparison}; inversion at #${tracePlayback.stepper.first_inversion}, return false and stop early.`;
+    const firstInversion = tracePlayback.stepper.result_index
+      ?? tracePlayback.stepper.first_inversion;
+    return `${comparison}; inversion at #${firstInversion}, return false and stop early.`;
   }
   return tracePlayback.stepper.done
     ? `${comparison}; scan complete, return true.`
@@ -298,7 +300,9 @@ function renderTraceState() {
   const atEnd = Boolean(tracePlayback.stepper?.done);
   const stoppedEarly = tracePlayback.algorithm === "is_sorted"
     && atEnd
-    && !tracePlayback.stepper.sorted;
+    && (algorithmUi[tracePlayback.algorithm].generated
+      ? tracePlayback.stepper.has_result
+      : !tracePlayback.stepper.sorted);
   elements["trace-progress"].textContent = atEnd
     ? `${stoppedEarly ? "Early stop" : "Complete"} / ${tracePlayback.index + 1} WASM steps`
     : tracePlayback.index < 0 ? "Ready / WASM" : `WASM step ${tracePlayback.index + 1}`;
@@ -646,22 +650,32 @@ function completedVisualMachine(values) {
   return machine;
 }
 
+function visualResultBit(observation, ui) {
+  if (ui.resultView === "sortedness") return observation.has_result ? 2 : 1;
+  return observation.has_result ? ((observation.result_index ?? 0) % 251) + 1 : 0;
+}
+
 function runGeneratedAlgorithm(values) {
   const ui = algorithmUi[activeAlgorithm];
   const observation = completedVisualMachine(values);
   const resultIndex = observation.result_index;
   const resultValue = observation.result_value;
-  const expectedBit = observation.has_result ? ((resultIndex ?? 0) % 251) + 1 : 0;
+  const expectedBit = visualResultBit(observation, ui);
   const timing = measureLocalCall(
     () => completedVisualMachine(values),
-    (sample) => sample.has_result ? ((sample.result_index ?? 0) % 251) + 1 : 0,
+    (sample) => visualResultBit(sample, ui),
     expectedBit,
   );
   const partition = ui.resultView === "partition_boundary";
+  const sortedness = ui.resultView === "sortedness";
   elements["sorted-result"].textContent = partition
     ? String(resultIndex)
-    : observation.has_result ? String(resultValue) : "None";
-  elements["sorted-result"].className = observation.has_result ? "is-true" : "";
+    : sortedness
+      ? observation.has_result ? "Not sorted" : "Sorted"
+      : observation.has_result ? String(resultValue) : "None";
+  elements["sorted-result"].className = sortedness
+    ? observation.has_result ? "is-false" : "is-true"
+    : observation.has_result ? "is-true" : "";
   elements["comparison-count"].textContent = String(observation[ui.primaryCounter]);
   elements["inversion-index"].textContent = observation[ui.secondaryCounter] ?? "None";
   const output = Array.from(observation.values);
@@ -670,7 +684,7 @@ function runGeneratedAlgorithm(values) {
       partitionBoundary: resultIndex,
       originalIndices: ui.moved ? Array.from(observation.original_indices) : undefined,
     }
-    : { selectedIndex: resultIndex });
+    : sortedness ? { firstInversion: resultIndex } : { selectedIndex: resultIndex });
   prepareStepper(values, activeAlgorithm);
   displayTiming(timing, "generated-program construction and WASM execution");
   observation.free();

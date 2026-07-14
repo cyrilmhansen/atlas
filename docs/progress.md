@@ -1,5 +1,34 @@
 # Progress log
 
+## 2026-07-14 - Differential generated is-sorted migration
+
+### Result
+
+- Added a nine-instruction lowering of the exact adjacent `is_sorted` AST using
+  previous/direct reads, greater-than comparison, early return and no-inversion
+  completion.
+- Switched the existing Web selector to the generated program without adding a
+  duplicate page or selector.
+- Retained native observation, analytical trace and hand-written incremental
+  stepper APIs as independent test oracles.
+- Preserved empty/singleton zero-step behavior, complete scans and first-
+  inversion early stopping.
+
+### Verification
+
+- 54 `atlas` and 25 `atlas-web-wasm` library tests passed.
+- Rust and Node differential tests matched every visible operation field and
+  final counter across five input regimes.
+- `scripts/check-web.sh` passed; Chrome headless at 1440x1000 rendered the
+  generated descending-input path without layout regression.
+
+### Limits
+
+- The retained hand-written path is intentionally not removed during the
+  differential period.
+- Insertion and reverse remain hand-written browser paths. Stable insertion is
+  the next migration and requires an explicit register-copy instruction.
+
 ## 2026-07-14 - Generated mutating partition execution
 
 ### Result

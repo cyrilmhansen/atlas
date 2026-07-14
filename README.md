@@ -27,12 +27,13 @@ exact authority, counter, dynamics and timing boundaries. Its projection and
 WASM interfaces remain private, the site is not published, and no subsequent
 MVP is active.
 
-MVP 6 is active under DEC-061. Its generated paths compile `sequence.minimum`
-and even `sequence.partition` from their exact reviewed ASTs to private programs
-executed by the common WASM visual machine. It will migrate the three curated
-MVP 5 demonstrations to the same build-generated program model and derived
-presentation description under DEC-062/DEC-063. The current bytecode,
-predicate intrinsic and presentation shapes are not public contracts.
+MVP 6 is active under DEC-061. Its generated paths compile `sequence.minimum`,
+even `sequence.partition` and adjacent `sequence.is_sorted` from their exact
+reviewed ASTs to private programs executed by the common WASM visual machine.
+The retained `is_sorted` stepper is an operation-for-operation differential
+oracle. Insertion and reverse remain to migrate to the same generated program
+model and derived presentation description under DEC-062/DEC-063. The current
+bytecode, predicate intrinsic and presentation shapes are not public contracts.
 
 ## Project map
 

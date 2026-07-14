@@ -40,6 +40,9 @@ assert.equal(projection.dynamics[0].algorithm_id, "order.is_sorted.adjacent");
 assert.equal(projection.dynamics[0].ast_id, "ast.order.is_sorted.adjacent.v0");
 assert.equal(projection.dynamics[0].max_interactive_input_length, 64);
 assert.equal(projection.dynamics[0].max_analytical_trace_input_length, 64);
+assert.equal(projection.dynamics[0].program.instructions.length, 9);
+assert.equal(projection.dynamics[0].presentation.key, "is_sorted");
+assert.equal(projection.dynamics[0].presentation.result_view, "sortedness");
 assert.match(
   projection.dynamics[0].pseudocode_source,
   /operation is-sorted\.adjacent\.compare \| Compare/,

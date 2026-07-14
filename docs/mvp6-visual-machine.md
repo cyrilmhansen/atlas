@@ -6,7 +6,7 @@ protocol. DEC-061 through DEC-063 define its scope.
 
 ## Authority and generation
 
-The minimum and partition pseudocode sources parse to the same typed
+The minimum, partition and `is_sorted` pseudocode sources parse to the same typed
 `AlgorithmAst` values as their Rust AST builders. Each specialized compiler
 accepts only its exact reviewed AST shape and emits
 `atlas-visual-bytecode-private-v0`. Bundle generation validates every register
@@ -15,8 +15,8 @@ node with the matching operation kind.
 
 The generated program is embedded in the derived Web projection. The browser
 passes its JSON representation to `VisualMachine`; it is never read from the
-registry or retained as execution evidence. Native `minimum_by` and
-`partition_in_place` remain the correction oracles.
+registry or retained as execution evidence. Native `minimum_by`,
+`partition_in_place` and `is_sorted_by` remain correction oracles.
 
 ## Current machine
 
@@ -33,16 +33,19 @@ instructions.
 | `branch_index_less_than_length` | selects a validated in-program target |
 | `branch_index_less_than_index` | compares two index registers for two-pointer control |
 | `branch_predicate` | branches on the last intrinsic predicate result |
+| `branch_if_greater` | branches on an adjacent inversion comparison |
 | `set_register_to_length` | initializes an index from sequence length |
 | `read` | bounds-checks one indexed read and exposes its exact AST node |
 | `read_previous` | reads the checked index immediately before a register |
 | `predicate_even` | evaluates `i32 is_even` and exposes its exact AST node |
 | `compare_less` | compares two indexed values and exposes its exact AST node |
+| `compare_greater` | compares direct/previous indices for an inversion |
 | `copy_if_less` | conditionally updates an index register |
 | `increment` / `decrement` | checked index movement |
 | `swap_previous` | mutates values and origins and exposes its exact AST node |
 | `jump` | transfers to a validated in-program target |
 | `return_optional_index` | bounds-checks and returns the selected index |
+| `return_none` | completes without a selected or inversion index |
 | `return_index` | returns a boundary and exposes its exact AST node |
 
 Control instructions execute internally until the next semantic read,
@@ -81,10 +84,11 @@ Rust and Node tests cover empty, singleton, ordinary and tied-minimum cases,
 plus empty, all-matching, none-matching, mixed and alternating partitions.
 Native mutation, boundary, permutation, counters, exact operation order,
 AST-node identity, invalid targets and the 4096-element bound are checked. The
-two generated paths coexist with the three hand-written MVP 5 steppers. This
+three generated paths coexist with the three hand-written MVP 5 steppers. This
 differential period is intentional.
 
-The compilers remain specialized to two reviewed AST shapes. There is no
-general predicate, call, write-value or multi-region model. Differentially
-migrating adjacent `is_sorted` is the next gate; it should reuse the existing
-read/compare subset without adding instructions.
+The compilers remain specialized to three reviewed AST shapes. Adjacent
+`is_sorted` now uses a generated path while retaining its hand-written stepper
+as an operation-for-operation oracle. There is no general predicate, call,
+write-value or multi-region model. Stable insertion is the next differential
+gate and requires one explicit register-copy operation.

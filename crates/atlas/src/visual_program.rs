@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::ast::{AlgorithmAst, SemanticOperation, minimum_ast, partition_ast};
+use crate::ast::{AlgorithmAst, SemanticOperation, is_sorted_ast, minimum_ast, partition_ast};
 
 pub const VISUAL_PROGRAM_FORMAT: &str = "atlas-visual-bytecode-private-v0";
 
@@ -38,6 +38,10 @@ pub enum VisualInstruction {
         when_true: usize,
         when_false: usize,
     },
+    BranchIfGreater {
+        when_true: usize,
+        when_false: usize,
+    },
     SetRegisterToLength {
         register: usize,
     },
@@ -58,6 +62,12 @@ pub enum VisualInstruction {
         node_id: &'static str,
         left_register: usize,
         right_register: usize,
+    },
+    CompareGreater {
+        node_id: &'static str,
+        left_register: usize,
+        right_register: usize,
+        left_previous: bool,
     },
     CopyIfLess {
         target_register: usize,
@@ -80,6 +90,7 @@ pub enum VisualInstruction {
     ReturnOptionalIndex {
         register: usize,
     },
+    ReturnNone,
     ReturnIndex {
         node_id: &'static str,
         register: usize,
@@ -259,6 +270,65 @@ pub fn compile_partition_even_visual_program(
     Ok(program)
 }
 
+pub fn compile_is_sorted_visual_program(
+    ast: &AlgorithmAst,
+) -> Result<VisualProgram, VisualProgramError> {
+    let errors = ast.validate();
+    if !errors.is_empty() {
+        return Err(VisualProgramError(format!(
+            "cannot compile invalid AST: {}",
+            errors.join("; ")
+        )));
+    }
+    if ast != &is_sorted_ast() {
+        return Err(VisualProgramError(
+            "is-sorted visual lowering accepts only the reviewed adjacent-scan AST shape"
+                .to_owned(),
+        ));
+    }
+
+    let program = VisualProgram {
+        format: VISUAL_PROGRAM_FORMAT,
+        algorithm_id: ast.algorithm_id,
+        ast_id: ast.id,
+        registers: vec![VisualRegister {
+            name: "index",
+            initial: 1,
+        }],
+        instructions: vec![
+            VisualInstruction::BranchIndexLessThanLength {
+                register: 0,
+                when_true: 1,
+                when_false: 7,
+            },
+            VisualInstruction::ReadPrevious {
+                node_id: "is-sorted.left.read",
+                register: 0,
+            },
+            VisualInstruction::Read {
+                node_id: "is-sorted.right.read",
+                register: 0,
+            },
+            VisualInstruction::CompareGreater {
+                node_id: "is-sorted.adjacent.compare",
+                left_register: 0,
+                right_register: 0,
+                left_previous: true,
+            },
+            VisualInstruction::BranchIfGreater {
+                when_true: 8,
+                when_false: 5,
+            },
+            VisualInstruction::Increment { register: 0 },
+            VisualInstruction::Jump { target: 0 },
+            VisualInstruction::ReturnNone,
+            VisualInstruction::ReturnOptionalIndex { register: 0 },
+        ],
+    };
+    validate_visual_program(&program, ast)?;
+    Ok(program)
+}
+
 pub fn validate_visual_program(
     program: &VisualProgram,
     ast: &AlgorithmAst,
@@ -327,6 +397,13 @@ pub fn validate_visual_program(
                 target(*when_true)?;
                 target(*when_false)?;
             }
+            VisualInstruction::BranchIfGreater {
+                when_true,
+                when_false,
+            } => {
+                target(*when_true)?;
+                target(*when_false)?;
+            }
             VisualInstruction::SetRegisterToLength {
                 register: destination,
             } => register(*destination)?,
@@ -356,6 +433,16 @@ pub fn validate_visual_program(
                 node_id,
                 left_register,
                 right_register,
+            } => {
+                register(*left_register)?;
+                register(*right_register)?;
+                validate_node(ast, node_id, SemanticOperation::Compare)?;
+            }
+            VisualInstruction::CompareGreater {
+                node_id,
+                left_register,
+                right_register,
+                ..
             } => {
                 register(*left_register)?;
                 register(*right_register)?;
@@ -395,6 +482,7 @@ pub fn validate_visual_program(
                 register(*source)?;
                 validate_node(ast, node_id, SemanticOperation::Partition)?;
             }
+            VisualInstruction::ReturnNone => {}
             VisualInstruction::Jump {
                 target: jump_target,
             } => target(*jump_target)?,
@@ -421,11 +509,11 @@ fn validate_node(
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::{Statement, minimum_ast, partition_ast};
+    use crate::ast::{Statement, is_sorted_ast, minimum_ast, partition_ast};
 
     use super::{
-        VisualInstruction, compile_minimum_visual_program, compile_partition_even_visual_program,
-        validate_visual_program,
+        VisualInstruction, compile_is_sorted_visual_program, compile_minimum_visual_program,
+        compile_partition_even_visual_program, validate_visual_program,
     };
 
     #[test]
@@ -470,6 +558,25 @@ mod tests {
             instruction,
             VisualInstruction::SwapPrevious {
                 node_id: "partition.swap",
+                ..
+            }
+        )));
+        validate_visual_program(&first, &ast).unwrap();
+    }
+
+    #[test]
+    fn is_sorted_lowering_is_deterministic_and_ast_linked() {
+        let ast = is_sorted_ast();
+        let first = compile_is_sorted_visual_program(&ast).unwrap();
+        let second = compile_is_sorted_visual_program(&ast).unwrap();
+
+        assert_eq!(first, second);
+        assert_eq!(first.registers.len(), 1);
+        assert_eq!(first.instructions.len(), 9);
+        assert!(first.instructions.iter().any(|instruction| matches!(
+            instruction,
+            VisualInstruction::CompareGreater {
+                node_id: "is-sorted.adjacent.compare",
                 ..
             }
         )));

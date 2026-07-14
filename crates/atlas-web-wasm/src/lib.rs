@@ -60,6 +60,10 @@ enum VisualInstructionSpec {
         when_true: usize,
         when_false: usize,
     },
+    BranchIfGreater {
+        when_true: usize,
+        when_false: usize,
+    },
     SetRegisterToLength {
         register: usize,
     },
@@ -80,6 +84,12 @@ enum VisualInstructionSpec {
         node_id: String,
         left_register: usize,
         right_register: usize,
+    },
+    CompareGreater {
+        node_id: String,
+        left_register: usize,
+        right_register: usize,
+        left_previous: bool,
     },
     CopyIfLess {
         target_register: usize,
@@ -102,6 +112,7 @@ enum VisualInstructionSpec {
     ReturnOptionalIndex {
         register: usize,
     },
+    ReturnNone,
     ReturnIndex {
         node_id: String,
         register: usize,
@@ -127,6 +138,7 @@ pub struct VisualMachine {
     registers: Vec<usize>,
     pc: usize,
     comparison_less: bool,
+    comparison_greater: bool,
     predicate_result: bool,
     result_index: Option<usize>,
     done: bool,
@@ -298,6 +310,7 @@ impl VisualMachine {
             initial_registers,
             pc: 0,
             comparison_less: false,
+            comparison_greater: false,
             predicate_result: false,
             result_index: None,
             done: false,
@@ -324,6 +337,7 @@ impl VisualMachine {
         self.registers.clone_from(&self.initial_registers);
         self.pc = 0;
         self.comparison_less = false;
+        self.comparison_greater = false;
         self.predicate_result = false;
         self.result_index = None;
         self.done = false;
@@ -418,6 +432,30 @@ impl VisualMachine {
                 });
                 self.pc += 1;
             }
+            VisualInstructionSpec::CompareGreater {
+                node_id,
+                left_register,
+                right_register,
+                left_previous,
+            } => {
+                let left_index = if left_previous {
+                    self.previous_index(left_register)?
+                } else {
+                    self.read_register(left_register)?
+                };
+                let right_index = self.read_register(right_register)?;
+                let ordering = self.value(left_index)?.cmp(self.value(right_index)?);
+                self.comparison_greater = ordering == Ordering::Greater;
+                self.comparisons += 1;
+                self.operation = Some(VisualOperation {
+                    node_id,
+                    kind: "Compare",
+                    left_index,
+                    right_index: Some(right_index),
+                    ordering: Some(ordering_value(ordering)),
+                });
+                self.pc += 1;
+            }
             VisualInstructionSpec::SwapPrevious {
                 node_id,
                 left_register,
@@ -482,6 +520,7 @@ impl VisualMachine {
                 | VisualInstructionSpec::ReadPrevious { .. }
                 | VisualInstructionSpec::PredicateEven { .. }
                 | VisualInstructionSpec::CompareLess { .. }
+                | VisualInstructionSpec::CompareGreater { .. }
                 | VisualInstructionSpec::SwapPrevious { .. }
                 | VisualInstructionSpec::ReturnIndex { .. } => {
                     return Ok(());
@@ -528,6 +567,16 @@ impl VisualMachine {
                         when_false
                     };
                 }
+                VisualInstructionSpec::BranchIfGreater {
+                    when_true,
+                    when_false,
+                } => {
+                    self.pc = if self.comparison_greater {
+                        when_true
+                    } else {
+                        when_false
+                    };
+                }
                 VisualInstructionSpec::SetRegisterToLength { register } => {
                     self.registers[register] = self.values.len();
                     self.pc += 1;
@@ -558,6 +607,10 @@ impl VisualMachine {
                     let index = self.read_register(register)?;
                     self.value(index)?;
                     self.result_index = Some(index);
+                    self.done = true;
+                }
+                VisualInstructionSpec::ReturnNone => {
+                    self.result_index = None;
                     self.done = true;
                 }
             }
@@ -647,6 +700,13 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
                 target(*when_true)?;
                 target(*when_false)?;
             }
+            VisualInstructionSpec::BranchIfGreater {
+                when_true,
+                when_false,
+            } => {
+                target(*when_true)?;
+                target(*when_false)?;
+            }
             VisualInstructionSpec::SetRegisterToLength {
                 register: destination,
             } => register(*destination)?,
@@ -677,6 +737,18 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
                 node_id,
                 left_register,
                 right_register,
+            } => {
+                if node_id.is_empty() {
+                    return Err("visual compare node ID must not be empty".to_owned());
+                }
+                register(*left_register)?;
+                register(*right_register)?;
+            }
+            VisualInstructionSpec::CompareGreater {
+                node_id,
+                left_register,
+                right_register,
+                ..
             } => {
                 if node_id.is_empty() {
                     return Err("visual compare node ID must not be empty".to_owned());
@@ -722,6 +794,7 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
                 }
                 register(*source)?;
             }
+            VisualInstructionSpec::ReturnNone => {}
             VisualInstructionSpec::Jump {
                 target: destination,
             } => target(*destination)?,
@@ -732,6 +805,7 @@ fn validate_visual_program_spec(program: &VisualProgramSpec) -> Result<(), Strin
             instruction,
             VisualInstructionSpec::ReturnOptionalIndex { .. }
                 | VisualInstructionSpec::ReturnIndex { .. }
+                | VisualInstructionSpec::ReturnNone
         )
     }) {
         return Err("visual program has no return instruction".to_owned());
@@ -1838,6 +1912,13 @@ mod tests {
         super::VisualMachine::from_json(&serde_json::to_string(&program).unwrap(), values).unwrap()
     }
 
+    fn is_sorted_visual_machine(values: &[i32]) -> super::VisualMachine {
+        let program =
+            atlas::visual_program::compile_is_sorted_visual_program(&atlas::ast::is_sorted_ast())
+                .unwrap();
+        super::VisualMachine::from_json(&serde_json::to_string(&program).unwrap(), values).unwrap()
+    }
+
     #[test]
     fn generated_minimum_machine_matches_native_and_preserves_first_tie() {
         use atlas_algorithms::minimum::minimum_by;
@@ -1956,6 +2037,51 @@ mod tests {
                 _ => panic!("unexpected operation kind {kind}"),
             };
             assert_eq!(ast.operation_by_id(&node_id), Some(expected));
+        }
+    }
+
+    #[test]
+    fn generated_is_sorted_matches_native_and_retained_stepper_exactly() {
+        for input in [
+            vec![],
+            vec![7],
+            vec![1, 2, 2, 5],
+            vec![5, 4, 3],
+            vec![1, 2, 5, 4, 6],
+        ] {
+            let native = super::observe_is_sorted(&input).unwrap();
+            let mut retained = super::IsSortedStepper::from_values(&input).unwrap();
+            let mut generated = is_sorted_visual_machine(&input);
+            let mut retained_operations = Vec::new();
+            let mut generated_operations = Vec::new();
+
+            while retained.step() {
+                let operation = retained.operation.unwrap();
+                retained_operations.push((
+                    operation.node_id.to_owned(),
+                    operation.operation.name(),
+                    operation.left_index,
+                    operation.right_index,
+                    operation.ordering,
+                ));
+            }
+            while generated.step_checked().unwrap() {
+                let operation = generated.operation.as_ref().unwrap();
+                generated_operations.push((
+                    operation.node_id.clone(),
+                    operation.kind,
+                    operation.left_index as u32,
+                    operation.right_index.map(|index| index as u32),
+                    operation.ordering,
+                ));
+            }
+
+            assert_eq!(generated_operations, retained_operations);
+            assert_eq!(generated.comparisons, native.comparisons);
+            assert_eq!(generated.steps, retained.steps);
+            assert_eq!(generated.result_index(), native.first_inversion);
+            assert_eq!(generated.has_result(), !native.sorted);
+            assert_eq!(generated.values, input);
         }
     }
 

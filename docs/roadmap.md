@@ -1,34 +1,35 @@
 # Project roadmap
 
-This roadmap refines the vision without changing MVP scope. Accepted decisions
-remain authoritative when this document and a decision record differ.
+This roadmap refines the vision without silently changing public schema or
+accepted scope. Decisions remain authoritative when this document and a
+decision record differ.
 
 ## Current position
 
 MVP 1 through MVP 6 are closed. No subsequent MVP is active. GitHub CI runs the
 reproducible MVP 2 acceptance gate, all workspace targets, the RV64 LP64 probe
 and the MIR RV64 generator probe on pushes and pull requests. The project has a
-Git-authoritative YAML registry (10 problems, 15 algorithms and 20 Rust implementations), a
-rebuildable SQLite projection, deterministic datasets and reproducible local
-observations, plus five bounded composition scenarios with compiled Rust
-orchestration.
+Git-authoritative YAML registry (10 problems, 15 algorithms and 20 Rust
+implementations), a rebuildable SQLite projection, deterministic datasets and
+reproducible local observations, plus five bounded composition scenarios with
+compiled Rust orchestration.
 
 MVP 5 delivered the reproducible static interactive artifact. MVP 6 replaced
 its specialized browser execution paths with five AST-derived private programs,
 one bounded WASM visual machine and derived presentation data. DEC-064 closes
 that scope while retaining private test-only exports as differential oracles.
 
-An external post-foundation audit recommends shifting new work back to corpus,
+An external post-foundation audit recommended shifting new work back to corpus,
 ontology, generic selection and agent consumption while freezing execution and
-presentation capability growth. The audit and resulting vocabulary/roadmap are
-recorded in:
+presentation capability growth. DEC-065 and DEC-066 accept the vocabulary and
+activate Phase 2. The audit and maintained planning documents are:
 
 - `docs/audits/2026-07-14-external-project-audit.md`;
-- `docs/project-vocabulary-proposal.md`;
-- `docs/post-foundation-roadmap-proposal.md`.
+- `docs/project-vocabulary.md`;
+- `docs/phase2-external-corpus.md`.
 
-These are proposals. No post-foundation phase or trajectory is active until a
-new decision accepts its question, program statuses and exit evidence.
+Atlas Knowledge is active. Atlas Execution Lab is frozen and Atlas Explorer is
+maintained for the duration of Phase 2.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

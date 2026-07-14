@@ -1,7 +1,10 @@
-# MVP status
+# Project status
 
-- Active MVP: **none**
-- Status: MVP 1 through MVP 6 closed; no subsequent MVP activated
+- Active phase: **Phase 2 - External corpus trial** under DEC-066
+- Active work program: **Atlas Knowledge**
+- Atlas Execution Lab: **frozen**
+- Atlas Explorer: **maintained**
+- Historical MVP status: MVP 1 through MVP 6 closed; no subsequent MVP activated
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
@@ -9,12 +12,10 @@
 - MVP 5: closed under DEC-060
 - MVP 6: closed under DEC-064
 
-Post-foundation planning is proposed but not active. The external audit,
-three-program vocabulary and recommended external-corpus phase are recorded in
+Post-foundation planning is accepted under DEC-065 and DEC-066. The external
+audit, three-program vocabulary and active external-corpus phase are recorded in
 `docs/audits/2026-07-14-external-project-audit.md`,
-`docs/project-vocabulary-proposal.md` and
-`docs/post-foundation-roadmap-proposal.md`. They do not change the current
-`Active MVP: none` status without a new decision.
+`docs/project-vocabulary.md` and `docs/phase2-external-corpus.md`.
 
 ## Latest closed slice
 

@@ -1,6 +1,6 @@
-# Proposed Atlas project vocabulary
+# Atlas project vocabulary
 
-Status: proposal for human validation  
+Status: accepted under DEC-065  
 Basis: post-MVP 6 external audit and current project evidence  
 Scope: project planning and governance only; no public schema change
 
@@ -43,9 +43,8 @@ The experimental laboratory:
 - performance-fingerprint experiments.
 
 Execution Lab artifacts are non-normative unless a separate decision promotes a
-result into Atlas Knowledge. The recommended initial status after MVP 6 is
-**frozen**: correction and CI maintenance continue, capability expansion does
-not.
+result into Atlas Knowledge. Its current Phase 2 status is **frozen**: correction
+and CI maintenance continue, capability expansion does not.
 
 ### Atlas Explorer
 
@@ -59,7 +58,7 @@ The human-facing product surface:
 
 Explorer derives facts from Knowledge and may invoke bounded Execution Lab
 capabilities. Presentation choices do not become knowledge semantics by use.
-The recommended initial status is **maintained**, without a new feature phase.
+Its current Phase 2 status is **maintained**, without a new feature phase.
 
 These programs are ownership and planning boundaries, not new repositories,
 crates or deployment units. A code split requires separate evidence.
@@ -211,12 +210,10 @@ the existing decisions. This reinterpretation does not rewrite those decisions.
 - Keep negative results and unsupported representations visible.
 - Push at milestones, consistent with the established repository policy.
 
-## Proposed immediate statuses
+## Current program statuses
 
-These statuses are recommendations, not yet accepted:
-
-| Program | Proposed status | Reason |
+| Program | Status | Reason |
 |---|---|---|
-| Atlas Knowledge | `active` through proposed Phase 2 | central hypothesis still under-tested |
+| Atlas Knowledge | `active` through Phase 2 | central hypothesis still under-tested |
 | Atlas Execution Lab | `frozen` | existing instruments are sufficient for corpus falsification |
 | Atlas Explorer | `maintained` | preserve the static artifact without expanding presentation scope |

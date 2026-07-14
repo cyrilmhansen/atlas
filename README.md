@@ -37,6 +37,11 @@ removes their imports and dispatch from the browser while retaining the WASM
 exports for differential tests. The current bytecode, predicate intrinsic and
 presentation shapes are not public contracts.
 
+Phase 2 is active under DEC-066 with Atlas Knowledge as the active work program,
+Atlas Execution Lab frozen and Atlas Explorer maintained. It tests external
+corpus fidelity, generic candidate discovery and agent consumption before any
+new runtime or presentation expansion. See `docs/phase2-external-corpus.md`.
+
 ## Project map
 
 - `registry/atlas.yaml`: authoritative aggregate source registry;
@@ -51,8 +56,8 @@ presentation shapes are not public contracts.
 - `docs/mvp6-visual-machine.md`: private generated-program and WASM-machine boundary;
 - `docs/mvp6-review.md`: MVP 6 closure audit and reproducibility evidence;
 - `docs/audits/2026-07-14-external-project-audit.md`: external post-foundation audit;
-- `docs/project-vocabulary-proposal.md`: proposed work-program and planning vocabulary;
-- `docs/post-foundation-roadmap-proposal.md`: proposed external-corpus and agent-consumer phase;
+- `docs/project-vocabulary.md`: accepted work-program and planning vocabulary;
+- `docs/phase2-external-corpus.md`: active external-corpus and agent-consumer phase;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

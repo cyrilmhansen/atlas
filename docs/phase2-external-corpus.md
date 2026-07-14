@@ -1,7 +1,7 @@
-# Post-foundation roadmap proposal
+# Phase 2 - External corpus trial
 
-Status: proposal; no phase activated  
-Recommended trajectory: Atlas Knowledge first  
+Status: active under DEC-066  
+Trajectory: Atlas Knowledge first, accepted by DEC-066  
 Inputs: project vision, DEC-064 closure evidence and the external audit recorded
 in `docs/audits/2026-07-14-external-project-audit.md`
 
@@ -21,32 +21,23 @@ The primary unresolved product hypothesis is:
 The current 10-problem, 15-algorithm and 20-implementation sequence corpus is
 too small and homogeneous to answer that question.
 
-## Strategic trajectory
+## Accepted strategic trajectory
 
-### Option A - Atlas Knowledge first (recommended)
+### Atlas Knowledge first
 
 Run an external-corpus trial while freezing Execution Lab capability growth and
 maintaining Explorer. This maximizes new information about ontology, source
 fidelity, generic selection and agent use. It is reversible because no existing
 runtime or artifact is removed.
 
-### Option B - Atlas Explorer first
+Alternatives considered by DEC-066:
 
-Expand the interactive educational product across visually different families.
-This offers the clearest near-term public demonstration, but it risks adapting
-new corpus entries to presentation constraints before the knowledge model is
-validated.
+- Explorer-first was deferred because it would adapt corpus work to presentation
+  before validating the knowledge model;
+- Execution-Lab-first was deferred because the existing instruments are already
+  sufficient to falsify the next hypothesis.
 
-### Option C - Atlas Execution Lab first
-
-Advance memory regions, compact identities, MIR/RISC-V and execution
-instrumentation. This deepens a coherent technical laboratory, but yields the
-least evidence about the original encyclopedia and agent-consumer hypothesis.
-
-**Recommendation:** accept A for one phase, then use its evidence to decide
-whether the next investment belongs in Knowledge, Explorer or Execution Lab.
-
-## Proposed Phase 2 - External corpus trial
+## Active phase
 
 ### Phase question
 
@@ -56,7 +47,7 @@ source-specific planner logic?
 
 ### Work-program statuses during the phase
 
-| Program | Proposed status | Allowed work |
+| Program | Status | Allowed work |
 |---|---|---|
 | Atlas Knowledge | `active` | corpus, import, ontology, contracts, generic query/selection/composition |
 | Atlas Execution Lab | `frozen` | CI preservation, correction fixes and diagnostic use only |
@@ -66,10 +57,11 @@ No MIR feature, new visual instruction, new presentation kind or Web feature is
 added merely to make an imported algorithm look complete. Modeling failures are
 phase results.
 
-### Corpus target
+### Corpus sampling target
 
-Import 30 to 50 algorithms across at least three structurally foreign families
-and three independent source classes:
+Use 30 to 50 algorithms as a secondary sampling target across at least three
+structurally foreign families and independent source classes. Phase success is
+determined by qualitative coverage and decision behavior, not entry count.
 
 | Family | Initial candidates | Modeling pressure |
 |---|---|---|
@@ -91,26 +83,54 @@ At least two concrete implementations must originate outside Atlas. Prefer
 unchanged upstream source plus a thin test adapter. Any semantic rewrite becomes
 a separate Atlas implementation with explicit derivation provenance.
 
+### Source fidelity model
+
+Each import report evaluates five independent dimensions:
+
+| Dimension | Required record |
+|---|---|
+| Bibliographic fidelity | author, title/project, edition or version, page/section or commit, license and retrieval context |
+| Algorithmic fidelity | strategy, invariants, validity conditions and guarantees preserved or changed |
+| Representational fidelity | source structure, vocabulary and decomposition preserved or normalized |
+| Executable fidelity | behavior checked against source examples, tests or implementation where available |
+| Declared transformations | translation, specialization, type adaptation, bug correction or pedagogical simplification |
+
+The dimensions are not interchangeable. An Atlas entry may be algorithmically
+faithful and executable while deliberately changing representation. It must say
+so rather than claiming undifferentiated source fidelity.
+
 ## Milestones
 
 ### K-M0 - Import protocol and baseline
 
 Deliverables:
 
-- a source-fidelity worksheet covering locator, edition/version, terminology,
-  original assumptions, Atlas mapping and unresolved differences;
+- one bounded source-fidelity worksheet separating bibliographic, algorithmic,
+  representational and executable fidelity plus declared transformations;
 - a time/effort log at corpus-batch granularity;
-- a normalization rubric for identity, problem boundaries, preconditions,
-  effects, costs and evidence;
+- an import-equivalence rubric distinguishing identity, semantic, taxonomic,
+  operational and acceptable documentary differences;
 - a frozen snapshot of current schema/AST coverage before imports.
+
+Pilot cases:
+
+1. BFS and Dijkstra provide a rapid comparison over shared graph vocabulary.
+2. Union-find immediately provides a structurally different persistent-state
+   case before any conclusion about ontology adequacy.
+
+The primary equivalence question is whether normalized differences change a
+selection, substitution or composition decision. Textual YAML equality is not
+an objective.
 
 Acceptance:
 
-- two pilot entries can be reviewed without a schema or runtime change;
+- BFS, Dijkstra and union-find can be reviewed without a public schema or
+  runtime change;
 - unresolved mappings remain representable as explicit findings rather than
   forced values;
 - the protocol distinguishes quoted source fact, Atlas interpretation and
-  executable validation.
+  executable validation;
+- no general importer, metrics service, dashboard or new agent API is created.
 
 ### K-M1 - Graph corpus batch
 
@@ -160,26 +180,23 @@ work before submission.
 
 Compare:
 
-- problem and algorithm identity;
-- variant boundaries and terminology;
-- preconditions, outputs and effects;
-- complexity/evidence classification;
-- unresolved ambiguity;
-- authoring time and required human interventions.
+- **identity equivalence**: same problem and algorithm identity;
+- **semantic equivalence**: compatible preconditions, outputs and guarantees;
+- **taxonomic equivalence**: compatible categories and variant boundaries;
+- **operational equivalence**: same selection, substitution and composition
+  outcomes;
+- **documentary divergence**: wording, reference decomposition and examples that
+  do not alter a knowledge decision;
+- unresolved ambiguity, authoring time and required human interventions.
 
 Acceptance is not perfect agreement. The experiment must produce a reproducible
 agreement matrix, explain disagreements and separate protocol ambiguity from
 source ambiguity and model insufficiency.
 
-Decision trigger:
-
-- below 70% semantic agreement on core contracts, pause corpus growth and revise
-  normalization guidance;
-- above 25% lossy or blocked mappings in a batch, investigate the ontology before
-  extending execution infrastructure.
-
-Thresholds are proposed operational tripwires, not quality claims, and should be
-confirmed when the phase is activated.
+Pause corpus growth and review the ontology when remaining import differences
+change a selection, substitution or composition outcome, or when the same lossy
+mapping recurs in two structural families. Do not invent a numeric agreement
+score unless the manual pilot demonstrates that one answers a phase question.
 
 ### K-M5 - Manifest-driven candidate discovery
 
@@ -242,10 +259,16 @@ fails.
 
 Phase 2 can close when all of the following are available:
 
-- 30 or more reviewed algorithm entries from the three families and independent
-  source classes;
+- at least three structurally different algorithm families;
+- at least five problems with competing algorithms;
+- at least three algorithms with multiple implementations;
+- at least two external source types;
 - at least two externally authored implementations with preserved provenance
   and executable correction tests;
+- at least two cases that require an experimental annotation because schema 0.1
+  cannot represent them cleanly;
+- at least one substantive semantic divergence detected between independent
+  imports;
 - source-fidelity and unresolved-mapping records for every corpus batch;
 - a dual-agent import agreement report;
 - one generic candidate-discovery experiment with no new implementation branch;
@@ -253,8 +276,8 @@ Phase 2 can close when all of the following are available:
 - an evidence-based list of model changes, with no extension justified by only
   one isolated case.
 
-The numeric corpus target is a sampling floor, not the phase hypothesis. Source
-diversity, modeling failures and agent outcomes carry more weight than totals.
+The 30-to-50 corpus target is a secondary progress indicator. Source diversity,
+competing choices, modeling failures and agent outcomes are the exit evidence.
 
 ## Explicitly excluded during Phase 2
 
@@ -267,9 +290,22 @@ diversity, modeling failures and agent outcomes carry more weight than totals.
 - a general planner hidden behind source-specific rules;
 - treating AST representability as an import acceptance requirement.
 
+No public field or relation can be justified by one family alone. A schema
+proposal requires at least two materially independent cases from two structural
+families. Until then, use a private experimental annotation, non-stabilized
+relation or import report.
+
+## Anti-instrumentation rule
+
+The manual worksheet, comparison matrix, current CLI and existing executable
+gates are the default tools. New instrumentation requires a named phase question
+that cannot be answered with them. Convenience, aggregate counts or presentation
+quality alone do not justify an importer framework, dashboard, metrics service
+or new agent API.
+
 ## Strategic decisions anticipated
 
-### P2-C1 - Activate the trajectory
+### Resolved by DEC-066 - Activate the trajectory
 
 | Option | Consequence |
 |---|---|
@@ -277,9 +313,9 @@ diversity, modeling failures and agent outcomes carry more weight than totals.
 | B. Atlas Explorer first | Strongest public demonstration; weaker ontology falsification. |
 | C. Atlas Execution Lab first | Deepest runtime research; largest risk of continued center-of-gravity drift. |
 
-Recommendation: **A**.
+Accepted: **A**.
 
-### P2-C2 - Preserve source fidelity
+### Resolved by DEC-066 - Preserve source fidelity
 
 | Option | Consequence |
 |---|---|
@@ -287,8 +323,8 @@ Recommendation: **A**.
 | B. Normalize directly into current entities | Lowest initial machinery; risks erasing source distinctions. |
 | C. Store source snapshots as primary authority | High fidelity but creates copyright, versioning and multi-authority problems. |
 
-Recommendation: **A**, initially as review documentation rather than a public
-schema change.
+Accepted: **A**, initially as review documentation and private experimental
+annotations rather than a public schema change.
 
 ### P2-B1 - Agent interface for the first consumer experiment
 
@@ -310,15 +346,14 @@ Recommendation: **A**. Record friction before proposing an API.
 
 None should be decided solely from the current sequence corpus.
 
-## First two weeks of work after activation
+## First active milestone
 
 1. Select sources and licensing boundaries for the graph pilot.
 2. Draft the import worksheet outside the public schema.
-3. Import BFS and one structurally contrasting weighted algorithm twice,
-   independently.
-4. Measure disagreement and authoring friction.
-5. Adjust the protocol once, then freeze it for the first graph batch.
+3. Import BFS and Dijkstra twice, independently.
+4. Immediately import union-find through the same independent protocol.
+5. Compare decision-relevant divergence and authoring friction.
+6. Adjust the protocol once, then freeze it for the first corpus batches.
 
 This small experiment decides how to conduct the larger phase without first
 building a general importer.
-

@@ -1,5 +1,34 @@
 # Progress log
 
+## 2026-07-14 - Activate Phase 2 and adopt project vocabulary
+
+### Result
+
+- Accepted `vocab-A` as DEC-065 and adopted Atlas Knowledge, Atlas Execution Lab
+  and Atlas Explorer as orthogonal work programs.
+- Accepted `phase2-A` as DEC-066 and activated the external-corpus trial in
+  Atlas Knowledge while freezing Execution Lab and maintaining Explorer.
+- Made BFS and Dijkstra the rapid shared-vocabulary pilot, followed immediately
+  by union-find as a structurally different mandatory case.
+- Defined import equivalence by identity, semantics, taxonomy, operational
+  decisions and acceptable documentary divergence.
+- Split source fidelity into bibliographic, algorithmic, representational,
+  executable and declared-transformation dimensions.
+- Replaced corpus volume as the main exit criterion with qualitative quotas and
+  prohibited public schema extension from only one algorithm family.
+
+### Verification
+
+- DEC-065, DEC-066, the maintained vocabulary, active phase plan, roadmap,
+  status and README agree on current program states.
+- No code, schema, runtime, importer or instrumentation was added.
+
+### Limits
+
+- Source selection and licensing review remain the first K-M0 work.
+- No ontology adequacy conclusion may be drawn before the heterogeneous
+  BFS/Dijkstra/union-find pilot is reviewed.
+
 ## 2026-07-14 - Record external audit and propose post-foundation direction
 
 ### Result

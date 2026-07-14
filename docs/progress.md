@@ -1,5 +1,32 @@
 # Progress log
 
+## 2026-07-14 - Record external audit and propose post-foundation direction
+
+### Result
+
+- Recorded the independent post-MVP 6 audit as a non-normative source with
+  explicit provenance and authority.
+- Proposed three orthogonal work programs: Atlas Knowledge, Atlas Execution Lab
+  and Atlas Explorer.
+- Proposed replacing future MVP numbering with Phase, Milestone, Experiment,
+  Decision and Gate vocabulary while preserving historical records.
+- Drafted a Knowledge-first external-corpus phase covering graphs, dynamic
+  structures and streaming, plus dual-agent import and blind agent-consumer
+  experiments.
+
+### Verification
+
+- The current vision, roadmap, status and DEC-064 closure boundary were reviewed
+  before drafting the proposals.
+- Cross-document links and proposal/non-authority labels are checked locally.
+
+### Limits
+
+- No phase is activated, no schema changes and no runtime/Explorer extensions
+  are authorized by these documents.
+- Corpus source selection, licensing boundaries and proposed experiment
+  thresholds still require human validation.
+
 ## 2026-07-14 - Close MVP 6 scope
 
 ### Result

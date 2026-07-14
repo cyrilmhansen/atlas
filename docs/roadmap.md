@@ -18,6 +18,18 @@ its specialized browser execution paths with five AST-derived private programs,
 one bounded WASM visual machine and derived presentation data. DEC-064 closes
 that scope while retaining private test-only exports as differential oracles.
 
+An external post-foundation audit recommends shifting new work back to corpus,
+ontology, generic selection and agent consumption while freezing execution and
+presentation capability growth. The audit and resulting vocabulary/roadmap are
+recorded in:
+
+- `docs/audits/2026-07-14-external-project-audit.md`;
+- `docs/project-vocabulary-proposal.md`;
+- `docs/post-foundation-roadmap-proposal.md`.
+
+These are proposals. No post-foundation phase or trajectory is active until a
+new decision accepts its question, program statuses and exit evidence.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

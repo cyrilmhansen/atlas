@@ -9,6 +9,13 @@
 - MVP 5: closed under DEC-060
 - MVP 6: closed under DEC-064
 
+Post-foundation planning is proposed but not active. The external audit,
+three-program vocabulary and recommended external-corpus phase are recorded in
+`docs/audits/2026-07-14-external-project-audit.md`,
+`docs/project-vocabulary-proposal.md` and
+`docs/post-foundation-roadmap-proposal.md`. They do not change the current
+`Active MVP: none` status without a new decision.
+
 ## Latest closed slice
 
 MVP 6 replaces algorithm-specific Web steppers and rendering branches with one

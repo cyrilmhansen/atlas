@@ -1,5 +1,37 @@
 # Progress log
 
+## 2026-07-14 - Editable data and first semantic Web dynamics
+
+### Result
+
+- Accepted DEC-058 (`scope-A data-A dynamics-B`) and kept MVP 5 open for an
+  algorithm-centered interactive experience.
+- Made the sequence explicitly editable and added deterministic SplitMix64
+  generation by profile, size and unsigned 32-bit seed.
+- Separated Explore sizes up to 64 from Scale sizes up to the existing 4096
+  element limit; all generated inputs remain ephemeral.
+- Added a native adjacent-`is_sorted` trace with exact left-read, right-read and
+  comparison node IDs verified against the existing AST.
+- Put colored pseudocode, graphical state, event detail, timeline and playback
+  controls at the center of the execution view.
+- Added multi-size Scale charts for exact comparisons or swaps, with linear and
+  quadratic fixtures and an explicit separation from sourced `O(...)` claims.
+
+### Verification
+
+- `cargo test -p atlas-web-wasm --locked --offline`
+- `scripts/check-web.sh`
+- Headless Chrome desktop/mobile Explore rendering and Scale scenario inspection
+
+### Limits
+
+- Reverse and insertion have deterministic Scale charts but no semantic trace
+  or pseudocode view yet.
+- Scale execution is synchronous and bounded to 4096 elements; cancellation is
+  not required at the current limit.
+- The changed bundle needs a new clean-archive reproducibility record before
+  formal MVP closure.
+
 ## 2026-07-14 - Reproducible MVP 5 bundle gate
 
 ### Result

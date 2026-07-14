@@ -64,6 +64,29 @@ shape is compatible; they remain attributed to `sequence.sort` and are not
 presented as problem-specific specifications for those operations. Edited input
 is immediately marked as custom, ephemeral and without registry evidence.
 
+DEC-058 adds a second deterministic local-data path. The user can edit the
+sequence directly or generate `uniform`, `few_unique`, `ascending` and
+`descending` profiles from an explicit unsigned 32-bit seed. Explore sizes 8
+through 64 admit bounded animation. Scale sizes 128 through 4096 retain the
+existing execution limit and show exact operation counts across multiple `n`
+values. Generated data remains ephemeral and is never promoted to DatasetSpec
+or registry evidence.
+
+Adjacent `is_sorted` is the first semantic-dynamics adapter. It calls the native
+algorithm and records each left read, right read and comparison at its comparator
+boundary. Every event exposes the exact node ID from
+`ast.order.is_sorted.adjacent.v0`; Rust tests verify node existence and operation
+concordance against the AST. The browser renders the already tested textual
+pseudocode, active node, immutable sequence state, event detail, timeline and
+reset/previous/play/next controls. Inputs above 64 elements cannot produce this
+trace.
+
+The Scale chart runs complete generated sequences at increasing sizes and plots
+deterministic comparisons or swaps. It illustrates profile-dependent operation
+growth only. It neither derives asymptotic complexity nor replaces the sourced
+claim displayed above it. A scenario can be reproduced with private URL
+parameters such as `?algorithm=insertion&profile=descending&size=128&seed=7`.
+
 The browser timing is calibrated over a bounded repeated batch and includes the
 JavaScript/WebAssembly call boundary and observation allocation. The display
 records repetitions, elapsed batch duration and browser identity. It is neither
@@ -73,12 +96,17 @@ algorithm-only timing nor portable benchmark evidence.
 
 - The static bundle is built and tested locally but not published.
 - Projection JSON and generated bindings are ignored build products.
-- MIR, target code and semantic trace playback are not executed in the browser.
+- MIR and target code are not executed in the browser; native Rust/WASM remains
+  the dynamics and correction path.
+- Reverse and insertion expose Scale counts but do not yet have validated
+  pseudocode/AST trace adapters.
 
 ## Reproducible bundle gate
 
-The complete bundle has been rebuilt from a Git archive containing no `.git`,
+The DEC-057 checkpoint bundle was rebuilt from a Git archive containing no `.git`,
 `target` or ignored build products. With the source commit supplied explicitly,
 `scripts/check-web.sh` reproduced identical SHA-256 hashes for all eight output
 files: HTML, CSS, JavaScript, projection JSON, WASM, JavaScript bindings and both
-TypeScript declarations. See `docs/mvp5-review.md` for the exit audit.
+TypeScript declarations. DEC-058 adds another source module and changes the
+bundle; its final clean-archive manifest must be recorded again before closure.
+See `docs/mvp5-review.md` for the earlier checkpoint audit.

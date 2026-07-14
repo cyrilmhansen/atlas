@@ -51,18 +51,91 @@
           </div>
         </div>
 
+        <section id="dynamics-panel" class="dynamics-panel" aria-labelledby="dynamics-heading" tabindex="0">
+          <div class="dynamics-code">
+            <div class="section-heading">
+              <div>
+                <p class="section-index">Algorithm</p>
+                <h3 id="dynamics-heading">Semantic pseudocode</h3>
+              </div>
+              <code id="trace-ast-id">AST pending</code>
+            </div>
+            <div id="pseudocode-code" class="pseudocode-code" aria-label="Algorithm pseudocode"></div>
+          </div>
+          <div class="dynamics-state">
+            <div class="section-heading">
+              <div>
+                <p class="section-index">Execution</p>
+                <h3>State transition</h3>
+              </div>
+              <span id="trace-progress" class="trace-progress">Trace pending</span>
+            </div>
+            <div id="trace-sequence" class="trace-sequence"></div>
+            <p id="trace-event" class="trace-event">Run an Explore input to construct the trace.</p>
+            <input id="trace-slider" class="trace-slider" type="range" min="0" max="0" value="0" aria-label="Trace position">
+            <div class="trace-controls" aria-label="Trace playback controls">
+              <button id="trace-reset" type="button">Reset</button>
+              <button id="trace-previous" type="button">Previous</button>
+              <button id="trace-play" class="primary-command" type="button">Play</button>
+              <button id="trace-next" type="button">Next</button>
+              <label for="trace-speed">Speed
+                <select id="trace-speed">
+                  <option value="1200">Slow</option>
+                  <option value="650" selected>Normal</option>
+                  <option value="250">Fast</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </section>
+
         <div class="workbench">
           <section class="input-panel" aria-labelledby="input-heading">
             <div class="section-heading">
               <div>
                 <p class="section-index">01</p>
-                <h3 id="input-heading">Working data</h3>
+                <h3 id="input-heading">Editable working data</h3>
               </div>
-              <select id="dataset-select" aria-label="Dataset">
+              <span class="editable-badge">Editable</span>
+            </div>
+            <div class="source-control">
+              <label for="dataset-select">DatasetSpec case</label>
+              <select id="dataset-select">
                 <option value="">Loading DatasetSpec cases</option>
               </select>
             </div>
-            <label for="sequence-input">Signed 32-bit integers</label>
+            <fieldset class="generator-controls">
+              <legend>Deterministic local generator</legend>
+              <label for="generator-profile">Profile
+                <select id="generator-profile">
+                  <option value="uniform">Pseudo-random uniform</option>
+                  <option value="few_unique">Few unique values</option>
+                  <option value="ascending">Ascending</option>
+                  <option value="descending">Descending</option>
+                </select>
+              </label>
+              <label for="generator-size">Size
+                <select id="generator-size">
+                  <optgroup label="Explore - animated">
+                    <option value="8">8</option>
+                    <option value="16" selected>16</option>
+                    <option value="32">32</option>
+                    <option value="64">64</option>
+                  </optgroup>
+                  <optgroup label="Scale - aggregate">
+                    <option value="128">128</option>
+                    <option value="512">512</option>
+                    <option value="2048">2048</option>
+                    <option value="4096">4096</option>
+                  </optgroup>
+                </select>
+              </label>
+              <label for="generator-seed">Seed
+                <input id="generator-seed" type="number" min="0" max="4294967295" step="1" value="1">
+              </label>
+              <button id="generate-button" type="button">Generate</button>
+            </fieldset>
+            <label class="editor-label" for="sequence-input">Sequence values - edit directly</label>
             <textarea id="sequence-input" rows="3" spellcheck="false"></textarea>
             <p class="dataset-context" id="dataset-context">Dataset provenance pending.</p>
             <div class="input-actions">
@@ -101,6 +174,18 @@
           </section>
         </div>
 
+        <section id="scale-panel" class="scale-panel" aria-labelledby="scale-heading" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="section-index">Scale</p>
+              <h3 id="scale-heading">Deterministic operation growth</h3>
+            </div>
+            <span id="scale-operation" class="trace-progress">Operation count</span>
+          </div>
+          <div id="scale-chart" class="scale-chart"></div>
+          <p id="scale-note" class="runtime-context"></p>
+        </section>
+
         <section class="sequence-panel" aria-labelledby="sequence-heading">
           <div class="section-heading">
             <div>
@@ -110,6 +195,7 @@
             <span class="legend"><i></i><span id="legend-text">first decreasing pair</span></span>
           </div>
           <div id="sequence-visual" class="sequence-visual"></div>
+          <p id="sequence-note" class="sequence-note"></p>
         </section>
       </section>
 

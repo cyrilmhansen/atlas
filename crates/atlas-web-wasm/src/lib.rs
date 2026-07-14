@@ -6,6 +6,11 @@ use atlas_algorithms::reverse::reverse_in_place;
 use wasm_bindgen::prelude::*;
 
 pub const MAX_INPUT_LENGTH: usize = 4_096;
+pub const MAX_TRACE_INPUT_LENGTH: usize = 64;
+
+const LEFT_READ_NODE: &str = "is-sorted.left.read";
+const RIGHT_READ_NODE: &str = "is-sorted.right.read";
+const COMPARE_NODE: &str = "is-sorted.adjacent.compare";
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -62,6 +67,144 @@ pub fn observe_is_sorted(values: &[i32]) -> Result<IsSortedObservation, usize> {
         sorted,
         comparisons,
         first_inversion,
+    })
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum TraceOperation {
+    Read,
+    Compare,
+}
+
+impl TraceOperation {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Read => "Read",
+            Self::Compare => "Compare",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct IsSortedTraceEvent {
+    node_id: &'static str,
+    operation: TraceOperation,
+    left_index: u32,
+    right_index: Option<u32>,
+    ordering: Option<i8>,
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IsSortedTrace {
+    sorted: bool,
+    first_inversion: Option<u32>,
+    events: Vec<IsSortedTraceEvent>,
+}
+
+#[wasm_bindgen]
+impl IsSortedTrace {
+    #[wasm_bindgen(getter)]
+    pub fn sorted(&self) -> bool {
+        self.sorted
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn first_inversion(&self) -> Option<u32> {
+        self.first_inversion
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn event_count(&self) -> u32 {
+        self.events.len() as u32
+    }
+
+    pub fn event_node_id(&self, index: u32) -> Option<String> {
+        self.events
+            .get(index as usize)
+            .map(|event| event.node_id.to_owned())
+    }
+
+    pub fn event_operation(&self, index: u32) -> Option<String> {
+        self.events
+            .get(index as usize)
+            .map(|event| event.operation.name().to_owned())
+    }
+
+    pub fn event_left_index(&self, index: u32) -> Option<u32> {
+        self.events
+            .get(index as usize)
+            .map(|event| event.left_index)
+    }
+
+    pub fn event_right_index(&self, index: u32) -> Option<u32> {
+        self.events
+            .get(index as usize)
+            .and_then(|event| event.right_index)
+    }
+
+    pub fn event_ordering(&self, index: u32) -> Option<i8> {
+        self.events
+            .get(index as usize)
+            .and_then(|event| event.ordering)
+    }
+}
+
+#[wasm_bindgen]
+pub fn trace_is_sorted_i32(values: &[i32]) -> Result<IsSortedTrace, JsError> {
+    trace_is_sorted(values).map_err(|length| {
+        JsError::new(&format!(
+            "trace input length {length} exceeds the Atlas Explore limit of {MAX_TRACE_INPUT_LENGTH}"
+        ))
+    })
+}
+
+pub fn trace_is_sorted(values: &[i32]) -> Result<IsSortedTrace, usize> {
+    if values.len() > MAX_TRACE_INPUT_LENGTH {
+        return Err(values.len());
+    }
+
+    let mut events = Vec::with_capacity(values.len().saturating_sub(1) * 3);
+    let mut first_inversion = None;
+    let sorted = is_sorted_by(values, |left, right| {
+        let right_index = (events.len() / 3 + 1) as u32;
+        let left_index = right_index - 1;
+        events.push(IsSortedTraceEvent {
+            node_id: LEFT_READ_NODE,
+            operation: TraceOperation::Read,
+            left_index,
+            right_index: None,
+            ordering: None,
+        });
+        events.push(IsSortedTraceEvent {
+            node_id: RIGHT_READ_NODE,
+            operation: TraceOperation::Read,
+            left_index: right_index,
+            right_index: None,
+            ordering: None,
+        });
+        let ordering = left.cmp(right);
+        events.push(IsSortedTraceEvent {
+            node_id: COMPARE_NODE,
+            operation: TraceOperation::Compare,
+            left_index,
+            right_index: Some(right_index),
+            ordering: Some(match ordering {
+                Ordering::Less => -1,
+                Ordering::Equal => 0,
+                Ordering::Greater => 1,
+            }),
+        });
+        if ordering == Ordering::Greater {
+            first_inversion = Some(right_index);
+        }
+        ordering
+    });
+
+    Ok(IsSortedTrace {
+        sorted,
+        first_inversion,
+        events,
     })
 }
 
@@ -206,8 +349,10 @@ pub fn observe_reverse(values: &[i32]) -> Result<ReverseObservation, usize> {
 #[cfg(test)]
 mod tests {
     use super::{
-        InsertionSortObservation, IsSortedObservation, MAX_INPUT_LENGTH, ReverseObservation,
-        observe_insertion_sort, observe_is_sorted, observe_reverse,
+        COMPARE_NODE, InsertionSortObservation, IsSortedObservation, LEFT_READ_NODE,
+        MAX_INPUT_LENGTH, MAX_TRACE_INPUT_LENGTH, RIGHT_READ_NODE, ReverseObservation,
+        TraceOperation, observe_insertion_sort, observe_is_sorted, observe_reverse,
+        trace_is_sorted,
     };
 
     #[test]
@@ -321,5 +466,55 @@ mod tests {
         let second = observe_reverse(&first.values).unwrap();
 
         assert_eq!(second.values, input);
+    }
+
+    #[test]
+    fn is_sorted_trace_links_every_event_to_the_exact_ast_operation() {
+        use atlas::ast::{SemanticOperation, is_sorted_ast};
+
+        let trace = trace_is_sorted(&[1, 2, 5, 4, 6]).unwrap();
+        assert!(!trace.sorted);
+        assert_eq!(trace.first_inversion, Some(3));
+        assert_eq!(trace.events.len(), 9);
+        assert_eq!(
+            trace
+                .events
+                .iter()
+                .map(|event| event.node_id)
+                .collect::<Vec<_>>(),
+            [
+                LEFT_READ_NODE,
+                RIGHT_READ_NODE,
+                COMPARE_NODE,
+                LEFT_READ_NODE,
+                RIGHT_READ_NODE,
+                COMPARE_NODE,
+                LEFT_READ_NODE,
+                RIGHT_READ_NODE,
+                COMPARE_NODE,
+            ]
+        );
+
+        let ast = is_sorted_ast();
+        for event in &trace.events {
+            let expected = match event.operation {
+                TraceOperation::Read => SemanticOperation::Read,
+                TraceOperation::Compare => SemanticOperation::Compare,
+            };
+            assert_eq!(ast.operation_by_id(event.node_id), Some(expected));
+        }
+        let comparison = trace.events.last().unwrap();
+        assert_eq!(comparison.left_index, 2);
+        assert_eq!(comparison.right_index, Some(3));
+        assert_eq!(comparison.ordering, Some(1));
+    }
+
+    #[test]
+    fn is_sorted_trace_is_bounded_to_explore_inputs() {
+        assert!(trace_is_sorted(&vec![0; MAX_TRACE_INPUT_LENGTH]).is_ok());
+        assert_eq!(
+            trace_is_sorted(&vec![0; MAX_TRACE_INPUT_LENGTH + 1]),
+            Err(MAX_TRACE_INPUT_LENGTH + 1)
+        );
     }
 }

@@ -1,8 +1,9 @@
 # MVP 5 review
 
-Review date: 2026-07-14. Candidate scope: the local static interactive artifact
-authorized by DEC-053 through DEC-057. Exit evidence is complete; formal closure
-still requires a class C decision.
+Review date: 2026-07-14. This records the reproducible local-artifact checkpoint
+authorized by DEC-053 through DEC-057. DEC-058 subsequently keeps MVP 5 open for
+editable generation, operation-growth views and bounded semantic dynamics; this
+document is therefore a checkpoint audit rather than a closure candidate.
 
 ## Demonstrated boundary
 

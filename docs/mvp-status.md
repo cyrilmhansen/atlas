@@ -1,7 +1,7 @@
 # MVP status
 
 - Active MVP: **MVP 5**
-- Status: MVP 1 through MVP 4 closed; MVP 5 exit evidence complete, formal closure pending
+- Status: MVP 1 through MVP 4 closed; MVP 5 extended under DEC-058
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
 - MVP 3: closed locally under DEC-038
@@ -29,7 +29,13 @@ the Web selector now materializes five deterministic cases from the accepted
 sorting DatasetSpec with their original attribution and content digests. The
 bundle records its effective build and browser environments. A Git archive
 without repository metadata or prior build products reproduces all eight bundle
-files bit for bit. MVP 5 is ready for a formal class C closure decision.
+files bit for bit. DEC-058 keeps MVP 5 open for editable deterministic data,
+operation-growth views and bounded semantic dynamics. Adjacent `is_sorted` is
+the first accepted trace adapter: its bounded native trace, exact AST-node
+links, pseudocode highlighting and playback controls are implemented. Seeded
+Explore/Scale generation and deterministic multi-size operation charts are also
+complete. Reverse and insertion remain aggregate/Scale-only, and the extended
+bundle reproducibility gate must be rerun before closure.
 
 Current corpus progress:
 

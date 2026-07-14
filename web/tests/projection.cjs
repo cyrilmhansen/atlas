@@ -32,6 +32,15 @@ assert.equal(new Set(projection.datasets.map((dataset) => dataset.content_digest
 assert.deepEqual(projection.datasets[1].values, []);
 assert.deepEqual(projection.datasets[4].values, [5, -1, 5, 3, 0, -8, 3]);
 
+assert.equal(projection.dynamics.length, 1);
+assert.equal(projection.dynamics[0].algorithm_id, "order.is_sorted.adjacent");
+assert.equal(projection.dynamics[0].ast_id, "ast.order.is_sorted.adjacent.v0");
+assert.equal(projection.dynamics[0].max_trace_input_length, 64);
+assert.match(
+  projection.dynamics[0].pseudocode_source,
+  /operation is-sorted\.adjacent\.compare \| Compare/,
+);
+
 const algorithm = projection.algorithms.find((item) => item.id === "order.is_sorted.adjacent");
 assert.ok(algorithm);
 assert.equal(algorithm.solves, "sequence.is_sorted");

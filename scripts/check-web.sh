@@ -16,13 +16,17 @@ wasm-bindgen \
   target/wasm32-unknown-unknown/release/atlas_web_wasm.wasm
 
 node web/tests/is_sorted.cjs "$node_output/atlas_web.js"
+node web/tests/is_sorted_trace.cjs "$node_output/atlas_web.js"
 node web/tests/insertion_sort.cjs "$node_output/atlas_web.js"
 node web/tests/reverse.cjs "$node_output/atlas_web.js"
+node web/tests/generator.mjs
+node web/tests/scale_growth.mjs "$node_output/atlas_web.js"
 node web/tests/projection.cjs build/web/data/atlas.json
 
 test -s build/web/index.html
 test -s build/web/styles.css
 test -s build/web/app.js
+test -s build/web/generator.mjs
 test -s build/web/pkg/atlas_web.js
 test -s build/web/pkg/atlas_web_bg.wasm
 

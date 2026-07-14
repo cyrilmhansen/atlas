@@ -2,7 +2,9 @@ import init, {
   observe_insertion_sort_i32,
   observe_is_sorted_i32,
   observe_reverse_i32,
+  trace_is_sorted_i32,
 } from "./pkg/atlas_web.js";
+import { EXPLORE_MAX_LENGTH, generateSequence } from "./generator.mjs";
 
 const algorithmUi = {
   is_sorted: {
@@ -48,6 +50,11 @@ const elements = Object.fromEntries(
     "dataset-select", "dataset-context", "sequence-input", "input-count", "run-button", "runtime-status",
     "sorted-result", "comparison-count", "inversion-index", "local-time",
     "runtime-context", "sequence-heading", "sequence-visual", "legend-text",
+    "sequence-note", "dynamics-panel", "trace-ast-id", "pseudocode-code",
+    "trace-progress", "trace-sequence", "trace-event", "trace-slider",
+    "trace-reset", "trace-previous", "trace-play", "trace-next", "trace-speed",
+    "generator-profile", "generator-size", "generator-seed", "generate-button",
+    "scale-panel", "scale-operation", "scale-chart", "scale-note",
     "catalog-search", "catalog-body",
   ].map((id) => [id, document.getElementById(id)]),
 );
@@ -55,6 +62,141 @@ const elements = Object.fromEntries(
 let projection;
 let wasmReady = false;
 let activeAlgorithm = "is_sorted";
+let generatedInput = null;
+const tracePlayback = { values: [], events: [], index: -1, timer: null };
+
+function stopTracePlayback() {
+  if (tracePlayback.timer !== null) window.clearInterval(tracePlayback.timer);
+  tracePlayback.timer = null;
+  elements["trace-play"].textContent = "Play";
+}
+
+function clearTrace(message) {
+  stopTracePlayback();
+  tracePlayback.values = [];
+  tracePlayback.events = [];
+  tracePlayback.index = -1;
+  elements["trace-progress"].textContent = "No trace";
+  elements["trace-event"].textContent = message;
+  elements["trace-slider"].max = "0";
+  elements["trace-slider"].value = "0";
+  elements["trace-sequence"].replaceChildren();
+  document.querySelectorAll(".pseudo-line").forEach((line) => line.classList.remove("is-active"));
+  updateTraceControls();
+}
+
+function pseudocodeLine(sourceLine) {
+  const text = sourceLine.trim();
+  const indent = Math.floor((sourceLine.length - sourceLine.trimStart().length) / 2);
+  if (text.startsWith("operation ")) {
+    const [nodeId, operation, description] = text.slice("operation ".length).split("|").map((field) => field.trim());
+    return { text: `${operation.toLowerCase()} ${description}`, nodeId, indent, kind: "operation" };
+  }
+  if (text.startsWith("let ")) {
+    const [name, expression] = text.slice(4).split("|").map((field) => field.trim());
+    return { text: `${name} <- ${expression}`, indent, kind: "control" };
+  }
+  if (text.startsWith("while ") || text.startsWith("if ") || text === "end") {
+    return { text, indent, kind: "control" };
+  }
+  if (text.startsWith("return ")) return { text, indent, kind: "return" };
+  return { text, indent, kind: "plain" };
+}
+
+function renderPseudocode(dynamics) {
+  let inBody = false;
+  const lines = [];
+  for (const sourceLine of dynamics.pseudocode_source.split("\n")) {
+    const text = sourceLine.trim();
+    if (text === "begin") {
+      inBody = true;
+      continue;
+    }
+    if (!inBody || text === "" || text.startsWith("#")) continue;
+    lines.push(pseudocodeLine(sourceLine));
+  }
+  elements["pseudocode-code"].replaceChildren(...lines.map((line) => {
+    const row = document.createElement("div");
+    row.className = `pseudo-line is-${line.kind}`;
+    row.style.setProperty("--indent", String(line.indent));
+    row.textContent = line.text;
+    if (line.nodeId) row.dataset.nodeId = line.nodeId;
+    return row;
+  }));
+  elements["trace-ast-id"].textContent = dynamics.ast_id;
+}
+
+function traceEventLabel(event) {
+  if (event.operation === "Read") {
+    return `${event.nodeId}: read values[${event.leftIndex}] = ${tracePlayback.values[event.leftIndex]}`;
+  }
+  const symbols = ["<", "=", ">"];
+  return `${event.nodeId}: compare values[${event.leftIndex}] ${symbols[event.ordering + 1]} values[${event.rightIndex}]`;
+}
+
+function renderTraceState() {
+  const event = tracePlayback.events[tracePlayback.index];
+  elements["trace-sequence"].replaceChildren(...tracePlayback.values.map((value, index) => {
+    const cell = document.createElement("div");
+    cell.className = "trace-cell";
+    if (event?.operation === "Read" && index === event.leftIndex) cell.classList.add("is-read");
+    if (event?.operation === "Compare"
+      && (index === event.leftIndex || index === event.rightIndex)) {
+      cell.classList.add(event.ordering > 0 ? "is-inversion" : "is-compare");
+    }
+    const label = document.createElement("span");
+    label.textContent = String(value);
+    const position = document.createElement("small");
+    position.textContent = `#${index}`;
+    cell.append(label, position);
+    return cell;
+  }));
+  document.querySelectorAll(".pseudo-line").forEach((line) => {
+    line.classList.toggle("is-active", Boolean(event) && line.dataset.nodeId === event.nodeId);
+  });
+  elements["trace-progress"].textContent = event
+    ? `Event ${tracePlayback.index + 1} / ${tracePlayback.events.length}`
+    : `Ready / ${tracePlayback.events.length} events`;
+  elements["trace-event"].textContent = event
+    ? traceEventLabel(event)
+    : "Initial immutable sequence; advance to the first semantic event.";
+  elements["trace-slider"].value = String(tracePlayback.index + 1);
+  updateTraceControls();
+}
+
+function updateTraceControls() {
+  const available = tracePlayback.events.length > 0;
+  elements["trace-reset"].disabled = !available || tracePlayback.index < 0;
+  elements["trace-previous"].disabled = !available || tracePlayback.index < 0;
+  elements["trace-play"].disabled = !available;
+  elements["trace-next"].disabled = !available || tracePlayback.index >= tracePlayback.events.length - 1;
+}
+
+function setTraceIndex(index) {
+  tracePlayback.index = Math.max(-1, Math.min(index, tracePlayback.events.length - 1));
+  renderTraceState();
+}
+
+function prepareIsSortedTrace(values) {
+  stopTracePlayback();
+  if (values.length > EXPLORE_MAX_LENGTH) {
+    clearTrace(`Scale input (${values.length} values): semantic animation is bounded to ${EXPLORE_MAX_LENGTH}.`);
+    return;
+  }
+  const trace = trace_is_sorted_i32(new Int32Array(values));
+  tracePlayback.values = [...values];
+  tracePlayback.events = Array.from({ length: trace.event_count }, (_, index) => ({
+    nodeId: trace.event_node_id(index),
+    operation: trace.event_operation(index),
+    leftIndex: trace.event_left_index(index),
+    rightIndex: trace.event_right_index(index),
+    ordering: trace.event_ordering(index),
+  }));
+  tracePlayback.index = -1;
+  elements["trace-slider"].max = String(tracePlayback.events.length);
+  trace.free();
+  renderTraceState();
+}
 
 function datasetOptionLabel(dataset) {
   const name = dataset.case_id.split(".").at(-1).replaceAll("_", " ");
@@ -67,10 +209,15 @@ function selectDataset(caseId) {
   elements["dataset-select"].value = dataset.case_id;
   elements["sequence-input"].value = dataset.values.join(", ");
   elements["dataset-context"].textContent = `${dataset.spec_id} for ${dataset.problem_id}; ${dataset.class}; seed ${dataset.seed}; sha256 ${dataset.content_digest_sha256}`;
+  generatedInput = null;
 }
 
 function populateDatasets() {
-  elements["dataset-select"].replaceChildren(...projection.datasets.map((dataset) => {
+  const custom = document.createElement("option");
+  custom.value = "";
+  custom.textContent = "Custom or generated input";
+  custom.disabled = true;
+  elements["dataset-select"].replaceChildren(custom, ...projection.datasets.map((dataset) => {
     const option = document.createElement("option");
     option.value = dataset.case_id;
     option.textContent = datasetOptionLabel(dataset);
@@ -100,6 +247,11 @@ function setRuntimeStatus(label, state) {
 function renderSequence(values, highlight = {}) {
   const visual = elements["sequence-visual"];
   visual.replaceChildren();
+  const displayLimit = 128;
+  const displayedValues = values.slice(0, displayLimit);
+  elements["sequence-note"].textContent = values.length > displayLimit
+    ? `Scale overview: first ${displayLimit} of ${values.length} values shown; counters use the complete sequence.`
+    : "";
   if (values.length === 0) {
     const empty = document.createElement("span");
     empty.className = "empty-state";
@@ -107,8 +259,8 @@ function renderSequence(values, highlight = {}) {
     visual.append(empty);
     return;
   }
-  const scale = Math.max(...values.map((value) => Math.abs(value)), 1);
-  values.forEach((value, index) => {
+  const scale = Math.max(...displayedValues.map((value) => Math.abs(value)), 1);
+  displayedValues.forEach((value, index) => {
     const column = document.createElement("div");
     column.className = "value-column";
     if (highlight.firstInversion !== undefined
@@ -186,6 +338,7 @@ function runIsSorted(values) {
   elements["comparison-count"].textContent = String(observation.comparisons);
   elements["inversion-index"].textContent = firstInversion ?? "None";
   renderSequence(values, { firstInversion });
+  prepareIsSortedTrace(values);
   displayTiming(timing, "JS/WASM observation");
   observation.free();
 }
@@ -253,6 +406,8 @@ function runObservation() {
     if (activeAlgorithm === "is_sorted") runIsSorted(values);
     else if (activeAlgorithm === "insertion") runInsertionSort(values);
     else runReverse(values);
+    if (generatedInput && generatedInput.length > EXPLORE_MAX_LENGTH) renderScaleStudy(generatedInput);
+    else elements["scale-panel"].hidden = true;
     setRuntimeStatus("WASM ready", "ready");
   } catch (error) {
     elements["sorted-result"].textContent = "Invalid input";
@@ -262,6 +417,72 @@ function runObservation() {
     elements["local-time"].textContent = "-";
     elements["runtime-context"].textContent = error instanceof Error ? error.message : String(error);
     setRuntimeStatus("Input rejected", "error");
+  }
+}
+
+function countSelectedOperation(values) {
+  const input = new Int32Array(values);
+  if (activeAlgorithm === "is_sorted") {
+    const observation = observe_is_sorted_i32(input);
+    const count = observation.comparisons;
+    observation.free();
+    return [count, "Adjacent comparisons"];
+  }
+  if (activeAlgorithm === "insertion") {
+    const observation = observe_insertion_sort_i32(input);
+    const count = observation.comparisons;
+    observation.free();
+    return [count, "Comparisons"];
+  }
+  const observation = observe_reverse_i32(input);
+  const count = observation.swaps;
+  observation.free();
+  return [count, "Symmetric swaps"];
+}
+
+function renderScaleStudy(configuration) {
+  const candidates = [8, 16, 32, 64, 128, 512, 2048, 4096];
+  const sizes = candidates.filter((size) => size <= configuration.length);
+  if (!sizes.includes(configuration.length)) sizes.push(configuration.length);
+  const observations = sizes.map((size) => {
+    const values = generateSequence(configuration.profile, size, configuration.seed);
+    const [count, operation] = countSelectedOperation(values);
+    return { size, count, operation };
+  });
+  const maximum = Math.max(...observations.map((observation) => observation.count), 1);
+  elements["scale-chart"].replaceChildren(...observations.map((observation) => {
+    const column = document.createElement("div");
+    column.className = "scale-column";
+    const count = document.createElement("strong");
+    count.textContent = observation.count.toLocaleString("en-US");
+    const bar = document.createElement("div");
+    bar.className = "scale-bar";
+    bar.style.height = `${Math.max(4, Math.round((observation.count / maximum) * 150))}px`;
+    const size = document.createElement("span");
+    size.textContent = `n=${observation.size}`;
+    column.append(count, bar, size);
+    return column;
+  }));
+  elements["scale-operation"].textContent = observations[0].operation;
+  elements["scale-note"].textContent = `${configuration.profile}; seed ${configuration.seed}. Exact semantic counts over complete generated sequences. This illustrates input-dependent growth; the sourced complexity claim above remains authoritative.`;
+  elements["scale-panel"].hidden = false;
+}
+
+function generateFromControls() {
+  try {
+    const profile = elements["generator-profile"].value;
+    const length = Number(elements["generator-size"].value);
+    const seed = Number(elements["generator-seed"].value);
+    const values = generateSequence(profile, length, seed);
+    generatedInput = { profile, length, seed };
+    elements["dataset-select"].value = "";
+    elements["sequence-input"].value = values.join(", ");
+    const regime = length <= EXPLORE_MAX_LENGTH ? "Explore" : "Scale";
+    elements["dataset-context"].textContent = `Generated locally; ${regime}; ${profile}; length ${length}; seed ${seed}; deterministic and ephemeral.`;
+    runObservation();
+  } catch (error) {
+    elements["runtime-context"].textContent = error instanceof Error ? error.message : String(error);
+    setRuntimeStatus("Generator rejected", "error");
   }
 }
 
@@ -320,6 +541,13 @@ function applyProjection() {
   elements["sequence-heading"].textContent = ui.sequenceHeading;
   elements["legend-text"].textContent = ui.legend;
   elements["legend-text"].parentElement.classList.toggle("is-moved", ui.moved);
+  const dynamics = projection.dynamics.find((item) => item.algorithm_id === algorithm.id);
+  elements["dynamics-panel"].hidden = !dynamics;
+  if (dynamics) {
+    renderPseudocode(dynamics);
+  } else {
+    clearTrace("No validated semantic trace is exposed for this algorithm.");
+  }
   renderCatalog();
 }
 
@@ -355,6 +583,8 @@ elements["dataset-select"].addEventListener("change", () => {
 elements["sequence-input"].addEventListener("input", () => {
   elements["dataset-select"].value = "";
   elements["dataset-context"].textContent = "Custom ephemeral input; no registry evidence.";
+  generatedInput = null;
+  clearTrace("Input edited; run the algorithm to rebuild its semantic trace.");
   try {
     const count = parseSequence().length;
     elements["input-count"].textContent = `${count} value${count === 1 ? "" : "s"}`;
@@ -362,10 +592,58 @@ elements["sequence-input"].addEventListener("input", () => {
     elements["input-count"].textContent = "Invalid value";
   }
 });
+elements["generate-button"].addEventListener("click", generateFromControls);
+elements["trace-reset"].addEventListener("click", () => {
+  stopTracePlayback();
+  setTraceIndex(-1);
+});
+elements["trace-previous"].addEventListener("click", () => {
+  stopTracePlayback();
+  setTraceIndex(tracePlayback.index - 1);
+});
+elements["trace-next"].addEventListener("click", () => {
+  stopTracePlayback();
+  setTraceIndex(tracePlayback.index + 1);
+});
+elements["trace-play"].addEventListener("click", () => {
+  if (tracePlayback.timer !== null) {
+    stopTracePlayback();
+    return;
+  }
+  if (tracePlayback.index >= tracePlayback.events.length - 1) setTraceIndex(-1);
+  elements["trace-play"].textContent = "Pause";
+  tracePlayback.timer = window.setInterval(() => {
+    if (tracePlayback.index >= tracePlayback.events.length - 1) {
+      stopTracePlayback();
+      return;
+    }
+    setTraceIndex(tracePlayback.index + 1);
+  }, Number(elements["trace-speed"].value));
+});
+elements["trace-slider"].addEventListener("input", () => {
+  stopTracePlayback();
+  setTraceIndex(Number(elements["trace-slider"].value) - 1);
+});
+elements["dynamics-panel"].addEventListener("keydown", (event) => {
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    stopTracePlayback();
+    setTraceIndex(tracePlayback.index - 1);
+  } else if (event.key === "ArrowRight") {
+    event.preventDefault();
+    stopTracePlayback();
+    setTraceIndex(tracePlayback.index + 1);
+  } else if (event.key === " ") {
+    event.preventDefault();
+    elements["trace-play"].click();
+  }
+});
 elements["run-button"].addEventListener("click", runObservation);
 elements["catalog-search"].addEventListener("input", renderCatalog);
 
-const requestedAlgorithm = new URLSearchParams(window.location.search).get("algorithm");
+const query = new URLSearchParams(window.location.search);
+const requestedAlgorithm = query.get("algorithm");
 if (requestedAlgorithm && algorithmUi[requestedAlgorithm]) {
   activeAlgorithm = requestedAlgorithm;
   document.querySelectorAll("[data-algorithm]").forEach((item) => {
@@ -386,7 +664,21 @@ try {
   applyProjection();
   wasmReady = true;
   setRuntimeStatus("WASM ready", "ready");
-  runObservation();
+  const requestedProfile = query.get("profile");
+  const requestedSize = query.get("size");
+  const requestedSeed = query.get("seed");
+  const profileExists = [...elements["generator-profile"].options]
+    .some((option) => option.value === requestedProfile);
+  const sizeExists = [...elements["generator-size"].options]
+    .some((option) => option.value === requestedSize);
+  if (profileExists && sizeExists && /^\d+$/.test(requestedSeed ?? "")) {
+    elements["generator-profile"].value = requestedProfile;
+    elements["generator-size"].value = requestedSize;
+    elements["generator-seed"].value = requestedSeed;
+    generateFromControls();
+  } else {
+    runObservation();
+  }
 } catch (error) {
   setRuntimeStatus("Runtime unavailable", "error");
   elements["runtime-context"].textContent = error instanceof Error ? error.message : String(error);

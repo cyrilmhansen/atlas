@@ -11,3 +11,6 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 atlas-algorithms = { path = "../atlas-algorithms", default-features = false }
 wasm-bindgen.workspace = true
+
+[dev-dependencies]
+atlas = { path = "../atlas" }

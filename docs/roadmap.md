@@ -398,8 +398,16 @@ Current status:
 - The complete bundle gate passes from a Git archive without `.git`, `target` or
   prior Web output. All eight generated files match the normal build bit for
   bit, and effective build/runtime environments are exposed.
-- All activated MVP 5 exit evidence is complete. Stage 4 and external
-  publication remain excluded; formal MVP closure is a pending class C decision.
+- DEC-058 extends the active scope with Stage 4 before closure. Its first gate is
+  a bounded adjacent-`is_sorted` trace linked to exact AST nodes, alongside
+  deterministic editable-data generation and a separate scale regime.
+- That first gate is complete: Explore provides pseudocode-linked playback up to
+  64 elements, while Scale plots exact comparisons/swaps through 4096 elements
+  without treating browser timing as complexity evidence.
+- Reverse and insertion still need separately validated AST/trace adapters. The
+  extended clean-archive bundle manifest must then be recorded again.
+- External publication remains excluded. Formal closure is reconsidered after
+  the dynamics and operation-growth gates, without promoting a public trace API.
 
 Resource limits must be part of the local execution boundary: maximum input
 length, trace-event cap, step budget, cancellation and no network access from

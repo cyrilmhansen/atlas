@@ -19,6 +19,7 @@ pub struct WebProjection<'a> {
     algorithms: Vec<WebAlgorithm<'a>>,
     implementations: Vec<WebImplementation<'a>>,
     datasets: Vec<WebDataset>,
+    dynamics: Vec<WebDynamics>,
 }
 
 #[derive(Clone, Copy, Serialize)]
@@ -74,6 +75,14 @@ struct WebDataset {
 }
 
 #[derive(Serialize)]
+struct WebDynamics {
+    algorithm_id: &'static str,
+    ast_id: &'static str,
+    pseudocode_source: &'static str,
+    max_trace_input_length: usize,
+}
+
+#[derive(Serialize)]
 struct WebClaim<'a, T> {
     value: &'a T,
     level: String,
@@ -119,6 +128,12 @@ impl<'a> WebProjection<'a> {
                 .map(WebImplementation::from)
                 .collect(),
             datasets,
+            dynamics: vec![WebDynamics {
+                algorithm_id: "order.is_sorted.adjacent",
+                ast_id: "ast.order.is_sorted.adjacent.v0",
+                pseudocode_source: include_str!("../pseudocode/is_sorted.atlas-pseudo"),
+                max_trace_input_length: 64,
+            }],
         })
     }
 }
@@ -268,6 +283,21 @@ mod tests {
                 .unwrap()
                 .len(),
             64
+        );
+        assert_eq!(
+            value["dynamics"][0]["algorithm_id"],
+            "order.is_sorted.adjacent"
+        );
+        assert_eq!(
+            value["dynamics"][0]["ast_id"],
+            "ast.order.is_sorted.adjacent.v0"
+        );
+        assert_eq!(value["dynamics"][0]["max_trace_input_length"], 64);
+        assert!(
+            value["dynamics"][0]["pseudocode_source"]
+                .as_str()
+                .unwrap()
+                .contains("operation is-sorted.adjacent.compare | Compare")
         );
         assert!(first.contains("order.is_sorted.adjacent"));
     }

@@ -43,6 +43,7 @@ dependencies = [
 name = "atlas-web-wasm"
 version = "0.1.0"
 dependencies = [
+ "atlas",
  "atlas-algorithms",
  "wasm-bindgen",
 ]

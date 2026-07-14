@@ -463,9 +463,9 @@ mod tests {
         assert_eq!(value["build"]["wasm_bindgen"], "wasm-bindgen 0.2.100");
         assert_eq!(value["build"]["target"], "wasm32-unknown-unknown");
         assert_eq!(value["build"]["profile"], "release");
-        assert_eq!(value["counts"]["problems"], 10);
-        assert_eq!(value["counts"]["algorithms"], 15);
-        assert_eq!(value["counts"]["implementations"], 20);
+        assert_eq!(value["counts"]["problems"], 14);
+        assert_eq!(value["counts"]["algorithms"], 19);
+        assert_eq!(value["counts"]["implementations"], 22);
         assert_eq!(value["datasets"].as_array().unwrap().len(), 10);
         assert_eq!(
             value["datasets"][4]["case_id"],

@@ -12,9 +12,11 @@ DEC-050 adds a private read-only `is_sorted` guest import and DEC-051 adds
 checked `reverse` mutation. Latency, executable allocation footprint and
 multi-region memory remain separate work.
 
-The current MVP 1 corpus contains 10 problems, 15 algorithms, and 20 tested Rust
-implementations. Schema hardening, local evidence integrity, deterministic
-indexing, the acceptance gate, and the local Git baseline are complete.
+The authoritative registry now contains 14 problems, 19 algorithms, and 22
+implementations: the 10/15/20 MVP 1 sequence baseline plus the first external
+graph batch and two tested petgraph adapters. Schema hardening, local evidence
+integrity, deterministic indexing, the acceptance gate, and the local Git
+baseline are complete.
 
 MVP 5 is closed under DEC-060. Its static Web artifact projects the complete
 registry and executes adjacent `is_sorted`, stable insertion sort and symmetric
@@ -58,6 +60,7 @@ new runtime or presentation expansion. See `docs/phase2-external-corpus.md`.
 - `docs/audits/2026-07-14-external-project-audit.md`: external post-foundation audit;
 - `docs/project-vocabulary.md`: accepted work-program and planning vocabulary;
 - `docs/phase2-external-corpus.md`: active external-corpus and agent-consumer phase;
+- `docs/phase2/k-m1-graph-corpus.md`: first external graph batch and model-friction report;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

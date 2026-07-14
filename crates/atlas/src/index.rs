@@ -545,9 +545,9 @@ mod tests {
 
         let summary = rebuild_connection(&registry(), &mut connection).unwrap();
 
-        assert_eq!(summary.entities, 45);
-        assert_eq!(summary.relations, 35);
-        assert!(summary.claims > 250);
+        assert_eq!(summary.entities, 55);
+        assert_eq!(summary.relations, 41);
+        assert!(summary.claims > 300);
         assert_eq!(summary.digest.len(), 64);
         let projection_version: String = connection
             .query_row(
@@ -564,7 +564,7 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(versions, 20);
+        assert_eq!(versions, 22);
     }
 
     #[test]

@@ -18,8 +18,9 @@ The primary unresolved product hypothesis is:
 > Can Atlas preserve and normalize knowledge from independent algorithm sources
 > well enough for generic selection, composition and agent consumption?
 
-The current 10-problem, 15-algorithm and 20-implementation sequence corpus is
-too small and homogeneous to answer that question.
+The phase began with a 10-problem, 15-algorithm and 20-implementation sequence
+corpus that was too small and homogeneous to answer that question. K-M1 has
+since added the first external graph batch without changing that diagnosis.
 
 ## Accepted strategic trajectory
 
@@ -147,6 +148,11 @@ Acceptance:
 - no general importer, metrics service, dashboard or new agent API is created.
 
 ### K-M1 - Graph corpus batch
+
+Status: complete. Four exact BFS/Dijkstra contracts and two petgraph 0.8.3
+implementation records are in the authoritative registry. The tested adapter,
+source transformations, experimental projections and mismatch severities are
+documented in `docs/phase2/k-m1-graph-corpus.md`.
 
 Import a coherent graph batch from at least two independent sources. Include
 both traversal and weighted/ordering problems. Do not extend the AST or visual

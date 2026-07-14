@@ -19,14 +19,13 @@ audit, three-program vocabulary and active external-corpus phase are recorded in
 
 ## Active slice
 
-K-M0 is complete. Two isolated importers produced six BFS, Dijkstra and
-union-find worksheets from `petgraph` 0.8.3 and the Algorithms, 4th Edition
-booksite. The five-dimensional comparison found decision-level convergence for
-BFS and union-find, plus a substantive Dijkstra projection/identity divergence.
-Protocol `k-m0.2` corrects unequal optional source coverage and unreliable
-self-estimated effort once, then freezes the manual process. No registry entity,
-dependency, public schema field, AST capability or runtime instrumentation has
-been added. K-M1 is the next gate.
+K-M1 is complete. The registry now contains four separate external graph
+contracts and algorithms: incremental BFS traversal, materialized unweighted
+shortest paths, nonnegative shortest distances and a nonnegative shortest-path
+tree. Two petgraph 0.8.3 implementation records are tested through a thin
+default-feature-disabled dev adapter. Algs4 remains documentary under its GPL
+boundary. No public projection relation, graph-specific query flag, AST
+capability or runtime instrumentation was added. K-M2 is the next gate.
 
 ## Latest closed slice
 
@@ -85,9 +84,9 @@ subsequent MVP.
 
 Current corpus progress:
 
-- Problems: 10 / 10
-- Algorithms: 15 / 15
-- Implementations: 20 / 20
+- Problems: 14 total (10 at MVP 1 baseline)
+- Algorithms: 19 total (15 at MVP 1 baseline)
+- Implementations: 22 total (20 at MVP 1 baseline)
 
 Current MIR adapter progress: scalar arithmetic and trace imports, mutable even
 partition, adjacent `is_sorted`, minimum/maximum selection, reverse, and stable

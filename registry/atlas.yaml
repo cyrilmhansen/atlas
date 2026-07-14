@@ -157,6 +157,94 @@ problems:
         - "result retains the first input occurrence and relative order"
       level: tested
       source: "tests:deduplicate::quadratic_preserves_first_occurrences;deduplicate::hash_preserves_first_occurrences"
+  - id: graph.reachable_traversal
+    input:
+      value: "graph: FiniteGraph<Node>; source: Node; neighbor_order: IterationOrder<Node>"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    requires:
+      value:
+        - "input.source is a valid node in input.graph"
+        - "the graph node set and adjacency relation remain stable during traversal"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    output:
+      value: "result: IncrementalTraversal<Node>"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    ensures:
+      value:
+        - "every yielded node is reachable from input.source"
+        - "each reachable node is yielded exactly once"
+        - "no node outside the reachable component is yielded"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+  - id: graph.unweighted_shortest_paths
+    input:
+      value: "graph: FiniteUndirectedGraph<Node>; sources: NonEmptySet<Node>; neighbor_order: IterationOrder<Node>"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    requires:
+      value:
+        - "every input source is a valid node in input.graph"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    output:
+      value: "result: PerNode<Reachability, MinimumEdgeCount, Optional<Path<Node>>>"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    ensures:
+      value:
+        - "reachable nodes have their minimum edge count from any input source"
+        - "each returned path joins an input source to its node and has the stated edge count"
+        - "unreachable nodes are identified without a path"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+  - id: graph.nonnegative_shortest_distances
+    input:
+      value: "graph: FiniteWeightedGraph<Node, Cost>; source: Node; edge_cost: Edge -> Cost"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    requires:
+      value:
+        - "input.source is a valid node in input.graph"
+        - "every edge cost is nonnegative"
+        - "cost addition and ordering preserve shortest-path comparisons"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    output:
+      value: "result: Map<ReachableNode, MinimumPathCost>"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    ensures:
+      value:
+        - "result maps every node reachable from input.source to its minimum path cost"
+        - "input.source maps to zero"
+        - "unreachable nodes are absent"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+  - id: graph.nonnegative_shortest_path_tree
+    input:
+      value: "graph: FiniteDirectedGraph<Node, NonNegativeFiniteF64>; source: Node"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    requires:
+      value:
+        - "input.source is a valid node in input.graph"
+        - "all path-cost arithmetic is free from comparison-changing rounding and overflow"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    output:
+      value: "result: PerNode<Reachability, MinimumPathCost, Optional<DirectedPath>>"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    ensures:
+      value:
+        - "each reachable node has its minimum path cost from input.source"
+        - "each reachable node has a reconstructible path with the stated cost"
+        - "unreachable nodes have infinite distance and no path"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
 
 algorithms:
   - id: sort.merge.top_down
@@ -519,6 +607,98 @@ algorithms:
       value: "O(n) excluding output storage"
       level: declared
       source: "file:crates/atlas-algorithms/src/deduplicate.rs"
+  - id: graph.bfs.traversal
+    solves: graph.reachable_traversal
+    name:
+      value: "breadth-first graph traversal"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    requires:
+      value:
+        - "neighbor iteration follows input.neighbor_order"
+      level: declared
+      source: "analysis:phase2/k-m1-graph-corpus"
+    deterministic:
+      value: true
+      level: declared
+      source: "analysis:phase2/k-m1-graph-corpus"
+    time_worst:
+      value: "O(V + E)"
+      level: inferred
+      source: "analysis:phase2/k-m1-graph-corpus"
+    auxiliary_memory:
+      value: "O(V)"
+      level: inferred
+      source: "analysis:phase2/k-m1-graph-corpus"
+  - id: graph.bfs.shortest_paths
+    solves: graph.unweighted_shortest_paths
+    name:
+      value: "breadth-first shortest paths"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    requires:
+      value:
+        - "neighbor and source iteration order are stable"
+      level: declared
+      source: "analysis:phase2/k-m1-graph-corpus"
+    deterministic:
+      value: true
+      level: declared
+      source: "analysis:phase2/k-m1-graph-corpus"
+    time_worst:
+      value: "Theta(V + E)"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    auxiliary_memory:
+      value: "Theta(V), excluding the input graph"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+  - id: graph.dijkstra.distances
+    solves: graph.nonnegative_shortest_distances
+    name:
+      value: "Dijkstra shortest distances"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    requires:
+      value:
+        - "the edge-cost callback is deterministic for each edge"
+      level: declared
+      source: "analysis:phase2/k-m1-graph-corpus"
+    deterministic:
+      value: true
+      level: declared
+      source: "analysis:phase2/k-m1-graph-corpus"
+    time_worst:
+      value: "O((V + E) log V)"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    auxiliary_memory:
+      value: "O(V + E), using the selected source accounting convention"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+  - id: graph.dijkstra.shortest_path_tree
+    solves: graph.nonnegative_shortest_path_tree
+    name:
+      value: "Dijkstra shortest-path tree with a binary heap"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    requires:
+      value:
+        - "edge weights and every intermediate path cost are exactly comparable in the declared floating-point domain"
+      level: declared
+      source: "analysis:phase2/k-m1-graph-corpus"
+    deterministic:
+      value: true
+      level: declared
+      source: "analysis:phase2/k-m1-graph-corpus"
+    time_worst:
+      value: "Theta(E log V)"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    auxiliary_memory:
+      value: "Theta(V), excluding the input graph"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
 
 implementations:
   - id: sort.merge.rust.slice.v1
@@ -1493,5 +1673,99 @@ implementations:
         - "deduplicate::tests::hash_preserves_first_occurrences"
       level: tested
       source: "command:cargo test --workspace --features hash-dedup"
+  - id: graph.bfs.petgraph.0_8_3
+    implements: graph.bfs.traversal
+    language:
+      value: rust
+      level: declared
+      source: "docs:phase2/k-m0-source-selection.md"
+    version:
+      value: "0.8.3"
+      level: declared
+      source: "file:Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "docs:phase2/k-m0-source-selection.md"
+    target:
+      value: "Rust target with alloc; K-M1 adapter tested on a std host"
+      level: tested
+      source: "file:crates/atlas/tests/external_graph_adapters.rs"
+    dependencies:
+      value: ["petgraph 0.8.3 with default features disabled"]
+      level: declared
+      source: "file:crates/atlas/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "petgraph::visit::Bfs::new and petgraph::visit::Bfs::next"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    signature:
+      value: "Bfs::new(graph, source); Bfs::next(&mut self, graph) -> Option<NodeId>"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    effects:
+      value:
+        mutates: [traversal.frontier, traversal.discovered]
+        io: none
+        blocking: false
+        allocation: "allocates the traversal frontier and discovered-node map"
+      level: declared
+      source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+    tests:
+      value:
+        - "external_graph_adapters::petgraph_bfs_visits_exactly_the_reachable_component"
+      level: tested
+      source: "file:crates/atlas/tests/external_graph_adapters.rs"
+  - id: graph.dijkstra.petgraph.0_8_3
+    implements: graph.dijkstra.distances
+    language:
+      value: rust
+      level: declared
+      source: "docs:phase2/k-m0-source-selection.md"
+    version:
+      value: "0.8.3"
+      level: declared
+      source: "file:Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "docs:phase2/k-m0-source-selection.md"
+    target:
+      value: "Rust target with alloc; K-M1 adapter tested on a std host"
+      level: tested
+      source: "file:crates/atlas/tests/external_graph_adapters.rs"
+    dependencies:
+      value: ["petgraph 0.8.3 with default features disabled"]
+      level: declared
+      source: "file:crates/atlas/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "petgraph::algo::dijkstra specialized with goal = None"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    signature:
+      value: "dijkstra(graph, source, None, edge_cost) -> HashMap<NodeId, Cost>"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    effects:
+      value:
+        mutates: [cost_callback.capture_if_any]
+        io: none
+        blocking: false
+        allocation: "allocates a distance map and priority queue"
+      level: declared
+      source: "docs:phase2/imports/importer-a/dijkstra.md;phase2/imports/importer-b/dijkstra.md"
+    tests:
+      value:
+        - "external_graph_adapters::petgraph_dijkstra_goal_none_returns_all_reachable_distances"
+      level: tested
+      source: "file:crates/atlas/tests/external_graph_adapters.rs"
 
 executions: []

@@ -2767,3 +2767,35 @@ rg -n "petgraph|Algorithms, 4th Edition|Protocol revision" docs/phase2
 sha256sum docs/phase2/imports/importer-{a,b}/*.md
 git diff --check
 ```
+
+## 2026-07-14 - K-M1 exact graph contracts and external adapters
+
+### Result
+
+- Added four exact graph problem/algorithm pairs for petgraph/algs4 BFS and
+  Dijkstra boundaries without adding a projection relation.
+- Added petgraph 0.8.3 as an exact default-feature-disabled dev-dependency and
+  registered its BFS walker and `goal = None` Dijkstra specialization.
+- Tested reachable-component traversal and all-reachable weighted distances
+  through a thin adapter over the real upstream crate.
+- Updated registry, SQLite and maintained Web projection tests for 14 problems,
+  19 algorithms and 22 implementations.
+- Recorded every observed schema/AST mismatch with severity and lossiness in
+  `docs/phase2/k-m1-graph-corpus.md`.
+
+### Limits
+
+- Current query and composition code cannot reason about graph direction,
+  output projections, numerical validity or source cardinality.
+- Algs4 contracts have no registered implementation because no GPL code is
+  copied or linked.
+- BFS complexity inferred from the selected implementation structure remains
+  `inferred`, not source-declared or tested.
+
+### Verification
+
+```sh
+cargo test -p atlas --tests --locked
+cargo fmt --all -- --check
+git diff --check
+```

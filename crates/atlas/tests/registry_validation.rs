@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -10,6 +11,26 @@ static NEXT_DATABASE: AtomicUsize = AtomicUsize::new(0);
 
 fn parse(contents: &str) -> Registry {
     serde_yaml::from_str(contents).expect("test fixture must match the schema shape")
+}
+
+fn expected_list(registry: &Registry, selected_kind: Option<&str>) -> String {
+    let mut output = String::new();
+    if selected_kind.is_none_or(|kind| kind == "problem") {
+        for problem in &registry.problems {
+            writeln!(&mut output, "problem\t{}", problem.id).unwrap();
+        }
+    }
+    if selected_kind.is_none_or(|kind| kind == "algorithm") {
+        for algorithm in &registry.algorithms {
+            writeln!(&mut output, "algorithm\t{}", algorithm.id).unwrap();
+        }
+    }
+    if selected_kind.is_none_or(|kind| kind == "implementation") {
+        for implementation in &registry.implementations {
+            writeln!(&mut output, "implementation\t{}", implementation.id).unwrap();
+        }
+    }
+    output
 }
 
 fn workspace_root() -> std::path::PathBuf {
@@ -29,9 +50,9 @@ fn accepts_the_committed_registry() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../registry/atlas.yaml");
     let registry = load_registry(&path).expect("committed registry must be valid");
 
-    assert_eq!(registry.problems.len(), 10);
-    assert_eq!(registry.algorithms.len(), 15);
-    assert_eq!(registry.implementations.len(), 20);
+    assert_eq!(registry.problems.len(), 14);
+    assert_eq!(registry.algorithms.len(), 19);
+    assert_eq!(registry.implementations.len(), 22);
     assert!(registry.executions.is_empty());
     let linear_search = registry
         .algorithms
@@ -63,14 +84,67 @@ fn accepts_the_committed_registry() {
         "O(n)"
     );
     for implementation in &registry.implementations {
-        assert_eq!(implementation.version.value, "0.1.0");
-        assert_eq!(implementation.license.value, "MIT");
         assert_eq!(
             implementation.abi.value,
             "Rust calling convention; no stable ABI"
         );
         assert!(!implementation.target.value.is_empty());
     }
+    let atlas_implementations = registry
+        .implementations
+        .iter()
+        .filter(|implementation| implementation.version.value == "0.1.0")
+        .collect::<Vec<_>>();
+    assert_eq!(atlas_implementations.len(), 20);
+    assert!(
+        atlas_implementations
+            .iter()
+            .all(|implementation| implementation.license.value == "MIT")
+    );
+    let petgraph_bfs = registry
+        .implementations
+        .iter()
+        .find(|implementation| implementation.id == "graph.bfs.petgraph.0_8_3")
+        .expect("petgraph BFS implementation must be present");
+    assert_eq!(petgraph_bfs.version.value, "0.8.3");
+    assert_eq!(petgraph_bfs.license.value, "MIT OR Apache-2.0");
+    assert_eq!(petgraph_bfs.implements, "graph.bfs.traversal");
+}
+
+#[test]
+fn committed_registry_keeps_exact_graph_contracts_separate() {
+    let registry = parse(VALID_REGISTRY);
+
+    let bfs_traversal = registry
+        .algorithms
+        .iter()
+        .find(|algorithm| algorithm.id == "graph.bfs.traversal")
+        .expect("BFS traversal must be present");
+    assert_eq!(bfs_traversal.solves, "graph.reachable_traversal");
+
+    let bfs_paths = registry
+        .algorithms
+        .iter()
+        .find(|algorithm| algorithm.id == "graph.bfs.shortest_paths")
+        .expect("BFS shortest paths must be present");
+    assert_eq!(bfs_paths.solves, "graph.unweighted_shortest_paths");
+
+    let dijkstra_distances = registry
+        .algorithms
+        .iter()
+        .find(|algorithm| algorithm.id == "graph.dijkstra.distances")
+        .expect("Dijkstra distances must be present");
+    assert_eq!(
+        dijkstra_distances.solves,
+        "graph.nonnegative_shortest_distances"
+    );
+
+    let dijkstra_tree = registry
+        .algorithms
+        .iter()
+        .find(|algorithm| algorithm.id == "graph.dijkstra.shortest_path_tree")
+        .expect("Dijkstra shortest-path tree must be present");
+    assert_eq!(dijkstra_tree.solves, "graph.nonnegative_shortest_path_tree");
 }
 
 #[test]
@@ -335,7 +409,7 @@ fn cli_accepts_an_explicit_registry_path() {
         "stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(String::from_utf8_lossy(&output.stdout).contains("Validated 10 problem(s)"));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Validated 14 problem(s)"));
 }
 
 #[test]
@@ -348,55 +422,10 @@ fn cli_lists_all_entity_kinds_in_manifest_order() {
         .expect("atlas binary must run");
 
     assert!(output.status.success());
+    let registry = parse(VALID_REGISTRY);
     assert_eq!(
         String::from_utf8(output.stdout).expect("UTF-8 CLI output"),
-        concat!(
-            "problem\tsequence.sort\n",
-            "problem\tsequence.search\n",
-            "problem\tsequence.minimum\n",
-            "problem\tsequence.maximum\n",
-            "problem\tsequence.filter\n",
-            "problem\tsequence.partition\n",
-            "problem\tsequence.reverse\n",
-            "problem\tsequence.merge_sorted\n",
-            "problem\tsequence.is_sorted\n",
-            "problem\tsequence.deduplicate\n",
-            "algorithm\tsort.merge.top_down\n",
-            "algorithm\tsort.insertion\n",
-            "algorithm\tsearch.linear\n",
-            "algorithm\tsearch.binary.lower_bound\n",
-            "algorithm\tselect.minimum.linear\n",
-            "algorithm\tselect.maximum.linear\n",
-            "algorithm\tfilter.copy.stable\n",
-            "algorithm\tfilter.compact.in_place\n",
-            "algorithm\tpartition.copy.stable\n",
-            "algorithm\tpartition.two_pointer.in_place\n",
-            "algorithm\treverse.symmetric.in_place\n",
-            "algorithm\tmerge.sorted.two_way\n",
-            "algorithm\torder.is_sorted.adjacent\n",
-            "algorithm\tdeduplicate.quadratic.stable\n",
-            "algorithm\tdeduplicate.hash.stable\n",
-            "implementation\tsort.merge.rust.slice.v1\n",
-            "implementation\tsort.merge_with_scratch.rust.slice.v1\n",
-            "implementation\tsort.insertion.rust.slice.v1\n",
-            "implementation\tsearch.linear.rust.slice.v1\n",
-            "implementation\tsearch.binary.rust.slice.v1\n",
-            "implementation\tselect.minimum.linear.rust.slice.v1\n",
-            "implementation\tselect.maximum.linear.rust.slice.v1\n",
-            "implementation\tfilter.copy.rust.vec.v1\n",
-            "implementation\tfilter.copy_into.rust.vec.v1\n",
-            "implementation\tfilter.in_place.rust.vec.v1\n",
-            "implementation\tpartition.copy.rust.vec.v1\n",
-            "implementation\tpartition.copy_into.rust.vec.v1\n",
-            "implementation\tpartition.in_place.rust.slice.v1\n",
-            "implementation\treverse.symmetric.rust.slice.v1\n",
-            "implementation\tmerge.sorted.rust.vec.v1\n",
-            "implementation\tmerge.sorted_into.rust.vec.v1\n",
-            "implementation\torder.is_sorted.rust.slice.v1\n",
-            "implementation\tdeduplicate.quadratic.rust.vec.v1\n",
-            "implementation\tdeduplicate.hash.rust.vec.v1\n",
-            "implementation\tdeduplicate.hash_into.rust.vec.v1\n",
-        )
+        expected_list(&registry, None)
     );
 }
 
@@ -410,25 +439,10 @@ fn cli_filters_entities_by_kind() {
         .expect("atlas binary must run");
 
     assert!(output.status.success());
+    let registry = parse(VALID_REGISTRY);
     assert_eq!(
         String::from_utf8(output.stdout).expect("UTF-8 CLI output"),
-        concat!(
-            "algorithm\tsort.merge.top_down\n",
-            "algorithm\tsort.insertion\n",
-            "algorithm\tsearch.linear\n",
-            "algorithm\tsearch.binary.lower_bound\n",
-            "algorithm\tselect.minimum.linear\n",
-            "algorithm\tselect.maximum.linear\n",
-            "algorithm\tfilter.copy.stable\n",
-            "algorithm\tfilter.compact.in_place\n",
-            "algorithm\tpartition.copy.stable\n",
-            "algorithm\tpartition.two_pointer.in_place\n",
-            "algorithm\treverse.symmetric.in_place\n",
-            "algorithm\tmerge.sorted.two_way\n",
-            "algorithm\torder.is_sorted.adjacent\n",
-            "algorithm\tdeduplicate.quadratic.stable\n",
-            "algorithm\tdeduplicate.hash.stable\n",
-        )
+        expected_list(&registry, Some("algorithm"))
     );
 }
 
@@ -553,7 +567,7 @@ fn cli_requires_exactly_one_show_id() {
 fn cli_searches_entity_ids() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
-        .args(["search", "binary"])
+        .args(["search", "search.binary"])
         .current_dir(workspace)
         .output()
         .expect("atlas binary must run");
@@ -582,6 +596,51 @@ fn cli_searches_declared_names_ignoring_case() {
         String::from_utf8(output.stdout).expect("UTF-8 CLI output"),
         "algorithm\tsort.merge.top_down\n"
     );
+}
+
+#[test]
+fn cli_searches_both_imported_breadth_first_contracts() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["search", "breadth-first"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    assert_eq!(
+        String::from_utf8(output.stdout).expect("UTF-8 CLI output"),
+        concat!(
+            "algorithm\tgraph.bfs.traversal\n",
+            "algorithm\tgraph.bfs.shortest_paths\n",
+        )
+    );
+}
+
+#[test]
+fn cli_explains_the_external_petgraph_distance_specialization() {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["explain", "graph.dijkstra.petgraph.0_8_3"])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains(concat!(
+        "chain:\n",
+        "  implementation: graph.dijkstra.petgraph.0_8_3\n",
+        "  algorithm: graph.dijkstra.distances\n",
+        "  problem: graph.nonnegative_shortest_distances\n",
+    )));
+    assert!(
+        stdout.contains(
+            "entrypoint:\n  value: petgraph::algo::dijkstra specialized with goal = None\n"
+        )
+    );
+    assert!(stdout.contains("    allocation: allocates a distance map and priority queue\n"));
+    assert!(stdout.contains("every edge cost is nonnegative"));
 }
 
 #[test]
@@ -1266,7 +1325,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
     let first = run();
     assert!(first.status.success());
     let first_stdout = String::from_utf8(first.stdout).expect("UTF-8 CLI output");
-    assert!(first_stdout.contains("Indexed 45 entities, 35 relations,"));
+    assert!(first_stdout.contains("Indexed 55 entities, 41 relations,"));
     let first_digest = first_stdout
         .lines()
         .find(|line| line.starts_with("Logical SHA-256: "))
@@ -1298,7 +1357,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(entities, 45);
+    assert_eq!(entities, 55);
     assert_eq!(stale, 0);
     drop(connection);
     fs::remove_file(database).unwrap();

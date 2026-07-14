@@ -14,6 +14,7 @@ sha2.workspace = true
 
 [dev-dependencies]
 atlas-algorithms = { path = "../atlas-algorithms" }
+petgraph.workspace = true
 
 [[bin]]
 name = "atlas"

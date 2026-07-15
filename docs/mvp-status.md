@@ -24,7 +24,7 @@ worksheets each from one frozen source packet. Three of five source-readable
 subjects converge operationally; three decision-changing divergences are
 adjudicated and Welford remains deliberately unresolved because the packet did
 not expose its article body. Corpus growth is paused for the bounded ontology
-review required by the gate. K-M5 remains planned behind that review.
+review required by the gate.
 
 K-M4-W is also complete. Open Pébay and Chan-Golub-LeVeque reports now support a
 neutral incremental second-central-moment import while Welford 1962 remains
@@ -34,9 +34,11 @@ empty-state adaptation plus `proven` evidence semantics to the ontology review.
 The bounded ontology review is accepted under DEC-067 and DEC-068. Schema 0.1
 remains authoritative while K-M5 compares it with a disposable private decision
 overlay. `proven` now requires an auditable proof mapping. Protocol `k-m0.3` and
-the overlay experiment boundary are specified. The private parser/validator is
-complete and tested; no corpus facts, evaluator or CLI surface are active yet.
-Its 557 non-test lines are retained as explicit authoring-cost evidence.
+the overlay experiment boundary are specified. The private parser/validator,
+bounded facts and generic evaluator are complete and tested with no CLI surface.
+Their 826 non-test Rust lines are retained as explicit experiment-cost evidence.
+K-M5 remains active while its isolated top-k independent-authoring packet awaits
+a submission.
 
 ## Latest closed slice
 

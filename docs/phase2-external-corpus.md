@@ -293,6 +293,11 @@ This does not close K-M5: an independently authored candidate/request pair must
 still test whether the overlay vocabulary converges operationally rather than
 only fitting the cases used to design it.
 
+That test is frozen in `docs/phase2/k-m5-independent-authoring-packet.md` around
+one bounded top-k implementation and three pre-adjudicated requests. The author
+receives neither the reference facts nor evaluator tests. A standalone overlay
+avoids exceeding the reference experiment's eight-candidate ceiling.
+
 ### K-M6 - Blind agent-consumer experiment
 
 Give an agent registry/query/compose tools, task requirements and evidence, but

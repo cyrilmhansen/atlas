@@ -68,8 +68,8 @@ tests alone does not justify schema 0.2.
 
 ## Next experiment
 
-Give the frozen overlay specification and source packet to an independent
-author. Ask for one additional candidate and request without showing the
-committed overlay facts. Compare operational decisions after ID normalization,
-then record authoring time, reused atoms, new atoms and decision-changing
-differences. K-M5 remains open until this test is complete.
+The reproducible task and isolation boundary are frozen in
+`k-m5-independent-authoring-packet.md`. Give that packet to an independent
+author without the committed overlay facts. Compare operational decisions after
+ID normalization, then record authoring time, reused atoms, new atoms and
+decision-changing differences. K-M5 remains open until this test is complete.

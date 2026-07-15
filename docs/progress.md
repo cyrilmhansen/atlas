@@ -1,5 +1,30 @@
 # Progress log
 
+## 2026-07-15 - Freeze the K-M5 independent-authoring packet
+
+### Result
+
+- Froze one bounded top-k authoring task at commit `459b4f0`, with six mandatory
+  inputs and their SHA-256 digests.
+- Defined three semantic requests before the run: zero-capacity projection,
+  `O(k)` retained memory and allocation-free rejection.
+- Required an isolated standalone overlay, preventing access to reference facts
+  and avoiding the existing eight-candidate ceiling.
+- Separated textual, identity, semantic, taxonomic and operational comparison.
+
+### Verification
+
+- All mandatory packet digests were computed from the frozen commit.
+- The packet remains inside the accepted closed vocabulary and adds no code,
+  dependency, schema field, registry entity or CLI surface.
+- Markdown and repository whitespace checks pass.
+
+### Limits
+
+- No independent submission exists yet; this checkpoint adds protocol, not
+  evidence of authoring convergence.
+- The authoring gate remains open and no schema 0.2 proposal is authorized.
+
 ## 2026-07-15 - Add the private K-M5 generic evaluator checkpoint
 
 ### Result

@@ -9,7 +9,7 @@ assert.match(projection.build.rustc, /^rustc /);
 assert.equal(projection.build.wasm_bindgen, "wasm-bindgen 0.2.100");
 assert.equal(projection.build.target, "wasm32-unknown-unknown");
 assert.equal(projection.build.profile, "release");
-assert.deepEqual(projection.counts, { problems: 31, algorithms: 37, implementations: 41 });
+assert.deepEqual(projection.counts, { problems: 31, algorithms: 38, implementations: 42 });
 
 assert.equal(projection.datasets.length, 10);
 assert.deepEqual(

@@ -9,7 +9,7 @@ decision record differ.
 MVP 1 through MVP 6 are closed. No subsequent MVP is active. GitHub CI runs the
 reproducible MVP 2 acceptance gate, all workspace targets, the RV64 LP64 probe
 and the MIR RV64 generator probe on pushes and pull requests. The project has a
-Git-authoritative YAML registry (31 problems, 37 algorithms and 41
+Git-authoritative YAML registry (31 problems, 38 algorithms and 42
 implementations), a rebuildable SQLite projection, deterministic datasets and
 reproducible local observations, plus five bounded composition scenarios with
 compiled Rust orchestration. The current counts include the 10/15/20 MVP 1
@@ -182,8 +182,14 @@ recurrence in K4-M2 before adding selection infrastructure.
 The owner accepts `b2-follow-A`. K4-M2 source review compares a drop-in
 quaternary `dary_heap`, the broader keyed orx queue and an Atlas-authored
 control. It recommends pinned `dary_heap` 0.3.9 because it changes arity while
-preserving the max-heap item model and capacity experiment. No dependency is
-added before the B1 validation.
+preserving the max-heap item model and capacity experiment. The owner accepts
+`dary-A`; K4-M2 is complete with direct upstream tests and relation-driven
+discovery. Both candidates mutate in place and may grow storage. Their
+conditioned `O(log n)` cost and concrete state compatibility are adjudicable in
+the unchanged private evaluator, but remain unsupported by the public query.
+Manual registry-to-overlay projection recurs; absent-versus-refuted collapse
+does not recur because growth is an explicit effect. K4-M3 exact bounded top-k
+competition is next, with no evaluator extension authorized.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

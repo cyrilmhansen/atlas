@@ -7,6 +7,7 @@ name = "atlas"
 version = "0.1.0"
 dependencies = [
  "atlas-algorithms",
+ "dary_heap",
  "hashbrown 0.17.1",
  "petgraph",
  "rusqlite",
@@ -131,6 +132,12 @@ checksum = "ce6e4c961d6cd6c9a86db418387425e8bdeaf05b3c8bc1411e6dca4c252f1453"
 dependencies = [
  "hybrid-array",
 ]
+
+[[package]]
+name = "dary_heap"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b1e3a325bc115f096c8b77bbf027a7c2592230e70be2d985be950d3d5e60ebe"
 
 [[package]]
 name = "digest"

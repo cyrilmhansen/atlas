@@ -13,7 +13,7 @@ import {
 
 const projection = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 
-assert.equal(catalogRecords(projection).length, 109);
+assert.equal(catalogRecords(projection).length, 111);
 assert.equal(filterCatalog(projection, "", "problem").length, 31);
 assert.equal(filterCatalog(projection, "graph", "problem").length, 4);
 

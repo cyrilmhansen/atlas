@@ -1,5 +1,37 @@
 # Progress log
 
+## 2026-07-15 - Complete K4-M2 priority-queue competition
+
+### Result
+
+- Added pinned, default-feature-free `dary_heap` 0.3.9 as a quaternary max-heap
+  push competitor for the existing `priority_queue.push` Problem.
+- Discovered both binary and quaternary candidates exclusively through
+  `solves` and `implements` relations.
+- Tested duplicate preservation, max order, interleaved operations, reserved
+  capacity and exhausted-storage growth against actual upstream code.
+- Reused the unchanged K-M5 evaluator for the four frozen requests, including
+  conditioned `O(log n)` cost and binary-state compatibility.
+
+### Verification
+
+- `cargo test -p atlas --test external_dynamic_structure_adapters` passes.
+- Focused registry discovery and unchanged-evaluator transfer tests pass.
+- `atlas validate` reports 31 problems, 38 algorithms and 42 implementations.
+- Derived index: 111 entities, 80 relations, 718 claims, logical digest
+  `07a24888ebb8fc6a75d1765bd85867e615bb1ef4cd1993cca2b12c8b2da05e04`.
+
+### Limits
+
+- `dary_heap` is based on standard-library heap code, so project/arity
+  diversity is not independent code ancestry.
+- Conditioned cost and concrete state are sourced but not expressible through
+  the public schema 0.1 query; the phase-local overlay restates them manually.
+- The projection limitation recurs, while the graph missing/refuted ambiguity
+  does not recur because storage growth is an explicit effect.
+- Per the stop rule, no third heap or evaluator extension is added; K4-M3 is
+  next.
+
 ## 2026-07-15 - Retain B2 control and review K4-M2 sources
 
 ### Result

@@ -1,6 +1,6 @@
 # K4-M2 priority-queue source review
 
-Status: B1 source decision pending
+Status: Option A accepted as `dary-A`; implementation complete
 
 Date: 2026-07-15
 
@@ -98,4 +98,4 @@ independence.
 4. Discover both push candidates through registry relations, never IDs.
 5. Adjudicate the four frozen requests and stop after the two-candidate matrix.
 
-Validation question: `dary-A`, `dary-B`, or `dary-C`?
+Owner decision: `dary-A`.

@@ -1,0 +1,106 @@
+overlay_version: phase2-km5-0
+
+atoms:
+  - { id: operation.heap_push, kind: capability }
+  - { id: condition.spare_capacity, kind: condition }
+  - { id: guarantee.in_place, kind: guarantee }
+  - { id: effect.may_grow_storage, kind: effect }
+  - { id: state.binary_heap, kind: state }
+  - { id: state.quaternary_heap, kind: state }
+
+candidates:
+  - id: candidate.heap_push.binary
+    source: registry:priority_queue.push.rust.std.1_85
+    provides:
+      - atom: operation.heap_push
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.in_place
+        evidence: { level: declared, source: "registry:priority_queue.binary_heap.push", proof: null }
+    effects:
+      - atom: effect.may_grow_storage
+        evidence: { level: declared, source: "registry:priority_queue.push.rust.std.1_85", proof: null }
+    consumes_state:
+      atom: state.binary_heap
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    produces_state:
+      atom: state.binary_heap
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    costs:
+      - operation: push
+        metric: time
+        regime: worst
+        bound: "O(log n)"
+        requires: [condition.spare_capacity]
+        evidence: { level: inferred, source: "docs:phase4/k4-m2-result.md", proof: null }
+
+  - id: candidate.heap_push.quaternary
+    source: registry:priority_queue.push.dary_heap.quaternary.0_3_9
+    provides:
+      - atom: operation.heap_push
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_dynamic_structure_adapters.rs", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.in_place
+        evidence: { level: inferred, source: "registry:priority_queue.quaternary_heap.push", proof: null }
+    effects:
+      - atom: effect.may_grow_storage
+        evidence: { level: declared, source: "registry:priority_queue.push.dary_heap.quaternary.0_3_9", proof: null }
+    consumes_state:
+      atom: state.quaternary_heap
+      evidence: { level: declared, source: "docs:phase4/imports/k4-m2/dary-heap-push.md", proof: null }
+    produces_state:
+      atom: state.quaternary_heap
+      evidence: { level: declared, source: "docs:phase4/imports/k4-m2/dary-heap-push.md", proof: null }
+    costs:
+      - operation: push
+        metric: time
+        regime: worst
+        bound: "O(log n)"
+        requires: [condition.spare_capacity]
+        evidence: { level: inferred, source: "docs:phase4/k4-m2-result.md", proof: null }
+
+relations: []
+
+requests:
+  - id: request.push.in_place
+    accepts: operation.heap_push
+    provides_conditions: []
+    requires_guarantees: [guarantee.in_place]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested]
+
+  - id: request.push.no_growth_without_capacity
+    accepts: operation.heap_push
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects: [effect.may_grow_storage]
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested]
+
+  - id: request.push.log_worst_with_spare_capacity
+    accepts: operation.heap_push
+    provides_conditions: [condition.spare_capacity]
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs:
+      - operation: push
+        metric: time
+        regime: worst
+        bound: "O(log n)"
+        requires: [condition.spare_capacity]
+    accepted_evidence: [declared, inferred, tested]
+
+  - id: request.push.state_compatible_with_binary
+    accepts: operation.heap_push
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: state.binary_heap
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested]

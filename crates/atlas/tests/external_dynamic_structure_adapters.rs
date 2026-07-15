@@ -1,6 +1,7 @@
 use std::collections::BinaryHeap;
 use std::hash::{BuildHasherDefault, Hasher};
 
+use dary_heap::QuaternaryHeap;
 use hashbrown::{HashMap, HashSet};
 use petgraph::unionfind::UnionFind;
 
@@ -51,6 +52,38 @@ fn binary_heap_operations_preserve_max_heap_behavior_and_capacity() {
     assert_eq!(heap.pop(), Some(3));
     assert_eq!(heap.pop(), Some(2));
     assert_eq!(heap.pop(), None);
+}
+
+#[test]
+fn dary_heap_push_preserves_max_order_duplicates_and_reserved_capacity() {
+    let mut heap = QuaternaryHeap::with_capacity(5);
+    let reserved_capacity = heap.capacity();
+
+    for value in [2, 7, 3, 7] {
+        heap.push(value);
+        assert_eq!(heap.capacity(), reserved_capacity);
+    }
+
+    assert_eq!(heap.peek(), Some(&7));
+    assert_eq!(heap.pop(), Some(7));
+    heap.push(5);
+    assert_eq!(heap.capacity(), reserved_capacity);
+    assert_eq!(heap.pop(), Some(7));
+    assert_eq!(heap.pop(), Some(5));
+    assert_eq!(heap.pop(), Some(3));
+    assert_eq!(heap.pop(), Some(2));
+    assert_eq!(heap.pop(), None);
+}
+
+#[test]
+fn dary_heap_push_grows_exhausted_storage() {
+    let mut heap = QuaternaryHeap::new();
+    assert_eq!(heap.capacity(), 0);
+
+    heap.push(11);
+
+    assert!(heap.capacity() > 0);
+    assert_eq!(heap.pop(), Some(11));
 }
 
 #[test]

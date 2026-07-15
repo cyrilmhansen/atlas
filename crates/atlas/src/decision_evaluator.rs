@@ -359,6 +359,59 @@ mod tests {
     }
 
     #[test]
+    fn phase4_priority_overlay_reuses_conditioned_costs_and_typed_state() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let overlay =
+            load_decision_overlay(&workspace.join("docs/phase4/k4-m2-priority-overlay.yaml"))
+                .expect("Phase 4 priority overlay must use the unchanged K-M5 format");
+        let registry =
+            load_registry(&workspace.join("registry/atlas.yaml")).expect("committed registry");
+        assert!(validate_overlay_sources(&overlay, &registry, &workspace).is_empty());
+
+        assert_eq!(
+            accepted_candidates(&overlay, "request.push.in_place"),
+            [
+                "candidate.heap_push.binary",
+                "candidate.heap_push.quaternary"
+            ]
+        );
+        assert!(
+            accepted_candidates(&overlay, "request.push.no_growth_without_capacity").is_empty()
+        );
+        assert_eq!(
+            accepted_candidates(&overlay, "request.push.log_worst_with_spare_capacity"),
+            [
+                "candidate.heap_push.binary",
+                "candidate.heap_push.quaternary"
+            ]
+        );
+        assert_eq!(
+            accepted_candidates(&overlay, "request.push.state_compatible_with_binary"),
+            ["candidate.heap_push.binary"]
+        );
+
+        for decision in
+            evaluate_request(&overlay, "request.push.no_growth_without_capacity").unwrap()
+        {
+            assert_eq!(
+                decision.reasons,
+                ["forbidden effect effect.may_grow_storage"]
+            );
+        }
+        let quaternary = evaluate_request(&overlay, "request.push.state_compatible_with_binary")
+            .unwrap()
+            .into_iter()
+            .find(|decision| decision.candidate_id == "candidate.heap_push.quaternary")
+            .expect("quaternary decision");
+        assert_eq!(
+            quaternary.reasons,
+            [
+                "state mismatch: requires state.binary_heap, candidate consumes state.quaternary_heap"
+            ]
+        );
+    }
+
+    #[test]
     fn bounded_equivalences_reconcile_both_top_k_encodings() {
         let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut overlay =

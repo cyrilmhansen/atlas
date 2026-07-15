@@ -16,12 +16,12 @@ The public Atlas Explorer is available at
 <https://cyrilmhansen.github.io/atlas/>. It is a derived static presentation of
 the Git-authoritative registry, not a stable JSON, WASM or URL API.
 
-The authoritative registry now contains 31 problems, 37 algorithms, and 41
+The authoritative registry now contains 31 problems, 38 algorithms, and 42
 implementations: the 10/15/20 MVP 1 sequence baseline plus the first external
-graph and dynamic-structure batches, plus the first Phase 4 DFS competitor. The
-latter separates union-find, binary
+graph and dynamic-structure batches, plus Phase 4 DFS and quaternary-heap
+competitors. The dynamic corpus separates union-find, binary and quaternary
 heap and collision-aware hash-table operations and adds tested petgraph,
-standard-library and hashbrown boundaries. A streaming batch adds bounded
+standard-library, dary_heap and hashbrown boundaries. A streaming batch adds bounded
 top-k, online moments, reservoir sampling and Bloom membership. Schema hardening, local evidence
 integrity, deterministic indexing, the acceptance gate, and the local Git
 baseline are complete.

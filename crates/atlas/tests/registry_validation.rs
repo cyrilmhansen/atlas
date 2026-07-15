@@ -51,8 +51,8 @@ fn accepts_the_committed_registry() {
     let registry = load_registry(&path).expect("committed registry must be valid");
 
     assert_eq!(registry.problems.len(), 31);
-    assert_eq!(registry.algorithms.len(), 37);
-    assert_eq!(registry.implementations.len(), 41);
+    assert_eq!(registry.algorithms.len(), 38);
+    assert_eq!(registry.implementations.len(), 42);
     assert!(registry.executions.is_empty());
     let linear_search = registry
         .algorithms
@@ -109,6 +109,16 @@ fn accepts_the_committed_registry() {
     assert_eq!(petgraph_bfs.version.value, "0.8.3");
     assert_eq!(petgraph_bfs.license.value, "MIT OR Apache-2.0");
     assert_eq!(petgraph_bfs.implements, "graph.bfs.traversal");
+    let dary_push = registry
+        .implementations
+        .iter()
+        .find(|implementation| {
+            implementation.id == "priority_queue.push.dary_heap.quaternary.0_3_9"
+        })
+        .expect("dary_heap push implementation must be present");
+    assert_eq!(dary_push.version.value, "0.3.9");
+    assert_eq!(dary_push.license.value, "MIT OR Apache-2.0");
+    assert_eq!(dary_push.implements, "priority_queue.quaternary_heap.push");
 }
 
 #[test]
@@ -171,6 +181,38 @@ fn committed_registry_discovers_both_reachability_candidates_from_relations() {
         implementations
             .iter()
             .all(|implementation| implementation.version.value == "0.8.3")
+    );
+}
+
+#[test]
+fn committed_registry_discovers_both_priority_push_candidates_from_relations() {
+    let registry = parse(VALID_REGISTRY);
+    let algorithms = registry
+        .algorithms
+        .iter()
+        .filter(|algorithm| algorithm.solves == "priority_queue.push")
+        .collect::<Vec<_>>();
+    assert_eq!(algorithms.len(), 2);
+
+    let implementations = registry
+        .implementations
+        .iter()
+        .filter(|implementation| {
+            algorithms
+                .iter()
+                .any(|algorithm| algorithm.id == implementation.implements)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(implementations.len(), 2);
+    assert!(
+        implementations
+            .iter()
+            .any(|implementation| { implementation.version.value == "Rust 1.85 API baseline" })
+    );
+    assert!(
+        implementations
+            .iter()
+            .any(|implementation| implementation.version.value == "0.3.9")
     );
 }
 
@@ -1460,7 +1502,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
     let first = run();
     assert!(first.status.success());
     let first_stdout = String::from_utf8(first.stdout).expect("UTF-8 CLI output");
-    assert!(first_stdout.contains("Indexed 109 entities, 78 relations,"));
+    assert!(first_stdout.contains("Indexed 111 entities, 80 relations,"));
     let first_digest = first_stdout
         .lines()
         .find(|line| line.starts_with("Logical SHA-256: "))
@@ -1492,7 +1534,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(entities, 109);
+    assert_eq!(entities, 111);
     assert_eq!(stale, 0);
     drop(connection);
     fs::remove_file(database).unwrap();

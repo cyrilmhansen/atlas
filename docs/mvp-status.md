@@ -78,7 +78,12 @@ transfer is mixed: three decisions reproduce fully, while refuted versus absent
 guarantees and registry-to-overlay discovery remain unsupported. Follow-up B2
 Option A is accepted: retain the partial control and proceed. K4-M2 source
 review recommends `dary_heap` 0.3.9 as a quaternary max-heap competitor; the
-dependency choice remains pending.
+owner accepts `dary-A` and K4-M2 is complete. Direct upstream tests separate
+reserved and exhausted capacity, and registry relations discover both push
+candidates. The unchanged evaluator handles conditioned cost and concrete
+state when facts are manually projected, confirming that projection/query
+machinery rather than a recurring missing schema fact is the current limit.
+K4-M3 exact bounded top-k competition is next.
 
 ## Latest closed slice
 

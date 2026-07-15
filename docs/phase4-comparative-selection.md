@@ -75,11 +75,11 @@ reasons, or explicitly demonstrate an unsupported qualification.
 
 ### K4-M2 - Dynamic priority-queue competition
 
-Status: source reviewed; dependency selection pending.
+Status: complete. Result: `docs/phase4/k4-m2-result.md`.
 
-`b2-follow-A` retains the unchanged evaluator as a partial control. Source
-options are reviewed in `docs/phase4/k4-m2-priority-source-review.md`;
-recommendation: `dary-A`.
+`b2-follow-A` retains the unchanged evaluator as a partial control. The owner
+accepted `dary-A`; pinned `dary_heap` 0.3.9 supplies a quaternary max-heap
+competitor with exact capacity-regime tests.
 
 Add a structurally distinct priority-queue strategy for at least one existing
 construct/push/pop problem. Test state compatibility, capacity conditions,

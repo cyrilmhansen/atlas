@@ -76,5 +76,5 @@ remain the pre-equivalence baseline.
 The independent result in `k-m5-independent-authoring-result.md` motivated
 DEC-069. Bounded bidirectional equivalences now reconcile both observed top-k
 encodings across four cross-encoding requests, at an incremental cost of 320
-non-test Rust lines. K-M5 remains open for one existing conditioned allocation
-case before deciding whether this compatibility cost is justified.
+non-test Rust lines. The conditioned allocation follow-up is now complete in
+`k-m5-heap-condition-result.md`; `k-m5-review.md` recommends mixed closure.

@@ -308,8 +308,14 @@ the original oracle.
 DEC-069 accepts `normalization-B`. Two non-recursive equivalences reconcile both
 top-k encodings for four requests, including the allocation false acceptance in
 the no-equivalence control. The private Rust experiment grows from 826 to 1,146
-non-test lines. A conditioned heap-allocation case remains the next falsifier;
-conditional cost equivalence is explicitly unsupported rather than inferred.
+non-test lines. At that checkpoint, conditional cost equivalence remains
+explicitly unsupported pending the conditioned heap falsifier.
+
+The heap falsifier now passes in both directions and preserves rejection without
+spare capacity. Condition transport adds 23 lines, bringing the private Rust
+total to 1,169. `docs/phase2/k-m5-review.md` recommends closing K-M5 as mixed:
+the private evaluator is supported, but schema 0.1 and the existing CLI still
+cannot consume the overlay facts. Human closure validation remains pending.
 
 ### K-M6 - Blind agent-consumer experiment
 

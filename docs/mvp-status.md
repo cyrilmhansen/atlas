@@ -39,8 +39,9 @@ bounded facts and generic evaluator are complete and tested with no CLI surface.
 Their initial 826 non-test Rust lines are retained as explicit experiment-cost
 evidence. The isolated top-k run agrees operationally but diverges on taxonomy.
 DEC-069's bounded equivalences reconcile four cross-encoding requests while
-raising the total to 1,146 lines. K-M5 remains active for a conditioned heap
-allocation falsifier.
+raising the total to 1,146 lines. The conditioned heap test succeeds for 23
+additional lines and preserves rejection without spare capacity. K-M5 remains
+active pending validation of the mixed closure recommended by its exit audit.
 
 ## Latest closed slice
 

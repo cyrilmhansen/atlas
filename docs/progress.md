@@ -1,5 +1,31 @@
 # Progress log
 
+## 2026-07-15 - Pass the conditioned heap-equivalence falsifier
+
+### Result
+
+- Reconciled a spare-capacity allocation-cost encoding with a no-allocation
+  guarantee encoding of the existing Rust binary-heap push implementation.
+- Accepted both encodings with `spare_capacity` and rejected both without it.
+- Transported only conditions explicitly attached to exact cost assertions;
+  resolution remains direct and non-recursive.
+- Added the K-M5 exit audit, recommending a mixed closure rather than more
+  private ontology machinery.
+
+### Verification
+
+- The conditioned heap source resolves to the existing registry implementation.
+- Four heap requests pass with and without equivalences as adjudicated.
+- No schema, registry, CLI, dependency or public query behavior changed.
+
+### Limits
+
+- Condition transport raises private non-test Rust from 1,146 to 1,169 lines;
+  the fixture adds 117 YAML lines.
+- Schema 0.1 remains unable to author these facts, and the existing CLI does not
+  consume them.
+- K-M5 closure as `mixed` requires human validation before K-M6 begins.
+
 ## 2026-07-15 - Implement normalization-B as bounded encoding equivalences
 
 ### Result

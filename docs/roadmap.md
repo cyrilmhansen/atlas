@@ -87,13 +87,17 @@ fields, broken atom references, duplicate candidates and unaudited `proven`
 facts. A bounded YAML overlay now exercises all seven discriminants through ten
 requests, and a 230-line generic evaluator produces five positive and five
 negative adjudications without candidate-specific branches. The full 826-line
-non-test Rust cost is part of the experiment result. K-M5 remains open for the
-independent-authoring test. Its isolated bounded top-k submission agrees on all
-three frozen decisions without evaluator changes. DEC-069 accepts bounded
+non-test Rust cost is the pre-authoring baseline. The isolated bounded top-k
+submission agrees on all three frozen decisions without evaluator changes.
+DEC-069 accepts bounded
 bidirectional equivalences instead of canonicalization. Two mappings correct
 all four top-k cross-encoding requests, but raise the private Rust cost from 826
-to 1,146 non-test lines. K-M5 remains open for the existing conditioned heap
-allocation falsifier; no public schema promotion is implied.
+to 1,146 non-test lines. The conditioned heap falsifier also passes without a
+boundary false acceptance, for 23 more lines. The K-M5 exit audit recommends a
+mixed closure at 1,169 private non-test lines: generic overlay decisions are
+supported, while schema 0.1 manifest discovery and the existing CLI remain
+unsupported. Human closure validation is pending; no schema promotion is
+implied.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

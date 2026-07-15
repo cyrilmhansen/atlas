@@ -1,0 +1,117 @@
+overlay_version: phase2-km5-0
+
+atoms:
+  - { id: operation.heap_push, kind: capability }
+  - { id: condition.spare_capacity, kind: condition }
+  - { id: guarantee.no_allocation, kind: guarantee }
+  - { id: effect.mutates, kind: effect }
+  - { id: state.binary_heap, kind: state }
+
+candidates:
+  - id: candidate.heap_push.cost_encoding
+    source: registry:priority_queue.push.rust.std.1_85
+    provides:
+      - atom: operation.heap_push
+        evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    requires: []
+    guarantees: []
+    effects:
+      - atom: effect.mutates
+        evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    consumes_state:
+      atom: state.binary_heap
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    produces_state:
+      atom: state.binary_heap
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    costs:
+      - operation: push
+        metric: allocation
+        regime: worst
+        bound: none
+        requires: [condition.spare_capacity]
+        evidence: { level: inferred, source: "docs:phase2/k-m4-dual-import-comparison.md", proof: null }
+
+  - id: candidate.heap_push.guarantee_encoding
+    source: registry:priority_queue.push.rust.std.1_85
+    provides:
+      - atom: operation.heap_push
+        evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    requires:
+      - atom: condition.spare_capacity
+        evidence: { level: declared, source: "docs:phase2/k-m4-dual-import-comparison.md", proof: null }
+    guarantees:
+      - atom: guarantee.no_allocation
+        evidence: { level: inferred, source: "docs:phase2/k-m4-dual-import-comparison.md", proof: null }
+    effects:
+      - atom: effect.mutates
+        evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    consumes_state:
+      atom: state.binary_heap
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    produces_state:
+      atom: state.binary_heap
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures.md", proof: null }
+    costs: []
+
+relations: []
+
+equivalences:
+  - id: equivalence.heap_push.no_allocation
+    left:
+      - kind: cost
+        operation: push
+        metric: allocation
+        regime: worst
+        bound: none
+        requires: [condition.spare_capacity]
+    right:
+      - { kind: guarantee, atom: guarantee.no_allocation }
+    evidence: { level: declared, source: "docs:phase2/k-m4-dual-import-comparison.md", proof: null }
+
+requests:
+  - id: request.heap_push.guarantee_with_capacity
+    accepts: operation.heap_push
+    provides_conditions: [condition.spare_capacity]
+    requires_guarantees: [guarantee.no_allocation]
+    forbids_effects: []
+    consumes_state: state.binary_heap
+    maximum_costs: []
+    accepted_evidence: [declared, inferred]
+
+  - id: request.heap_push.guarantee_without_capacity
+    accepts: operation.heap_push
+    provides_conditions: []
+    requires_guarantees: [guarantee.no_allocation]
+    forbids_effects: []
+    consumes_state: state.binary_heap
+    maximum_costs: []
+    accepted_evidence: [declared, inferred]
+
+  - id: request.heap_push.cost_with_capacity
+    accepts: operation.heap_push
+    provides_conditions: [condition.spare_capacity]
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: state.binary_heap
+    maximum_costs:
+      - operation: push
+        metric: allocation
+        regime: worst
+        bound: none
+        requires: [condition.spare_capacity]
+    accepted_evidence: [declared, inferred]
+
+  - id: request.heap_push.cost_without_capacity
+    accepts: operation.heap_push
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: state.binary_heap
+    maximum_costs:
+      - operation: push
+        metric: allocation
+        regime: worst
+        bound: none
+        requires: [condition.spare_capacity]
+    accepted_evidence: [declared, inferred]

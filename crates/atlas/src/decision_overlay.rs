@@ -637,12 +637,13 @@ fn validate_assertion(
         } => {
             validate_nonempty(&format!("{path}.operation"), operation, errors);
             validate_nonempty(&format!("{path}.bound"), bound, errors);
-            if !requires.is_empty() {
-                errors.push(error(
-                    format!("{path}.requires"),
-                    "conditional costs are unsupported in equivalences",
-                ));
-            }
+            validate_atom_refs(
+                &format!("{path}.requires"),
+                requires,
+                AtomKind::Condition,
+                atoms,
+                errors,
+            );
         }
     }
 }
@@ -867,7 +868,6 @@ equivalences:
         let message = error.to_string();
         assert!(message.contains("has kind Capability; expected Guarantee"));
         assert!(message.contains("left and right sides must be disjoint"));
-        assert!(message.contains("conditional costs are unsupported in equivalences"));
     }
 
     #[test]

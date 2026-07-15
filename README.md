@@ -80,6 +80,8 @@ and an auditable meaning of `proven`.
 - `docs/phase2/k-m5-independent-authoring-packet.md`: isolated top-k convergence task and adjudication protocol;
 - `docs/phase2/k-m5-independent-authoring-result.md`: operational agreement and taxonomic divergence report;
 - `docs/phase2/k-m5-normalization-b.md`: bounded encoding equivalences, controls and measured cost;
+- `docs/phase2/k-m5-heap-condition-result.md`: conditioned cost/guarantee equivalence falsifier;
+- `docs/phase2/k-m5-review.md`: K-M5 exit audit and mixed-closure recommendation;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

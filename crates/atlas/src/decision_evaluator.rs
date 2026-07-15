@@ -68,7 +68,7 @@ fn evaluate_candidate(
         let target = AssertionPattern::Guarantee {
             atom: required.clone(),
         };
-        if supports(overlay, candidate, &target, &accepted_evidence) {
+        if supports(overlay, candidate, &target, &accepted_evidence, &conditions) {
             continue;
         }
         match candidate
@@ -89,7 +89,7 @@ fn evaluate_candidate(
         let target = AssertionPattern::Effect {
             atom: forbidden.clone(),
         };
-        if supports_without_evidence(overlay, candidate, &target) {
+        if supports_without_evidence(overlay, candidate, &target, &conditions) {
             reasons.push(format!("forbidden effect {forbidden}"));
         }
     }
@@ -134,7 +134,7 @@ fn evaluate_candidate(
             )),
             None => {
                 let target = cost_pattern(required_cost);
-                if supports(overlay, candidate, &target, &accepted_evidence) {
+                if supports(overlay, candidate, &target, &accepted_evidence, &conditions) {
                     for condition in &required_cost.requires {
                         if !conditions.contains(condition.as_str()) {
                             reasons.push(format!(
@@ -175,7 +175,7 @@ fn capability_matches(
     let target = AssertionPattern::Capability {
         atom: request.accepts.clone(),
     };
-    if supports(overlay, candidate, &target, accepted_evidence) {
+    if supports(overlay, candidate, &target, accepted_evidence, conditions) {
         return Ok(());
     }
     let mut path_failures = Vec::new();
@@ -410,6 +410,47 @@ mod tests {
         assert_eq!(
             accepted_candidates(&overlay, "request.top_k.allocation_profile"),
             ["candidate.top_k.decomposed_encoding"]
+        );
+    }
+
+    #[test]
+    fn conditional_equivalence_reconciles_heap_allocation_encodings() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let mut overlay =
+            load_decision_overlay(&workspace.join("docs/phase2/k-m5-normalization-b-heap.yaml"))
+                .expect("conditioned heap fixture must validate");
+        let registry =
+            load_registry(&workspace.join("registry/atlas.yaml")).expect("committed registry");
+        assert!(validate_overlay_sources(&overlay, &registry, &workspace).is_empty());
+
+        let both = [
+            "candidate.heap_push.cost_encoding",
+            "candidate.heap_push.guarantee_encoding",
+        ];
+        assert_eq!(
+            accepted_candidates(&overlay, "request.heap_push.guarantee_with_capacity"),
+            both
+        );
+        assert_eq!(
+            accepted_candidates(&overlay, "request.heap_push.cost_with_capacity"),
+            both
+        );
+        assert!(
+            accepted_candidates(&overlay, "request.heap_push.guarantee_without_capacity")
+                .is_empty()
+        );
+        assert!(
+            accepted_candidates(&overlay, "request.heap_push.cost_without_capacity").is_empty()
+        );
+
+        overlay.equivalences.clear();
+        assert_eq!(
+            accepted_candidates(&overlay, "request.heap_push.guarantee_with_capacity"),
+            ["candidate.heap_push.guarantee_encoding"]
+        );
+        assert_eq!(
+            accepted_candidates(&overlay, "request.heap_push.cost_with_capacity"),
+            ["candidate.heap_push.cost_encoding"]
         );
     }
 

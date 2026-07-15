@@ -1,6 +1,6 @@
 # K-M5 bounded encoding-equivalence experiment
 
-Status: implementation checkpoint complete under DEC-069
+Status: initial DEC-069 checkpoint complete; condition-aware follow-up measured separately
 
 Date: 2026-07-15
 
@@ -78,15 +78,15 @@ separate module is an ownership boundary, not a claim that this cost disappears.
 
 ## Result and limits
 
-The bounded mapping corrects all four cross-encoding decisions and respects
-mapping evidence independently from candidate evidence. Invalid atom kinds,
-tautological sides and conditional costs are rejected.
+The initial bounded mapping corrects all four cross-encoding decisions and
+respects mapping evidence independently from candidate evidence. Invalid atom
+kinds and tautological sides are rejected. Conditional costs were rejected at
+this checkpoint pending the separate heap falsifier.
 
 This is evidence that explicit compatibility mappings can preserve multiple
 source-faithful taxonomies. It is also evidence that the approach is materially
-more expensive than canonicalization. The experiment covers one streaming
-subject only, cannot map conditioned heap allocation, and does not justify a
-public ontology or schema field.
+more expensive than canonicalization. This checkpoint covers one streaming
+subject only and does not justify a public ontology or schema field.
 
 Verification at this checkpoint:
 
@@ -95,7 +95,7 @@ Verification at this checkpoint:
 - `cargo check -p atlas --all-targets --locked` passes;
 - formatting and whitespace checks pass.
 
-The next falsification should use the existing heap spare-capacity case without
-adding a new assertion kind. Because conditional cost mappings are deliberately
-rejected, that case should reveal whether a small condition-aware extension is
-justified or whether K-M5 should close as mixed.
+The heap spare-capacity follow-up is complete in
+`k-m5-heap-condition-result.md`. It transports explicit cost conditions without
+adding an assertion kind and raises the private Rust total to 1,169 lines. The
+K-M5 exit recommendation is recorded in `k-m5-review.md`.

@@ -10,16 +10,18 @@ pub(crate) fn supports(
     candidate: &Candidate,
     target: &AssertionPattern,
     accepted: &HashSet<OverlayEvidenceLevel>,
+    conditions: &HashSet<&str>,
 ) -> bool {
-    supports_with_evidence(overlay, candidate, target, Some(accepted))
+    supports_with_evidence(overlay, candidate, target, Some(accepted), conditions)
 }
 
 pub(crate) fn supports_without_evidence(
     overlay: &DecisionOverlay,
     candidate: &Candidate,
     target: &AssertionPattern,
+    conditions: &HashSet<&str>,
 ) -> bool {
-    supports_with_evidence(overlay, candidate, target, None)
+    supports_with_evidence(overlay, candidate, target, None, conditions)
 }
 
 fn supports_with_evidence(
@@ -27,24 +29,29 @@ fn supports_with_evidence(
     candidate: &Candidate,
     target: &AssertionPattern,
     accepted: Option<&HashSet<OverlayEvidenceLevel>>,
+    conditions: &HashSet<&str>,
 ) -> bool {
-    direct_evidence(candidate, target).is_some_and(|level| allows(level, accepted))
-        || overlay.equivalences.iter().any(|equivalence| {
-            allows(equivalence.evidence.level, accepted)
-                && (derives(
-                    candidate,
-                    target,
-                    &equivalence.left,
-                    &equivalence.right,
-                    accepted,
-                ) || derives(
-                    candidate,
-                    target,
-                    &equivalence.right,
-                    &equivalence.left,
-                    accepted,
-                ))
-        })
+    assertion_conditions_met(target, conditions)
+        && (direct_evidence(candidate, target, conditions)
+            .is_some_and(|level| allows(level, accepted))
+            || overlay.equivalences.iter().any(|equivalence| {
+                allows(equivalence.evidence.level, accepted)
+                    && (derives(
+                        candidate,
+                        target,
+                        &equivalence.left,
+                        &equivalence.right,
+                        accepted,
+                        conditions,
+                    ) || derives(
+                        candidate,
+                        target,
+                        &equivalence.right,
+                        &equivalence.left,
+                        accepted,
+                        conditions,
+                    ))
+            }))
 }
 
 fn derives(
@@ -53,19 +60,25 @@ fn derives(
     target_side: &[AssertionPattern],
     source_side: &[AssertionPattern],
     accepted: Option<&HashSet<OverlayEvidenceLevel>>,
+    conditions: &HashSet<&str>,
 ) -> bool {
     target_side
         .iter()
         .any(|assertion| assertion_patterns_match(assertion, target))
         && source_side.iter().all(|assertion| {
-            direct_evidence(candidate, assertion).is_some_and(|level| allows(level, accepted))
+            direct_evidence(candidate, assertion, conditions)
+                .is_some_and(|level| allows(level, accepted))
         })
 }
 
 fn direct_evidence(
     candidate: &Candidate,
     assertion: &AssertionPattern,
+    conditions: &HashSet<&str>,
 ) -> Option<OverlayEvidenceLevel> {
+    if !assertion_conditions_met(assertion, conditions) {
+        return None;
+    }
     match assertion {
         AssertionPattern::Capability { atom } => candidate
             .provides
@@ -87,6 +100,15 @@ fn direct_evidence(
             .iter()
             .find(|cost| cost_matches_pattern(cost, assertion))
             .map(|cost| cost.evidence.level),
+    }
+}
+
+fn assertion_conditions_met(assertion: &AssertionPattern, conditions: &HashSet<&str>) -> bool {
+    match assertion {
+        AssertionPattern::Cost { requires, .. } => requires
+            .iter()
+            .all(|condition| conditions.contains(condition.as_str())),
+        _ => true,
     }
 }
 

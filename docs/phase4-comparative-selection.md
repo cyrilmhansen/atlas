@@ -62,7 +62,7 @@ missing authoritative facts from missing query machinery.
 
 ### K4-M1 - Graph reachability competition
 
-Status: next; source review precedes dependency selection.
+Status: complete. Result: `docs/phase4/k4-m1-result.md`.
 
 Add a depth-first reachability strategy competing with the existing breadth-
 first traversal for `graph.reachable_traversal`. Compare traversal-order needs,
@@ -74,6 +74,8 @@ through registry relations; frozen requests accept or reject both with sourced
 reasons, or explicitly demonstrate an unsupported qualification.
 
 ### K4-M2 - Dynamic priority-queue competition
+
+Status: next after B2 qualification-representation choice and source review.
 
 Add a structurally distinct priority-queue strategy for at least one existing
 construct/push/pop problem. Test state compatibility, capacity conditions,
@@ -120,6 +122,10 @@ Do not choose before K4-M0. Options are: reuse an unchanged K-M5 evaluator with
 a separate phase-local input, implement a smaller disposable comparison matrix,
 or stop at the schema 0.1 negative control. Recommendation will follow measured
 request needs and line cost.
+
+K4-M1 now supplies that evidence. Options and recommendation are recorded in
+`docs/phase4/k4-b2-options.md`; recommendation: `b2-A`, reuse the unchanged
+K-M5 evaluator with separate Phase 4 input and no public surface.
 
 ### C1 - Public schema or CLI promotion
 

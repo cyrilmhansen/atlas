@@ -960,6 +960,24 @@ algorithms:
       value: "Theta(V), excluding the input graph"
       level: declared
       source: "docs:phase2/imports/importer-a/bfs.md;phase2/imports/importer-b/bfs.md"
+  - id: graph.dfs.traversal
+    solves: graph.reachable_traversal
+    name:
+      value: "depth-first graph traversal"
+      level: declared
+      source: "file:docs/phase4/imports/k4-m1/petgraph-dfs.md"
+    deterministic:
+      value: true
+      level: tested
+      source: "file:crates/atlas/tests/external_graph_adapters.rs"
+    time_worst:
+      value: "O(V + E)"
+      level: inferred
+      source: "analysis:phase4/k4-m1-petgraph-dfs"
+    auxiliary_memory:
+      value: "O(V) for the traversal stack and discovered-node map"
+      level: inferred
+      source: "analysis:phase4/k4-m1-petgraph-dfs"
   - id: graph.dijkstra.distances
     solves: graph.nonnegative_shortest_distances
     name:
@@ -2376,6 +2394,54 @@ implementations:
     tests:
       value:
         - "external_graph_adapters::petgraph_bfs_visits_exactly_the_reachable_component"
+      level: tested
+      source: "file:crates/atlas/tests/external_graph_adapters.rs"
+  - id: graph.dfs.petgraph.0_8_3
+    implements: graph.dfs.traversal
+    language:
+      value: rust
+      level: declared
+      source: "file:docs/phase4/imports/k4-m1/petgraph-dfs.md"
+    version:
+      value: "0.8.3"
+      level: declared
+      source: "file:Cargo.toml"
+    license:
+      value: "MIT OR Apache-2.0"
+      level: declared
+      source: "docs:https://docs.rs/crate/petgraph/0.8.3/source/Cargo.toml.orig"
+    target:
+      value: "Rust target with alloc; K4-M1 adapter tested on a std host"
+      level: tested
+      source: "file:crates/atlas/tests/external_graph_adapters.rs"
+    dependencies:
+      value: ["petgraph 0.8.3 with default features disabled"]
+      level: declared
+      source: "file:crates/atlas/Cargo.toml"
+    abi:
+      value: "Rust calling convention; no stable ABI"
+      level: declared
+      source: "definition:rust-api-contract"
+    entrypoint:
+      value: "petgraph::visit::Dfs::new and petgraph::visit::Dfs::next"
+      level: declared
+      source: "docs:https://docs.rs/petgraph/0.8.3/petgraph/visit/struct.Dfs.html"
+    signature:
+      value: "Dfs::new(graph, source); Dfs::next(&mut self, graph) -> Option<NodeId>"
+      level: declared
+      source: "docs:https://docs.rs/petgraph/0.8.3/petgraph/visit/struct.Dfs.html"
+    effects:
+      value:
+        mutates: [traversal.stack, traversal.discovered]
+        io: none
+        blocking: false
+        allocation: "allocates the traversal stack and discovered-node map"
+      level: declared
+      source: "file:docs/phase4/imports/k4-m1/petgraph-dfs.md"
+    tests:
+      value:
+        - "external_graph_adapters::petgraph_dfs_visits_exactly_the_reachable_component_in_repeatable_preorder"
+        - "external_graph_adapters::petgraph_dfs_preorder_can_visit_a_deeper_node_before_a_shallower_node"
       level: tested
       source: "file:crates/atlas/tests/external_graph_adapters.rs"
   - id: graph.dijkstra.petgraph.0_8_3

@@ -13,7 +13,7 @@ import {
 
 const projection = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 
-assert.equal(catalogRecords(projection).length, 107);
+assert.equal(catalogRecords(projection).length, 109);
 assert.equal(filterCatalog(projection, "", "problem").length, 31);
 assert.equal(filterCatalog(projection, "graph", "problem").length, 4);
 
@@ -21,7 +21,7 @@ const problem = findRecord(projection, "graph.reachable_traversal");
 assert.equal(problem.kind, "problem");
 assert.deepEqual(
   relatedRecords(projection, problem).map((record) => record.entity.id),
-  ["graph.bfs.traversal"],
+  ["graph.bfs.traversal", "graph.dfs.traversal"],
 );
 
 const algorithm = findRecord(projection, "graph.bfs.traversal");

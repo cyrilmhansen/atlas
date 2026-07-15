@@ -1,5 +1,32 @@
 # Progress log
 
+## 2026-07-15 - Complete K4-M1 graph competition
+
+### Result
+
+- Added petgraph 0.8.3 DFS as a second algorithm and implementation for the
+  existing reachable-traversal problem without a new dependency.
+- Preserved exact upstream API, license, transformation and same-project source
+  limitation in a Phase 4 import record.
+- Discovered both candidates through registry relations and adjudicated the
+  four frozen graph requests.
+- Retained conditioned frontier memory as missing knowledge and disproved a
+  universal DFS hop-order guarantee with a concrete test.
+
+### Verification
+
+- `cargo test -p atlas --test external_graph_adapters --locked` passes.
+- `cargo test -p atlas --test registry_validation --locked` passes.
+- Registry evidence resolution covers the new worksheet and test source.
+- Derived index: 109 entities, 78 relations, 702 claims, logical digest
+  `e013e76e7c0f7b12ade8140996ced428f49814a23bcee1891455a7ca636ba04c`.
+
+### Limits
+
+- BFS and DFS share petgraph as their upstream implementation project.
+- No executable generic qualification representation is selected yet.
+- No schema, CLI, dependency, runtime or Explorer capability changed.
+
 ## 2026-07-15 - Review K4-M1 DFS sources
 
 ### Result

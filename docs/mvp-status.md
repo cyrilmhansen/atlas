@@ -53,8 +53,8 @@ Atlas identities unresolved. K-M7 concludes Phase 2 as mixed: foreign knowledge
 preservation is supported, but qualified public selection and generic
 composition remain unsupported. DEC-071 accepts that closure and activates
 Explorer-first Phase 3. Phase 3 is now closed supported under DEC-073. E-M1
-relational catalog and factual comparison is complete. All 107 entities now
-have searchable detail, exact chain navigation
+relational catalog and factual comparison is complete. At Phase 3 closure, all
+107 entities had searchable detail and exact chain navigation
 and sourced claims; same-kind comparison states missing facts explicitly and
 never ranks candidates. The five accepted visual programs remain the only
 execution handoffs. E-M2 evidence-centered handoff is complete. Its internal
@@ -70,7 +70,10 @@ bundle from `main`, without stabilizing its private formats.
 The exit audit in `docs/phase3/phase3-exit-audit.md` supports every technical
 Phase 3 criterion. DEC-074 activates Phase 4 comparative foreign selection.
 K4-M0 has frozen its cross-family requests and schema 0.1 controls before any
-competitor import or evaluator choice. K4-M1 graph source review is next.
+competitor import or evaluator choice. K4-M1 adds a petgraph DFS competitor
+without a dependency or schema change; both reachability candidates are found
+through registry relations and adjudicated against the frozen requests. B2 is
+the next qualification-representation decision before K4-M2.
 
 ## Latest closed slice
 

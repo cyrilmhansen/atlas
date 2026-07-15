@@ -1,6 +1,6 @@
 # K4-M1 DFS source review
 
-Status: source options reviewed; B1 selection pending
+Status: Option A accepted and implemented under `dfs-A`
 
 Date: 2026-07-15
 
@@ -98,4 +98,4 @@ source diversity rather than treating this first batch as sufficient evidence.
 4. Adjudicate all four frozen graph requests before choosing B2.
 5. Stop K4-M1 after the two-candidate matrix and implementation-cost record.
 
-Validation question: accept `dfs-A`, choose `dfs-B`, or choose `dfs-C`?
+Owner decision: `dfs-A`.

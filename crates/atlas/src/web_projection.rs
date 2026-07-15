@@ -520,8 +520,8 @@ mod tests {
         assert_eq!(value["build"]["target"], "wasm32-unknown-unknown");
         assert_eq!(value["build"]["profile"], "release");
         assert_eq!(value["counts"]["problems"], 31);
-        assert_eq!(value["counts"]["algorithms"], 36);
-        assert_eq!(value["counts"]["implementations"], 40);
+        assert_eq!(value["counts"]["algorithms"], 37);
+        assert_eq!(value["counts"]["implementations"], 41);
         let graph_problem = value["problems"]
             .as_array()
             .unwrap()

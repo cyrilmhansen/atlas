@@ -16,9 +16,10 @@ The public Atlas Explorer is available at
 <https://cyrilmhansen.github.io/atlas/>. It is a derived static presentation of
 the Git-authoritative registry, not a stable JSON, WASM or URL API.
 
-The authoritative registry now contains 31 problems, 36 algorithms, and 40
+The authoritative registry now contains 31 problems, 37 algorithms, and 41
 implementations: the 10/15/20 MVP 1 sequence baseline plus the first external
-graph and dynamic-structure batches. The latter separates union-find, binary
+graph and dynamic-structure batches, plus the first Phase 4 DFS competitor. The
+latter separates union-find, binary
 heap and collision-aware hash-table operations and adds tested petgraph,
 standard-library and hashbrown boundaries. A streaming batch adds bounded
 top-k, online moments, reservoir sampling and Bloom membership. Schema hardening, local evidence
@@ -105,6 +106,8 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/phase4-comparative-selection.md`: active cross-family competitor and selection experiment;
 - `docs/phase4/k4-m0-protocol.md`: frozen pre-import requests and schema 0.1 control baseline;
 - `docs/phase4/k4-m1-dfs-source-review.md`: first competitor source options and dependency tradeoffs;
+- `docs/phase4/k4-m1-result.md`: graph candidate discovery and frozen-request adjudication;
+- `docs/phase4/k4-b2-options.md`: executable qualification alternatives after the graph batch;
 - `docs/decisions/DEC-073-close-phase3-supported.md`: owner acceptance and Phase 3 closure boundary;
 - `docs/decisions/DEC-074-activate-phase4-comparative-selection.md`: Phase 4 authority and exclusions;
 - `docs/decisions/DEC-072-publish-explorer-on-github-pages.md`: public distribution boundary;

@@ -51,8 +51,8 @@ fn accepts_the_committed_registry() {
     let registry = load_registry(&path).expect("committed registry must be valid");
 
     assert_eq!(registry.problems.len(), 31);
-    assert_eq!(registry.algorithms.len(), 36);
-    assert_eq!(registry.implementations.len(), 40);
+    assert_eq!(registry.algorithms.len(), 37);
+    assert_eq!(registry.implementations.len(), 41);
     assert!(registry.executions.is_empty());
     let linear_search = registry
         .algorithms
@@ -145,6 +145,33 @@ fn committed_registry_keeps_exact_graph_contracts_separate() {
         .find(|algorithm| algorithm.id == "graph.dijkstra.shortest_path_tree")
         .expect("Dijkstra shortest-path tree must be present");
     assert_eq!(dijkstra_tree.solves, "graph.nonnegative_shortest_path_tree");
+}
+
+#[test]
+fn committed_registry_discovers_both_reachability_candidates_from_relations() {
+    let registry = parse(VALID_REGISTRY);
+    let algorithms = registry
+        .algorithms
+        .iter()
+        .filter(|algorithm| algorithm.solves == "graph.reachable_traversal")
+        .collect::<Vec<_>>();
+    assert_eq!(algorithms.len(), 2);
+
+    let implementations = registry
+        .implementations
+        .iter()
+        .filter(|implementation| {
+            algorithms
+                .iter()
+                .any(|algorithm| algorithm.id == implementation.implements)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(implementations.len(), 2);
+    assert!(
+        implementations
+            .iter()
+            .all(|implementation| implementation.version.value == "0.8.3")
+    );
 }
 
 #[test]
@@ -1433,7 +1460,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
     let first = run();
     assert!(first.status.success());
     let first_stdout = String::from_utf8(first.stdout).expect("UTF-8 CLI output");
-    assert!(first_stdout.contains("Indexed 107 entities, 76 relations,"));
+    assert!(first_stdout.contains("Indexed 109 entities, 78 relations,"));
     let first_digest = first_stdout
         .lines()
         .find(|line| line.starts_with("Logical SHA-256: "))
@@ -1465,7 +1492,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(entities, 107);
+    assert_eq!(entities, 109);
     assert_eq!(stale, 0);
     drop(connection);
     fs::remove_file(database).unwrap();

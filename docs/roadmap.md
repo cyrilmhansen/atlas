@@ -9,12 +9,12 @@ decision record differ.
 MVP 1 through MVP 6 are closed. No subsequent MVP is active. GitHub CI runs the
 reproducible MVP 2 acceptance gate, all workspace targets, the RV64 LP64 probe
 and the MIR RV64 generator probe on pushes and pull requests. The project has a
-Git-authoritative YAML registry (31 problems, 36 algorithms and 40
+Git-authoritative YAML registry (31 problems, 37 algorithms and 41
 implementations), a rebuildable SQLite projection, deterministic datasets and
 reproducible local observations, plus five bounded composition scenarios with
 compiled Rust orchestration. The current counts include the 10/15/20 MVP 1
 sequence baseline plus the complete Phase 2 graph, dynamic-structure and
-streaming batches.
+streaming batches and the first Phase 4 graph competitor.
 
 MVP 5 delivered the reproducible static interactive artifact. MVP 6 replaced
 its specialized browser execution paths with five AST-derived private programs,
@@ -163,6 +163,14 @@ the existing in-place priority-queue push and rejects allocation-free graph and
 top-k requests, but cannot express conditioned costs, state compatibility,
 output ordering or asymptotic thresholds. K4-M1 source review is next; no
 qualification representation has yet been selected.
+
+K4-M1 is complete with the accepted petgraph 0.8.3 DFS. It adds one Algorithm
+and one Implementation to the existing reachability Problem without dependency,
+schema, CLI or runtime growth. Relation-driven discovery finds both BFS and DFS.
+The frozen graph matrix accepts exact traversal, rejects declared allocation,
+retains graph-shape frontier qualification as missing and rejects DFS hop-order
+through a tested counterexample. B2 qualification representation is the next
+decision before the dynamic competitor batch.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

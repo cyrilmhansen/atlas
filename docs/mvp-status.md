@@ -41,9 +41,10 @@ evidence. The isolated top-k run agrees operationally but diverges on taxonomy.
 DEC-069's bounded equivalences reconcile four cross-encoding requests while
 raising the total to 1,146 lines. The conditioned heap test succeeds for 23
 additional lines and preserves rejection without spare capacity. DEC-070
-retains that private result and closes K-M5 mixed. K-M6 is the next planned
-milestone. Its blind top-k task and two-arm protocol are frozen; the agents have
-not yet run.
+retains that private result and closes K-M5 mixed. K-M6 is complete and
+supported: the assisted agent identified the exact top-k component chain with
+disciplined evidence, while the control retained the right strategy but left
+Atlas identities unresolved. K-M7 Phase 2 synthesis is next.
 
 ## Latest closed slice
 

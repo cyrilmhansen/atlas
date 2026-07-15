@@ -1,6 +1,6 @@
 # K-M6 blind agent-consumer protocol
 
-Status: frozen packet and oracle; dual-agent execution pending
+Status: executed; result in `docs/phase2/k-m6-result.md`
 
 Code and registry baseline: `bf5bcc973d96556cf1c5a87e1e3f79b3ece30a7d`
 

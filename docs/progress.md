@@ -1,5 +1,39 @@
 # Progress log
 
+## 2026-07-15 - Complete K-M6 with a supported agent-consumer result
+
+### Result
+
+- Ran independent assisted and control agents from the frozen bounded-top-k
+  packets with no clarification or human intervention.
+- The assisted arm selected the exact Problem, Algorithm and Implementation
+  chain and preserved all claim levels; the control selected the same min-heap
+  strategy but correctly left Atlas identities unresolved.
+- Revealed identical source and test results only after both initial responses
+  were copied and hashed. Both retained their initial semantic judgment and
+  avoided promoting fixture evidence to proof.
+- Closed K-M6 as supported and made K-M7 Phase 2 synthesis the next milestone.
+
+### Verification
+
+- Assisted/control initial-response SHA-256:
+  `2bc2628aae63b6618e24651d257b1f800cea91617304cc65ea1c1f7f40b1f33d` /
+  `1195cea91d58b7bed8affdea74fb16361c758cfcbc7a905cefff45316e77f66b`.
+- Reveal source matched its frozen digest in both arms.
+- `cargo test -p atlas --test external_streaming_adapters bounded_top_k_is_exact_and_never_exceeds_its_budget --locked`: 1 passed.
+- Final responses and the dimension-by-dimension comparison are archived in
+  `docs/phase2/k-m6-assisted-response.md`,
+  `docs/phase2/k-m6-control-response.md` and
+  `docs/phase2/k-m6-result.md`.
+
+### Limits
+
+- The result covers one task and two agents, not general agent effectiveness.
+- Source isolation remained procedural because current query commands require a
+  full evidence workspace.
+- The assisted arm issued 29 queries and took about 68 seconds longer; K-M7 must
+  retain this interface cost alongside the positive selection result.
+
 ## 2026-07-15 - Freeze the K-M6 blind agent-consumer packet
 
 ### Result

@@ -97,14 +97,17 @@ boundary false acceptance, for 23 more lines. The K-M5 exit audit recommends a
 mixed closure at 1,169 private non-test lines: generic overlay decisions are
 supported, while schema 0.1 manifest discovery and the existing CLI remain
 unsupported. DEC-070 accepts that mixed closure, retains the private
-condition-aware result and freezes further K-M5 growth. K-M6 is the next planned
-milestone; no schema promotion is implied.
+condition-aware result, freezes further K-M5 growth and made K-M6 the next
+milestone without implying schema promotion.
 
-K-M6 packet preparation is complete. Its exact bounded-top-k task compares an
-agent using the existing CLI/registry with an isolated control using only common
-project documentation. The selection oracle and identical post-selection source
-reveal are frozen before execution. No structured agent API or K-M5 overlay is
-available to either arm.
+K-M6 is complete with a supported verdict. Its exact bounded-top-k task compared
+an agent using the existing CLI/registry with an isolated control using only
+common project documentation. Atlas supplied exact component identity and
+evidence-grounded explanation without unsupported claims or human intervention;
+the control independently selected the min-heap strategy but could not establish
+registry identities. The assisted arm used 29 queries and took about 68 seconds
+longer, exposing a real query-cost limitation. No structured agent API or K-M5
+overlay was used. K-M7 Phase 2 synthesis is the next active milestone.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

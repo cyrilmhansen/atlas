@@ -5,6 +5,8 @@ use std::path::Path;
 
 use serde::Deserialize;
 
+use crate::registry::Registry;
+
 pub const SUPPORTED_OVERLAY_VERSION: &str = "phase2-km5-0";
 const MAX_ATOMS: usize = 32;
 const MAX_CANDIDATES: usize = 8;
@@ -50,14 +52,14 @@ pub struct Candidate {
     pub costs: Vec<CostFact>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Fact {
     pub atom: String,
     pub evidence: Evidence,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Evidence {
     pub level: OverlayEvidenceLevel,
@@ -75,7 +77,7 @@ pub enum OverlayEvidenceLevel {
     Proven,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProofMapping {
     pub artifact: String,
@@ -201,6 +203,43 @@ pub fn parse_decision_overlay(contents: &str) -> Result<DecisionOverlay, Overlay
     } else {
         Err(OverlayLoadError::Invalid(errors))
     }
+}
+
+pub fn validate_overlay_sources(
+    overlay: &DecisionOverlay,
+    registry: &Registry,
+    workspace_root: &Path,
+) -> Vec<OverlayValidationError> {
+    let mut errors = Vec::new();
+    for (index, candidate) in overlay.candidates.iter().enumerate() {
+        let path = format!("candidates[{index}].source");
+        if let Some(id) = candidate.source.strip_prefix("registry:") {
+            let exists = registry.problems.iter().any(|entity| entity.id == id)
+                || registry.algorithms.iter().any(|entity| entity.id == id)
+                || registry
+                    .implementations
+                    .iter()
+                    .any(|entity| entity.id == id);
+            if !exists {
+                errors.push(error(path, format!("unknown registry entity {id:?}")));
+            }
+        } else if let Some(relative) = candidate.source.strip_prefix("worksheet:") {
+            let relative = Path::new(relative);
+            if relative.is_absolute()
+                || relative
+                    .components()
+                    .any(|component| matches!(component, std::path::Component::ParentDir))
+            {
+                errors.push(error(path, "worksheet path must be workspace-relative"));
+            } else if !workspace_root.join(relative).is_file() {
+                errors.push(error(
+                    path,
+                    format!("worksheet {:?} does not exist", relative.display()),
+                ));
+            }
+        }
+    }
+    errors
 }
 
 impl DecisionOverlay {
@@ -557,6 +596,8 @@ fn error(field: impl Into<String>, message: impl Into<String>) -> OverlayValidat
 
 #[cfg(test)]
 mod tests {
+    use crate::registry::load_registry;
+
     use super::*;
 
     const VALID: &str = r#"
@@ -698,5 +739,15 @@ costs: []
                 .iter()
                 .any(|error| error.message.contains("duplicate candidate ID"))
         );
+    }
+
+    #[test]
+    fn committed_overlay_sources_resolve_without_becoming_registry_authority() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let overlay = load_decision_overlay(&workspace.join("docs/phase2/k-m5-overlay.yaml"))
+            .expect("committed overlay");
+        let registry =
+            load_registry(&workspace.join("registry/atlas.yaml")).expect("committed registry");
+        assert!(validate_overlay_sources(&overlay, &registry, &workspace).is_empty());
     }
 }

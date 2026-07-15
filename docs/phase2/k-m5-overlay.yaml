@@ -1,0 +1,319 @@
+overlay_version: phase2-km5-0
+
+atoms:
+  - { id: output.path_tree.all_reachable, kind: capability }
+  - { id: output.distances.all_reachable, kind: capability }
+  - { id: output.heavy_hitters.candidates, kind: capability }
+  - { id: output.heavy_hitters.exact, kind: capability }
+  - { id: operation.heap_push, kind: capability }
+  - { id: operation.disjoint_union, kind: capability }
+  - { id: output.bloom_membership, kind: capability }
+  - { id: output.bloom_definitive_negative, kind: capability }
+  - { id: output.moments_state, kind: capability }
+  - { id: output.unbiased_variance, kind: capability }
+  - { id: operation.moments_pairwise, kind: capability }
+  - { id: condition.nonnegative_weights, kind: condition }
+  - { id: condition.replayable_input, kind: condition }
+  - { id: condition.spare_capacity, kind: condition }
+  - { id: condition.valid_disjoint_state, kind: condition }
+  - { id: condition.declared_hash_model, kind: condition }
+  - { id: condition.negative_result, kind: condition }
+  - { id: condition.count_gt_1, kind: condition }
+  - { id: condition.count_lt_2, kind: condition }
+  - { id: condition.ieee754, kind: condition }
+  - { id: guarantee.exact, kind: guarantee }
+  - { id: guarantee.sound_superset, kind: guarantee }
+  - { id: guarantee.one_sided_error, kind: guarantee }
+  - { id: guarantee.sound_negative, kind: guarantee }
+  - { id: guarantee.bitwise_order_independent, kind: guarantee }
+  - { id: effect.mutates, kind: effect }
+  - { id: state.disjoint_set.rank_path_halving, kind: state }
+  - { id: state.binary_heap, kind: state }
+  - { id: state.bloom_bits, kind: state }
+  - { id: state.moments.count_mean_m2, kind: state }
+
+candidates:
+  - id: candidate.dijkstra.path_tree
+    source: registry:graph.dijkstra.shortest_path_tree
+    provides:
+      - atom: output.path_tree.all_reachable
+        evidence: { level: declared, source: "docs:phase2/k-m1-graph-corpus", proof: null }
+    requires:
+      - atom: condition.nonnegative_weights
+        evidence: { level: declared, source: "docs:phase2/k-m1-graph-corpus", proof: null }
+    guarantees:
+      - atom: guarantee.exact
+        evidence: { level: declared, source: "docs:phase2/k-m1-graph-corpus", proof: null }
+    effects: []
+    consumes_state: null
+    produces_state: null
+    costs: []
+
+  - id: candidate.misra_gries.candidates
+    source: worksheet:docs/phase2/imports/k-m4/importer-a/misra-gries.md
+    provides:
+      - atom: output.heavy_hitters.candidates
+        evidence: { level: declared, source: "docs:phase2/imports/k-m4/importer-a/misra-gries", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.sound_superset
+        evidence: { level: declared, source: "docs:phase2/imports/k-m4/importer-a/misra-gries", proof: null }
+    effects: []
+    consumes_state: null
+    produces_state: null
+    costs: []
+
+  - id: candidate.misra_gries.verified
+    source: worksheet:docs/phase2/imports/k-m4/importer-a/misra-gries.md
+    provides:
+      - atom: output.heavy_hitters.exact
+        evidence: { level: declared, source: "docs:phase2/imports/k-m4/importer-a/misra-gries", proof: null }
+    requires:
+      - atom: condition.replayable_input
+        evidence: { level: declared, source: "docs:phase2/imports/k-m4/importer-a/misra-gries", proof: null }
+    guarantees:
+      - atom: guarantee.exact
+        evidence: { level: declared, source: "docs:phase2/imports/k-m4/importer-a/misra-gries", proof: null }
+    effects: []
+    consumes_state: null
+    produces_state: null
+    costs: []
+
+  - id: candidate.heap_push
+    source: registry:priority_queue.binary_heap.push
+    provides:
+      - atom: operation.heap_push
+        evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures", proof: null }
+    requires: []
+    guarantees: []
+    effects:
+      - atom: effect.mutates
+        evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures", proof: null }
+    consumes_state:
+      atom: state.binary_heap
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures", proof: null }
+    produces_state:
+      atom: state.binary_heap
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures", proof: null }
+    costs:
+      - operation: push
+        metric: allocation
+        regime: worst
+        bound: none
+        requires: [condition.spare_capacity]
+        evidence: { level: inferred, source: "docs:phase2/k-m4-dual-import-comparison", proof: null }
+      - operation: push
+        metric: time
+        regime: worst
+        bound: "O(log n)"
+        requires: [condition.spare_capacity]
+        evidence: { level: inferred, source: "docs:phase2/k-m4-dual-import-comparison", proof: null }
+
+  - id: candidate.disjoint_union
+    source: registry:disjoint_set.rank_path_halving.union
+    provides:
+      - atom: operation.disjoint_union
+        evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures", proof: null }
+    requires:
+      - atom: condition.valid_disjoint_state
+        evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures", proof: null }
+    guarantees: []
+    effects:
+      - atom: effect.mutates
+        evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures", proof: null }
+    consumes_state:
+      atom: state.disjoint_set.rank_path_halving
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures", proof: null }
+    produces_state:
+      atom: state.disjoint_set.rank_path_halving
+      evidence: { level: declared, source: "docs:phase2/k-m2-dynamic-structures", proof: null }
+    costs: []
+
+  - id: candidate.bloom_query
+    source: registry:approximate_membership.bloom.query
+    provides:
+      - atom: output.bloom_membership
+        evidence: { level: declared, source: "docs:phase2/k-m3-streaming-approximation", proof: null }
+    requires:
+      - atom: condition.declared_hash_model
+        evidence: { level: declared, source: "docs:phase2/k-m3-streaming-approximation", proof: null }
+    guarantees:
+      - atom: guarantee.one_sided_error
+        evidence: { level: declared, source: "docs:phase2/k-m3-streaming-approximation", proof: null }
+      - atom: guarantee.sound_negative
+        evidence: { level: declared, source: "docs:phase2/k-m4-dual-import-comparison", proof: null }
+    effects: []
+    consumes_state:
+      atom: state.bloom_bits
+      evidence: { level: declared, source: "docs:phase2/k-m3-streaming-approximation", proof: null }
+    produces_state: null
+    costs: []
+
+  - id: candidate.moments.incremental
+    source: worksheet:docs/phase2/imports/k-m4-w/importer-a/online-second-moment.md
+    provides:
+      - atom: output.moments_state
+        evidence: { level: declared, source: "docs:phase2/k-m4-w-comparison", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.exact
+        evidence: { level: declared, source: "docs:phase2/k-m4-w-comparison", proof: null }
+    effects: []
+    consumes_state: null
+    produces_state:
+      atom: state.moments.count_mean_m2
+      evidence: { level: declared, source: "docs:phase2/k-m4-w-comparison", proof: null }
+    costs:
+      - operation: consume_stream
+        metric: time
+        regime: worst
+        bound: "O(n)"
+        requires: []
+        evidence: { level: inferred, source: "docs:phase2/k-m4-w-comparison", proof: null }
+      - operation: consume_stream
+        metric: retained_memory
+        regime: worst
+        bound: "O(1)"
+        requires: []
+        evidence: { level: inferred, source: "docs:phase2/k-m4-w-comparison", proof: null }
+
+  - id: candidate.moments.pairwise
+    source: worksheet:docs/phase2/imports/k-m4-w/importer-a/online-second-moment.md
+    provides:
+      - atom: operation.moments_pairwise
+        evidence: { level: declared, source: "docs:phase2/k-m4-w-comparison", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.exact
+        evidence: { level: declared, source: "docs:phase2/k-m4-w-comparison", proof: null }
+    effects: []
+    consumes_state:
+      atom: state.moments.count_mean_m2
+      evidence: { level: declared, source: "docs:phase2/k-m4-w-comparison", proof: null }
+    produces_state:
+      atom: state.moments.count_mean_m2
+      evidence: { level: declared, source: "docs:phase2/k-m4-w-comparison", proof: null }
+    costs: []
+
+relations:
+  - from: output.path_tree.all_reachable
+    to: output.distances.all_reachable
+    kind: projects_to
+    requires: [condition.nonnegative_weights]
+    evidence: { level: declared, source: "docs:phase2/k-m0-comparison", proof: null }
+  - from: output.heavy_hitters.exact
+    to: output.heavy_hitters.candidates
+    kind: refines
+    requires: [condition.replayable_input]
+    evidence: { level: declared, source: "docs:phase2/k-m4-dual-import-comparison", proof: null }
+  - from: output.bloom_membership
+    to: output.bloom_definitive_negative
+    kind: projects_to
+    requires: [condition.declared_hash_model, condition.negative_result]
+    evidence: { level: declared, source: "docs:phase2/k-m4-dual-import-comparison", proof: null }
+  - from: state.moments.count_mean_m2
+    to: output.unbiased_variance
+    kind: finalizes
+    requires: [condition.count_gt_1]
+    evidence: { level: declared, source: "docs:phase2/k-m4-w-comparison", proof: null }
+
+requests:
+  - id: request.dijkstra.distances
+    accepts: output.distances.all_reachable
+    provides_conditions: [condition.nonnegative_weights]
+    requires_guarantees: [guarantee.exact]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.heavy_hitters.exact
+    accepts: output.heavy_hitters.exact
+    provides_conditions: [condition.replayable_input]
+    requires_guarantees: [guarantee.exact]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.heap_push.no_allocation
+    accepts: operation.heap_push
+    provides_conditions: [condition.spare_capacity]
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: state.binary_heap
+    maximum_costs:
+      - operation: push
+        metric: allocation
+        regime: worst
+        bound: none
+        requires: [condition.spare_capacity]
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.heap_push.individual_log
+    accepts: operation.heap_push
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: state.binary_heap
+    maximum_costs:
+      - operation: push
+        metric: time
+        regime: worst
+        bound: "O(log n)"
+        requires: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.disjoint_union.state
+    accepts: operation.disjoint_union
+    provides_conditions: [condition.valid_disjoint_state]
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: state.disjoint_set.rank_path_halving
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.bloom.exact
+    accepts: output.bloom_membership
+    provides_conditions: [condition.declared_hash_model]
+    requires_guarantees: [guarantee.exact]
+    forbids_effects: []
+    consumes_state: state.bloom_bits
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.bloom.definitive_negative
+    accepts: output.bloom_definitive_negative
+    provides_conditions: [condition.declared_hash_model, condition.negative_result]
+    requires_guarantees: [guarantee.sound_negative]
+    forbids_effects: []
+    consumes_state: state.bloom_bits
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.moments.unbiased_small
+    accepts: output.unbiased_variance
+    provides_conditions: [condition.count_lt_2]
+    requires_guarantees: [guarantee.exact]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.moments.bitwise_pairwise
+    accepts: operation.moments_pairwise
+    provides_conditions: [condition.ieee754]
+    requires_guarantees: [guarantee.bitwise_order_independent]
+    forbids_effects: []
+    consumes_state: state.moments.count_mean_m2
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.moments.proven_pairwise
+    accepts: operation.moments_pairwise
+    provides_conditions: []
+    requires_guarantees: [guarantee.exact]
+    forbids_effects: []
+    consumes_state: state.moments.count_mean_m2
+    maximum_costs: []
+    accepted_evidence: [proven]

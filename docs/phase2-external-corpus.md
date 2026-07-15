@@ -269,7 +269,7 @@ schema 0.1 remains unchanged.
 
 ### K-M5 - Manifest-driven candidate discovery
 
-Status: **planned, held behind the post-K-M4 ontology review**.
+Status: **active; private generic evaluator complete, independent authoring pending**.
 
 Add at least one implementation whose compatibility is not named in a composer
 scenario. The existing query/composition path must discover, accept or reject it
@@ -285,6 +285,13 @@ Acceptance:
 If the current composer cannot perform this without scenario code, record that
 as a supported falsification of generic composition rather than hiding it behind
 a new hard-coded scenario.
+
+The first private evaluator checkpoint is recorded in
+`docs/phase2/k-m5-overlay-result.md`. It covers all seven discriminants through
+ten requests without source-family branches and leaves schema 0.1 unchanged.
+This does not close K-M5: an independently authored candidate/request pair must
+still test whether the overlay vocabulary converges operationally rather than
+only fitting the cases used to design it.
 
 ### K-M6 - Blind agent-consumer experiment
 

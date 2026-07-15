@@ -1,6 +1,6 @@
 # K-M5 experimental decision-overlay specification
 
-Status: private parser/validator checkpoint complete under DEC-067; facts and evaluator pending
+Status: private evaluator checkpoint complete under DEC-067; independent authoring pending
 
 Compatibility: none; the format may be replaced or deleted after K-M5
 
@@ -140,10 +140,10 @@ needing one of those features is an experiment failure, not permission to add it
 Exceeding a limit pauses implementation and requires review. Tests may expose a
 private library API; a later CLI demonstration is a separate reversible choice.
 
-The initial typed model, structured errors and validator occupy 557 non-test
+The current typed model, structured errors and validator occupy 596 non-test
 Rust lines. This count is recorded as experiment cost; it is not hidden by
 splitting files or excluded from the K-M5 synthesis. The separate evaluator
-budget remains below 300 non-test lines.
+occupies 230 non-test lines and remains below its 300-line budget.
 
 ## Acceptance tests
 
@@ -172,3 +172,6 @@ Delete the overlay if it corrects no decision, needs source-specific evaluator
 branches or exceeds the bounded language. Consider a public proposal only when
 at least two relation/fact concepts improve decisions in two structural families
 and independent authoring produces operationally compatible facts.
+
+The first evaluator result is recorded in `k-m5-overlay-result.md`. It is a
+checkpoint, not evidence for a public schema change or K-M5 closure.

@@ -1,5 +1,35 @@
 # Progress log
 
+## 2026-07-15 - Add the private K-M5 generic evaluator checkpoint
+
+### Result
+
+- Added a 319-line private YAML overlay containing 30 atoms, 8 candidates, 4
+  relations and 10 requests across the seven ontology discriminants.
+- Added a 230-line generic evaluator that discovers candidates from data,
+  follows one explicit directional relation and explains every rejection.
+- Resolved candidate sources against the authoritative registry or committed
+  worksheets so the overlay cannot silently become a parallel catalog.
+- Obtained five positive and five negative adjudications; changing a YAML fact
+  changes a decision without recompiling Rust.
+
+### Verification
+
+- All 13 focused decision tests pass; the complete `atlas` package run passes
+  152 tests across the library and four integration suites.
+- Formatting and the package-wide all-target check pass.
+- No registry, schema, index, CLI, AST, execution or presentation contract changed.
+
+### Limits
+
+- Model, parser and validation now cost 596 non-test Rust lines; with the
+  evaluator, the experiment totals 826 non-test Rust lines.
+- Schema 0.1 controls remain documented rather than executable.
+- K-M5 remains open until an independently authored candidate/request pair
+  measures vocabulary agreement and authoring cost.
+- Workspace-wide checking still encounters the pre-existing frozen MIR observer
+  mismatch; this Atlas Knowledge slice does not alter MIR.
+
 ## 2026-07-15 - Add the private K-M5 overlay parser checkpoint
 
 ### Result

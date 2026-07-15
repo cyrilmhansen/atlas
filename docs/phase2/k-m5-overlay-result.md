@@ -1,6 +1,6 @@
 # K-M5 decision-overlay evaluator checkpoint
 
-Status: evaluator implemented; independent authoring operationally passes but taxonomy review remains
+Status: evaluator and bounded equivalence checkpoint implemented; K-M5 remains open
 
 Date: 2026-07-15
 
@@ -48,10 +48,15 @@ typed experiment costs 826 non-test Rust lines. K-M5 must compare that cost with
 independent authoring agreement and the decisions corrected; passing these
 tests alone does not justify schema 0.2.
 
+DEC-069 subsequently adds private encoding equivalences. The complete parser,
+evaluator and resolver now total 1,146 non-test Rust lines; the incremental
+result and control are in `k-m5-normalization-b.md`. The initial counts above
+remain the pre-equivalence baseline.
+
 ## Verification
 
-- `cargo test -p atlas --locked`: 152 tests pass across the library and four
-  integration suites;
+- At the pre-equivalence baseline, `cargo test -p atlas --locked`: 152 tests
+  pass across the library and four integration suites;
 - `cargo check -p atlas --all-targets --locked`: passes;
 - `cargo fmt --all -- --check` and `git diff --check`: pass.
 
@@ -68,9 +73,8 @@ tests alone does not justify schema 0.2.
 
 ## Next experiment
 
-The reproducible task and isolation boundary are frozen in
-`k-m5-independent-authoring-packet.md`. Its result is recorded in
-`k-m5-independent-authoring-result.md`: all three decisions agree, but the
-author independently fused output with exactness and represented allocation as
-an effect rather than a cost. K-M5 remains open for a private normalization
-choice and one cross-encoding request before any closure recommendation.
+The independent result in `k-m5-independent-authoring-result.md` motivated
+DEC-069. Bounded bidirectional equivalences now reconcile both observed top-k
+encodings across four cross-encoding requests, at an incremental cost of 320
+non-test Rust lines. K-M5 remains open for one existing conditioned allocation
+case before deciding whether this compatibility cost is justified.

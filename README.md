@@ -79,6 +79,7 @@ and an auditable meaning of `proven`.
 - `docs/phase2/k-m5-overlay-result.md`: generic evaluator checkpoint, measured cost and remaining gate;
 - `docs/phase2/k-m5-independent-authoring-packet.md`: isolated top-k convergence task and adjudication protocol;
 - `docs/phase2/k-m5-independent-authoring-result.md`: operational agreement and taxonomic divergence report;
+- `docs/phase2/k-m5-normalization-b.md`: bounded encoding equivalences, controls and measured cost;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

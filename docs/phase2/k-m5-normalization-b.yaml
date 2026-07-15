@@ -1,0 +1,119 @@
+overlay_version: phase2-km5-0
+
+atoms:
+  - { id: result.top_k.exact_occurrences, kind: capability }
+  - { id: result.top_k.occurrences, kind: capability }
+  - { id: guarantee.exact, kind: guarantee }
+  - { id: effect.allocates.retained_and_output_storage, kind: effect }
+
+candidates:
+  - id: candidate.top_k.fused_encoding
+    source: registry:stream.top_k.rust.std_binary_heap.v1
+    provides:
+      - atom: result.top_k.exact_occurrences
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs", proof: null }
+    requires: []
+    guarantees: []
+    effects:
+      - atom: effect.allocates.retained_and_output_storage
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs", proof: null }
+    consumes_state: null
+    produces_state: null
+    costs:
+      - operation: bounded_top_k
+        metric: retained_memory
+        regime: worst
+        bound: "O(k) persistent retained elements"
+        requires: []
+        evidence: { level: inferred, source: "docs:phase2/k-m3-streaming-approximation.md", proof: null }
+
+  - id: candidate.top_k.decomposed_encoding
+    source: registry:stream.top_k.rust.std_binary_heap.v1
+    provides:
+      - atom: result.top_k.occurrences
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.exact
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs", proof: null }
+    effects: []
+    consumes_state: null
+    produces_state: null
+    costs:
+      - operation: bounded_top_k
+        metric: retained_memory
+        regime: worst
+        bound: "O(k) persistent retained elements"
+        requires: []
+        evidence: { level: inferred, source: "docs:phase2/k-m3-streaming-approximation.md", proof: null }
+      - operation: bounded_top_k
+        metric: allocation
+        regime: worst
+        bound: "allocates retained and output storage"
+        requires: []
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs", proof: null }
+
+relations: []
+
+equivalences:
+  - id: equivalence.top_k.exact_output
+    left:
+      - { kind: capability, atom: result.top_k.exact_occurrences }
+    right:
+      - { kind: capability, atom: result.top_k.occurrences }
+      - { kind: guarantee, atom: guarantee.exact }
+    evidence: { level: declared, source: "docs:phase2/k-m5-independent-authoring-result.md", proof: null }
+
+  - id: equivalence.top_k.allocation
+    left:
+      - { kind: effect, atom: effect.allocates.retained_and_output_storage }
+    right:
+      - kind: cost
+        operation: bounded_top_k
+        metric: allocation
+        regime: worst
+        bound: "allocates retained and output storage"
+        requires: []
+    evidence: { level: declared, source: "docs:phase2/k-m5-independent-authoring-result.md", proof: null }
+
+requests:
+  - id: request.top_k.decomposed_exact
+    accepts: result.top_k.occurrences
+    provides_conditions: []
+    requires_guarantees: [guarantee.exact]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested]
+
+  - id: request.top_k.fused_exact
+    accepts: result.top_k.exact_occurrences
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested]
+
+  - id: request.top_k.forbid_allocation
+    accepts: result.top_k.occurrences
+    provides_conditions: []
+    requires_guarantees: [guarantee.exact]
+    forbids_effects: [effect.allocates.retained_and_output_storage]
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested]
+
+  - id: request.top_k.allocation_profile
+    accepts: result.top_k.occurrences
+    provides_conditions: []
+    requires_guarantees: [guarantee.exact]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs:
+      - operation: bounded_top_k
+        metric: allocation
+        regime: worst
+        bound: "allocates retained and output storage"
+        requires: []
+    accepted_evidence: [declared, inferred, tested]

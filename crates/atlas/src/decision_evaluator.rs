@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
+use crate::decision_equivalence::{supports, supports_without_evidence};
 use crate::decision_overlay::{
-    Candidate, CostFact, CostRequirement, DecisionOverlay, Fact, Relation, Request,
+    AssertionPattern, Candidate, CostFact, CostRequirement, DecisionOverlay, Fact, Relation,
+    Request,
 };
 
 #[derive(Debug, Eq, PartialEq)]
@@ -63,6 +65,12 @@ fn evaluate_candidate(
     }
 
     for required in &request.requires_guarantees {
+        let target = AssertionPattern::Guarantee {
+            atom: required.clone(),
+        };
+        if supports(overlay, candidate, &target, &accepted_evidence) {
+            continue;
+        }
         match candidate
             .guarantees
             .iter()
@@ -78,7 +86,10 @@ fn evaluate_candidate(
     }
 
     for forbidden in &request.forbids_effects {
-        if candidate.effects.iter().any(|fact| fact.atom == *forbidden) {
+        let target = AssertionPattern::Effect {
+            atom: forbidden.clone(),
+        };
+        if supports_without_evidence(overlay, candidate, &target) {
             reasons.push(format!("forbidden effect {forbidden}"));
         }
     }
@@ -121,13 +132,27 @@ fn evaluate_candidate(
                 "cost {} {} has unaccepted evidence {:?}",
                 cost.operation, cost.bound, cost.evidence.level
             )),
-            None => reasons.push(format!(
-                "missing exact cost profile {} {:?} {:?} {}",
-                required_cost.operation,
-                required_cost.metric,
-                required_cost.regime,
-                required_cost.bound
-            )),
+            None => {
+                let target = cost_pattern(required_cost);
+                if supports(overlay, candidate, &target, &accepted_evidence) {
+                    for condition in &required_cost.requires {
+                        if !conditions.contains(condition.as_str()) {
+                            reasons.push(format!(
+                                "cost {} {} requires condition {condition}",
+                                required_cost.operation, required_cost.bound
+                            ));
+                        }
+                    }
+                } else {
+                    reasons.push(format!(
+                        "missing exact cost profile {} {:?} {:?} {}",
+                        required_cost.operation,
+                        required_cost.metric,
+                        required_cost.regime,
+                        required_cost.bound
+                    ));
+                }
+            }
         }
     }
 
@@ -147,6 +172,12 @@ fn capability_matches(
     conditions: &HashSet<&str>,
     accepted_evidence: &HashSet<crate::decision_overlay::OverlayEvidenceLevel>,
 ) -> Result<(), Vec<String>> {
+    let target = AssertionPattern::Capability {
+        atom: request.accepts.clone(),
+    };
+    if supports(overlay, candidate, &target, accepted_evidence) {
+        return Ok(());
+    }
     let mut path_failures = Vec::new();
     for fact in candidate
         .provides
@@ -228,6 +259,16 @@ fn cost_matches(cost: &CostFact, required: &CostRequirement) -> bool {
             .all(|condition| required.requires.contains(condition))
 }
 
+fn cost_pattern(required: &CostRequirement) -> AssertionPattern {
+    AssertionPattern::Cost {
+        operation: required.operation.clone(),
+        metric: required.metric,
+        regime: required.regime,
+        bound: required.bound.clone(),
+        requires: required.requires.clone(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -272,6 +313,113 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn bounded_equivalences_reconcile_both_top_k_encodings() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let mut overlay =
+            load_decision_overlay(&workspace.join("docs/phase2/k-m5-normalization-b.yaml"))
+                .expect("normalization-B fixture must validate");
+        let registry =
+            load_registry(&workspace.join("registry/atlas.yaml")).expect("committed registry");
+        assert!(validate_overlay_sources(&overlay, &registry, &workspace).is_empty());
+
+        let both = [
+            "candidate.top_k.fused_encoding",
+            "candidate.top_k.decomposed_encoding",
+        ];
+        let cases = [
+            ("request.top_k.decomposed_exact", &both[..]),
+            ("request.top_k.fused_exact", &both[..]),
+            ("request.top_k.forbid_allocation", &[][..]),
+            ("request.top_k.allocation_profile", &both[..]),
+        ];
+        for (request_id, expected) in cases {
+            assert_eq!(accepted_candidates(&overlay, request_id), expected);
+        }
+
+        overlay.atoms.push(crate::decision_overlay::Atom {
+            id: "effect.only_through_a_chain".into(),
+            kind: crate::decision_overlay::AtomKind::Effect,
+        });
+        overlay
+            .equivalences
+            .push(crate::decision_overlay::EncodingEquivalence {
+                id: "equivalence.chain_probe".into(),
+                left: vec![AssertionPattern::Capability {
+                    atom: "result.top_k.exact_occurrences".into(),
+                }],
+                right: vec![AssertionPattern::Effect {
+                    atom: "effect.only_through_a_chain".into(),
+                }],
+                evidence: crate::decision_overlay::Evidence {
+                    level: crate::decision_overlay::OverlayEvidenceLevel::Declared,
+                    source: "docs:chain-probe".into(),
+                    proof: None,
+                },
+            });
+        overlay
+            .requests
+            .iter_mut()
+            .find(|request| request.id == "request.top_k.decomposed_exact")
+            .expect("decomposed request")
+            .forbids_effects
+            .push("effect.only_through_a_chain".into());
+        assert!(overlay.validate().is_empty());
+        assert_eq!(
+            accepted_candidates(&overlay, "request.top_k.decomposed_exact"),
+            ["candidate.top_k.decomposed_encoding"],
+            "an equivalence result must not feed another equivalence"
+        );
+        overlay.atoms.pop();
+        overlay.equivalences.pop();
+        overlay
+            .requests
+            .iter_mut()
+            .find(|request| request.id == "request.top_k.decomposed_exact")
+            .expect("decomposed request")
+            .forbids_effects
+            .pop();
+
+        overlay
+            .requests
+            .iter_mut()
+            .find(|request| request.id == "request.top_k.decomposed_exact")
+            .expect("decomposed request")
+            .accepted_evidence = vec![crate::decision_overlay::OverlayEvidenceLevel::Tested];
+        assert_eq!(
+            accepted_candidates(&overlay, "request.top_k.decomposed_exact"),
+            ["candidate.top_k.decomposed_encoding"],
+            "mapping evidence must be accepted independently of source evidence"
+        );
+
+        overlay.equivalences.clear();
+        assert_eq!(
+            accepted_candidates(&overlay, "request.top_k.decomposed_exact"),
+            ["candidate.top_k.decomposed_encoding"]
+        );
+        assert_eq!(
+            accepted_candidates(&overlay, "request.top_k.fused_exact"),
+            ["candidate.top_k.fused_encoding"]
+        );
+        assert_eq!(
+            accepted_candidates(&overlay, "request.top_k.forbid_allocation"),
+            ["candidate.top_k.decomposed_encoding"]
+        );
+        assert_eq!(
+            accepted_candidates(&overlay, "request.top_k.allocation_profile"),
+            ["candidate.top_k.decomposed_encoding"]
+        );
+    }
+
+    fn accepted_candidates(overlay: &DecisionOverlay, request_id: &str) -> Vec<String> {
+        evaluate_request(overlay, request_id)
+            .expect("known request")
+            .into_iter()
+            .filter(|decision| decision.accepted)
+            .map(|decision| decision.candidate_id)
+            .collect()
     }
 
     #[test]

@@ -2,6 +2,7 @@ pub mod ast;
 pub mod comparisons;
 pub mod composition;
 pub mod datasets;
+mod decision_equivalence;
 pub mod decision_evaluator;
 pub mod decision_overlay;
 pub mod executions;

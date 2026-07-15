@@ -10,6 +10,8 @@ use crate::registry::Registry;
 pub const SUPPORTED_OVERLAY_VERSION: &str = "phase2-km5-0";
 const MAX_ATOMS: usize = 32;
 const MAX_CANDIDATES: usize = 8;
+const MAX_EQUIVALENCES: usize = 4;
+const MAX_EQUIVALENCE_SIDE: usize = 3;
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -18,6 +20,8 @@ pub struct DecisionOverlay {
     pub atoms: Vec<Atom>,
     pub candidates: Vec<Candidate>,
     pub relations: Vec<Relation>,
+    #[serde(default)]
+    pub(crate) equivalences: Vec<EncodingEquivalence>,
     pub requests: Vec<Request>,
 }
 
@@ -28,7 +32,7 @@ pub struct Atom {
     pub kind: AtomKind,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum AtomKind {
     Capability,
@@ -96,7 +100,7 @@ pub struct CostFact {
     pub evidence: Evidence,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum CostMetric {
     Time,
@@ -104,12 +108,42 @@ pub enum CostMetric {
     Allocation,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum CostRegime {
     Worst,
     Expected,
     Amortized,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct EncodingEquivalence {
+    pub(crate) id: String,
+    pub(crate) left: Vec<AssertionPattern>,
+    pub(crate) right: Vec<AssertionPattern>,
+    pub(crate) evidence: Evidence,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum AssertionPattern {
+    Capability {
+        atom: String,
+    },
+    Guarantee {
+        atom: String,
+    },
+    Effect {
+        atom: String,
+    },
+    Cost {
+        operation: String,
+        metric: CostMetric,
+        regime: CostRegime,
+        bound: String,
+        requires: Vec<String>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -272,6 +306,15 @@ impl DecisionOverlay {
                 ),
             ));
         }
+        if self.equivalences.len() > MAX_EQUIVALENCES {
+            errors.push(error(
+                "equivalences",
+                format!(
+                    "contains {}; experiment limit is {MAX_EQUIVALENCES}",
+                    self.equivalences.len()
+                ),
+            ));
+        }
 
         let mut atom_kinds = HashMap::new();
         for (index, atom) in self.atoms.iter().enumerate() {
@@ -398,6 +441,51 @@ impl DecisionOverlay {
             validate_evidence(&format!("{path}.evidence"), &relation.evidence, &mut errors);
         }
 
+        let mut equivalence_ids = HashSet::new();
+        for (index, equivalence) in self.equivalences.iter().enumerate() {
+            let path = format!("equivalences[{index}]");
+            validate_id(&format!("{path}.id"), &equivalence.id, &mut errors);
+            if !equivalence_ids.insert(equivalence.id.as_str()) {
+                errors.push(error(
+                    format!("{path}.id"),
+                    format!("duplicate equivalence ID {:?}", equivalence.id),
+                ));
+            }
+            for (side_name, side) in [("left", &equivalence.left), ("right", &equivalence.right)] {
+                if side.is_empty() || side.len() > MAX_EQUIVALENCE_SIDE {
+                    errors.push(error(
+                        format!("{path}.{side_name}"),
+                        format!("must contain 1 to {MAX_EQUIVALENCE_SIDE} assertions"),
+                    ));
+                }
+                let mut seen: Vec<&AssertionPattern> = Vec::new();
+                for (assertion_index, assertion) in side.iter().enumerate() {
+                    let assertion_path = format!("{path}.{side_name}[{assertion_index}]");
+                    validate_assertion(&assertion_path, assertion, &atom_kinds, &mut errors);
+                    if seen
+                        .iter()
+                        .any(|previous| assertion_patterns_match(previous, assertion))
+                    {
+                        errors.push(error(assertion_path, "duplicate assertion on this side"));
+                    }
+                    seen.push(assertion);
+                }
+            }
+            if equivalence.left.iter().any(|left| {
+                equivalence
+                    .right
+                    .iter()
+                    .any(|right| assertion_patterns_match(left, right))
+            }) {
+                errors.push(error(path.clone(), "left and right sides must be disjoint"));
+            }
+            validate_evidence(
+                &format!("{path}.evidence"),
+                &equivalence.evidence,
+                &mut errors,
+            );
+        }
+
         let mut request_ids = HashSet::new();
         for (index, request) in self.requests.iter().enumerate() {
             let path = format!("requests[{index}]");
@@ -479,6 +567,83 @@ impl DecisionOverlay {
         }
 
         errors
+    }
+}
+
+pub(crate) fn assertion_patterns_match(left: &AssertionPattern, right: &AssertionPattern) -> bool {
+    match (left, right) {
+        (
+            AssertionPattern::Cost {
+                operation: left_operation,
+                metric: left_metric,
+                regime: left_regime,
+                bound: left_bound,
+                requires: left_requires,
+            },
+            AssertionPattern::Cost {
+                operation: right_operation,
+                metric: right_metric,
+                regime: right_regime,
+                bound: right_bound,
+                requires: right_requires,
+            },
+        ) => {
+            left_operation == right_operation
+                && left_metric == right_metric
+                && left_regime == right_regime
+                && left_bound == right_bound
+                && left_requires.len() == right_requires.len()
+                && left_requires
+                    .iter()
+                    .all(|item| right_requires.contains(item))
+        }
+        _ => left == right,
+    }
+}
+
+fn validate_assertion(
+    path: &str,
+    assertion: &AssertionPattern,
+    atoms: &HashMap<&str, AtomKind>,
+    errors: &mut Vec<OverlayValidationError>,
+) {
+    match assertion {
+        AssertionPattern::Capability { atom } => validate_atom_ref(
+            &format!("{path}.atom"),
+            atom,
+            AtomKind::Capability,
+            atoms,
+            errors,
+        ),
+        AssertionPattern::Guarantee { atom } => validate_atom_ref(
+            &format!("{path}.atom"),
+            atom,
+            AtomKind::Guarantee,
+            atoms,
+            errors,
+        ),
+        AssertionPattern::Effect { atom } => validate_atom_ref(
+            &format!("{path}.atom"),
+            atom,
+            AtomKind::Effect,
+            atoms,
+            errors,
+        ),
+        AssertionPattern::Cost {
+            operation,
+            bound,
+            requires,
+            ..
+        } => {
+            validate_nonempty(&format!("{path}.operation"), operation, errors);
+            validate_nonempty(&format!("{path}.bound"), bound, errors);
+            if !requires.is_empty() {
+                errors.push(error(
+                    format!("{path}.requires"),
+                    "conditional costs are unsupported in equivalences",
+                ));
+            }
+        }
     }
 }
 
@@ -677,6 +842,32 @@ requests:
         let message = error.to_string();
         assert!(message.contains("has kind Condition; expected Capability"));
         assert!(message.contains("unknown atom \"guarantee.missing\""));
+    }
+
+    #[test]
+    fn rejects_wrong_kind_and_tautological_equivalence_assertions() {
+        let invalid = VALID.replace(
+            "relations: []",
+            r#"relations: []
+equivalences:
+  - id: equivalence.invalid
+    left:
+      - { kind: guarantee, atom: output.distances }
+    right:
+      - { kind: guarantee, atom: output.distances }
+      - kind: cost
+        operation: run
+        metric: time
+        regime: worst
+        bound: O(n)
+        requires: [condition.nonnegative]
+    evidence: { level: declared, source: "docs:fixture", proof: null }"#,
+        );
+        let error = parse_decision_overlay(&invalid).expect_err("invalid mapping must fail");
+        let message = error.to_string();
+        assert!(message.contains("has kind Capability; expected Guarantee"));
+        assert!(message.contains("left and right sides must be disjoint"));
+        assert!(message.contains("conditional costs are unsupported in equivalences"));
     }
 
     #[test]

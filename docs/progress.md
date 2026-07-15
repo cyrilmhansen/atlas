@@ -1,5 +1,33 @@
 # Progress log
 
+## 2026-07-15 - Implement normalization-B as bounded encoding equivalences
+
+### Result
+
+- Recorded `normalization-B` in DEC-069 without changing schema 0.1.
+- Added at most four evidence-bearing, bidirectional equivalences over sets of
+  capability, guarantee, effect and unconditional exact-cost assertions.
+- Reconciled fused/decomposed top-k output and effect/cost allocation encodings.
+- Corrected four cross-encoding decisions, including one unsafe allocation-free
+  acceptance in the no-equivalence control.
+- Kept resolution direct and non-recursive, with no variables, arithmetic,
+  transitive closure or candidate/source-family branch.
+
+### Verification
+
+- Sixteen focused overlay/evaluator tests pass.
+- Mapping and source evidence are checked independently.
+- Wrong atom kinds, tautological mappings and conditional costs are rejected.
+- The original reference overlay and independent submission remain unchanged.
+
+### Limits
+
+- Private non-test Rust grows from 826 to 1,146 lines; the new fixture adds 119
+  YAML lines.
+- Only one streaming subject is covered, and conditional cost mapping is
+  deliberately unsupported.
+- K-M5 remains open for the existing heap spare-capacity falsifier.
+
 ## 2026-07-15 - Adjudicate the independent K-M5 top-k submission
 
 ### Result

@@ -1,6 +1,6 @@
 # K-M5 independent overlay authoring packet
 
-Status: frozen packet; independent submission pending
+Status: completed; frozen inputs preserved, result in `k-m5-independent-authoring-result.md`
 
 Frozen at Atlas commit: `459b4f089d75af6ebef15d20ea610f72f321829b`
 

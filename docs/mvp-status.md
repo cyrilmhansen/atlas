@@ -36,10 +36,11 @@ remains authoritative while K-M5 compares it with a disposable private decision
 overlay. `proven` now requires an auditable proof mapping. Protocol `k-m0.3` and
 the overlay experiment boundary are specified. The private parser/validator,
 bounded facts and generic evaluator are complete and tested with no CLI surface.
-Their 826 non-test Rust lines are retained as explicit experiment-cost evidence.
-The isolated top-k authoring run agrees on all three frozen decisions but
-diverges on output/guarantee and effect/cost taxonomy. K-M5 remains active for a
-private normalization choice and cross-encoding request.
+Their initial 826 non-test Rust lines are retained as explicit experiment-cost
+evidence. The isolated top-k run agrees operationally but diverges on taxonomy.
+DEC-069's bounded equivalences reconcile four cross-encoding requests while
+raising the total to 1,146 lines. K-M5 remains active for a conditioned heap
+allocation falsifier.
 
 ## Latest closed slice
 

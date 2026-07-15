@@ -269,7 +269,7 @@ schema 0.1 remains unchanged.
 
 ### K-M5 - Manifest-driven candidate discovery
 
-Status: **active; private generic evaluator complete, independent authoring pending**.
+Status: **active; independent authoring and bounded equivalence checkpoint complete**.
 
 Add at least one implementation whose compatibility is not named in a composer
 scenario. The existing query/composition path must discover, accept or reject it
@@ -304,6 +304,12 @@ into the output capability and allocation was represented as an effect rather
 than a cost. K-M5 remains active until a private normalization rule and a
 cross-encoding request test whether those differences affect discovery beyond
 the original oracle.
+
+DEC-069 accepts `normalization-B`. Two non-recursive equivalences reconcile both
+top-k encodings for four requests, including the allocation false acceptance in
+the no-equivalence control. The private Rust experiment grows from 826 to 1,146
+non-test lines. A conditioned heap-allocation case remains the next falsifier;
+conditional cost equivalence is explicitly unsupported rather than inferred.
 
 ### K-M6 - Blind agent-consumer experiment
 

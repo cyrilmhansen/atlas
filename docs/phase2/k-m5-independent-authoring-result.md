@@ -87,13 +87,14 @@ candidate was authored quickly and produced the intended decisions without code
 changes. It does not yet support public ontology promotion because operational
 agreement was obtained through a taxonomically underdetermined task.
 
-K-M5 remains open. Before another authoring run, choose and document private
-normalization rules for:
+DEC-069 accepts `normalization-B`: retain both encodings and test explicit
+bounded equivalences. The implementation and measured result are recorded in
+`k-m5-normalization-b.md`. It addresses:
 
 - separating observable capability from qualifying guarantee;
 - using effects for unconditional behavior and cost facts for scoped or
   conditioned resource claims;
 - writing at least one cross-encoding request that exposes either distinction.
 
-This is a reversible experiment-protocol choice, not authorization to change
-schema 0.1.
+This remains a reversible experiment-protocol choice, not authorization to
+change schema 0.1.

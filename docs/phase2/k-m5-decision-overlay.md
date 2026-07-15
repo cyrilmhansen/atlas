@@ -1,8 +1,13 @@
 # K-M5 experimental decision-overlay specification
 
-Status: private evaluator checkpoint complete under DEC-067; independent authoring pending
+Status: frozen DEC-067 baseline; extended privately by DEC-069 in `k-m5-normalization-b.md`
 
 Compatibility: none; the format may be replaced or deleted after K-M5
+
+The independent packet used this file at commit `459b4f0` and preserves that
+digest. The current parser also accepts bounded `equivalences`; their later
+shape, semantics and cost are intentionally documented in the DEC-069 addendum
+rather than rewriting this experimental baseline.
 
 Authority: `registry/atlas.yaml` and frozen import worksheets remain primary
 

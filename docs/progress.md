@@ -1,5 +1,42 @@
 # Progress log
 
+## 2026-07-15 - Complete the K-M7 Phase 2 synthesis
+
+### Result
+
+- Audited K-M0 through K-M6 against every Phase 2 exit criterion and recorded a
+  mixed, informative verdict.
+- Reproduced the authoritative 31-problem, 36-algorithm and
+  40-implementation counts plus five competing problems and five
+  multi-implementation algorithms from the derived SQLite projection.
+- Distinguished literal quota completion from the central remaining gap: the
+  competing problems all predate Phase 2, and foreign-family algorithms still
+  have at most one implementation each.
+- Synthesized source diversity, importer agreement, authoring effort, recurring
+  ontology friction, AST non-coverage, K-M5's private selection result and
+  K-M6's supported agent-consumer result.
+- Recommended a bounded comparative foreign-selection Phase 3 before any public
+  schema 0.2 implementation.
+
+### Verification
+
+- `atlas index /tmp/atlas-km7-phase2.db`: 107 entities, 76 relations and 688
+  claims; logical SHA-256
+  `2c500088cf52278055afd1addf402ce0c27f035e70b52f539a2bd000665d9db4`.
+- Projection queries confirm 31/36/40 entities, exactly five problems with
+  competing algorithms and exactly five algorithms with multiple
+  implementations.
+- `cargo test -p atlas --locked`: 156 tests passed.
+- Every audit conclusion links to retained K-M0 through K-M6 reports or an
+  accepted decision; no runtime, schema, CLI or private-overlay change was made.
+
+### Limits
+
+- K-M1 through K-M3 have no comparable isolated authoring-time records.
+- Phase 2 synthesis does not authorize Phase 3, schema 0.2 or a new public API.
+- Official Phase 2 closure remains pending the trajectory decision recorded in
+  `docs/phase2/k-m7-phase-audit.md`.
+
 ## 2026-07-15 - Complete K-M6 with a supported agent-consumer result
 
 ### Result

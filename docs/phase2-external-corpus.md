@@ -20,9 +20,11 @@ The primary unresolved product hypothesis is:
 
 The phase began with a 10-problem, 15-algorithm and 20-implementation sequence
 corpus that was too small and homogeneous to answer that question. K-M1 through
-K-M3 added graph, dynamic-structure and streaming families. K-M4 has now tested
-independent normalization over six frozen subjects; its mixed gate result pauses
-corpus growth for a bounded ontology review.
+K-M3 added graph, dynamic-structure and streaming families. K-M4 tested
+independent normalization, K-M5 tested private generic decisions and K-M6
+tested blind agent consumption. K-M7 concludes that knowledge preservation is
+supported but public qualified selection and manifest-driven composition are
+not. The mixed synthesis and next-phase alternatives await a closure decision.
 
 ## Accepted strategic trajectory
 
@@ -349,11 +351,11 @@ Neither arm received the private K-M5 overlay. The assisted arm selected the
 exact three-entity chain with disciplined evidence; the control found the same
 min-heap strategy but correctly left Atlas identities unresolved. The supported
 verdict, source reveal, timings and CLI cost are recorded in
-`docs/phase2/k-m6-result.md`. K-M7 synthesis is next.
+`docs/phase2/k-m6-result.md`.
 
 ### K-M7 - Phase synthesis
 
-Status: **next active milestone**.
+Status: **complete; mixed synthesis, phase closure decision pending**.
 
 Produce a phase audit containing:
 
@@ -368,6 +370,14 @@ Produce a phase audit containing:
 The phase may conclude **supported**, **mixed**, or **falsified**. A mixed or
 negative result is valuable if it identifies where the knowledge hypothesis
 fails.
+
+The completed audit is `docs/phase2/k-m7-phase-audit.md`. It finds source
+preservation, independent normalization discipline and bounded agent
+consumption useful, while public qualified selection and manifest-driven
+composition remain unsupported. The literal competition quotas are met only by
+the older sequence corpus. It recommends a short comparative foreign-selection
+phase before schema 0.2; Phase 2 remains administratively active until that
+closure and next-phase choice are accepted.
 
 ## Phase exit evidence
 

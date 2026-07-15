@@ -13,7 +13,8 @@ Git-authoritative YAML registry (31 problems, 36 algorithms and 40
 implementations), a rebuildable SQLite projection, deterministic datasets and
 reproducible local observations, plus five bounded composition scenarios with
 compiled Rust orchestration. The current counts include the 10/15/20 MVP 1
-sequence baseline and the first external graph batch.
+sequence baseline plus the complete Phase 2 graph, dynamic-structure and
+streaming batches.
 
 MVP 5 delivered the reproducible static interactive artifact. MVP 6 replaced
 its specialized browser execution paths with five AST-derived private programs,
@@ -107,7 +108,16 @@ evidence-grounded explanation without unsupported claims or human intervention;
 the control independently selected the min-heap strategy but could not establish
 registry identities. The assisted arm used 29 queries and took about 68 seconds
 longer, exposing a real query-cost limitation. No structured agent API or K-M5
-overlay was used. K-M7 Phase 2 synthesis is the next active milestone.
+overlay was used.
+
+K-M7 synthesis is complete with a mixed verdict. The registry now contains
+31 problems, 36 algorithms and 40 implementations across sequence, graph,
+dynamic-structure and streaming families. Provenance/import discipline and
+agent consumption are supported, but public qualified selection and generic
+composition are not. The five competing problems all predate Phase 2, so the
+foreign corpus has not yet tested real alternative selection. The audit
+recommends a bounded comparative foreign-selection Phase 3 before schema 0.2.
+Phase 2 closure and the next trajectory remain an open class-C decision.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

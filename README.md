@@ -45,10 +45,11 @@ presentation shapes are not public contracts.
 Phase 2 is active under DEC-066 with Atlas Knowledge as the active work program,
 Atlas Execution Lab frozen and Atlas Explorer maintained. It tests external
 corpus fidelity, generic candidate discovery and agent consumption before any
-new runtime or presentation expansion. K-M4's independent dual import is
-complete and corpus growth is paused for its bounded ontology review. See
-`docs/phase2-external-corpus.md` and
-`docs/phase2/k-m4-dual-import-comparison.md`. K-M4-W repairs the inaccessible
+new runtime or presentation expansion. K-M7 now records a mixed synthesis:
+foreign knowledge preservation is supported, while public qualified selection
+and generic composition remain unsupported. Phase 2 closure and the next
+trajectory are awaiting validation. See `docs/phase2-external-corpus.md` and
+`docs/phase2/k-m7-phase-audit.md`. K-M4-W repaired the inaccessible
 online-moments source with two open primary reports while retaining a neutral
 algorithm identity. DEC-067 and DEC-068 accept the subsequent bounded ontology
 review without changing schema 0.1: a disposable decision-overlay experiment
@@ -85,6 +86,7 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/phase2/k-m5-review.md`: K-M5 exit audit and mixed-closure recommendation;
 - `docs/phase2/k-m6-agent-consumer-protocol.md`: frozen assisted/control task and source-reveal protocol;
 - `docs/phase2/k-m6-result.md`: supported blind agent-consumer comparison and measured interface cost;
+- `docs/phase2/k-m7-phase-audit.md`: mixed Phase 2 synthesis, exit audit and next-phase options;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

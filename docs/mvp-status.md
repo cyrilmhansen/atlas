@@ -1,6 +1,7 @@
 # Project status
 
 - Active phase: **Phase 2 - External corpus trial** under DEC-066
+- Phase state: **K-M7 synthesis complete; mixed closure decision pending**
 - Active work program: **Atlas Knowledge**
 - Atlas Execution Lab: **frozen**
 - Atlas Explorer: **maintained**
@@ -44,7 +45,10 @@ additional lines and preserves rejection without spare capacity. DEC-070
 retains that private result and closes K-M5 mixed. K-M6 is complete and
 supported: the assisted agent identified the exact top-k component chain with
 disciplined evidence, while the control retained the right strategy but left
-Atlas identities unresolved. K-M7 Phase 2 synthesis is next.
+Atlas identities unresolved. K-M7 now concludes Phase 2 as mixed: foreign
+knowledge preservation is supported, but qualified public selection and generic
+composition remain unsupported. Official closure and the next phase await a
+human trajectory decision.
 
 ## Latest closed slice
 

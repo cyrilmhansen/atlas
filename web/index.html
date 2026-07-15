@@ -33,18 +33,23 @@
               <button class="algorithm-option" type="button" data-algorithm="insertion" aria-pressed="false">Insertion sort</button>
               <button class="algorithm-option" type="button" data-algorithm="reverse" aria-pressed="false">Reverse</button>
             </div>
-            <p class="entity-id" id="algorithm-id">order.is_sorted.adjacent</p>
-            <h2 id="algorithm-name">Adjacent sortedness</h2>
+            <div class="algorithm-heading">
+              <div>
+                <p class="entity-id" id="algorithm-id">order.is_sorted.adjacent</p>
+                <h2 id="algorithm-name">Adjacent sortedness</h2>
+              </div>
+              <button id="execution-evidence-link" type="button">Registry evidence</button>
+            </div>
             <p class="execution-boundary" id="execution-boundary">Read-only input; no output transport copy.</p>
           </div>
           <div class="complexity-strip">
             <div>
-              <span>Worst time</span>
+              <span>Worst time claim</span>
               <strong id="time-complexity">O(n)</strong>
               <small id="time-provenance">registry</small>
             </div>
             <div>
-              <span>Algorithm auxiliary space</span>
+              <span>Auxiliary space claim</span>
               <strong id="space-complexity">O(1)</strong>
               <small id="space-provenance">registry</small>
             </div>
@@ -153,7 +158,7 @@
             <div class="section-heading">
               <div>
                 <p class="section-index">02</p>
-                <h3 id="result-heading">Observation</h3>
+                <h3 id="result-heading">Local observation</h3>
               </div>
               <span id="runtime-status" class="runtime-status">Loading WASM</span>
             </div>
@@ -263,8 +268,9 @@
                 <code id="entity-detail-id">No identity selected</code>
               </div>
               <div class="entity-actions">
+                <span id="entity-execution-status" class="execution-availability" hidden></span>
                 <button id="entity-compare" type="button">Compare</button>
-                <button id="entity-execute" class="primary-command" type="button" hidden>Open execution</button>
+                <button id="entity-execute" class="primary-command" type="button" hidden>Execute locally</button>
               </div>
             </div>
             <div class="entity-relations">

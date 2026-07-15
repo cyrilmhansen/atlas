@@ -57,7 +57,9 @@ complete. All 107 entities now have searchable detail, exact chain navigation
 and sourced claims; same-kind comparison states missing facts explicitly and
 never ranks candidates. The five accepted visual programs remain the only
 execution handoffs. E-M2 evidence-centered handoff is the next active
-milestone. E-M3 distribution is complete under DEC-072: GitHub Pages publishes
+milestone. Its internal baseline now makes execution availability explicit and
+adds an exact workbench-to-registry return; representative visitor validation
+remains pending. E-M3 distribution is complete under DEC-072: GitHub Pages publishes
 only the Web-verified derived bundle from `main`, without stabilizing its private
 formats.
 

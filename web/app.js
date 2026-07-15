@@ -75,6 +75,7 @@ const elements = Object.fromEntries(
     "entity-detail-kind", "entity-detail-name", "entity-detail-id", "entity-compare",
     "entity-execute", "entity-relation-list", "entity-claim-list", "comparison-panel",
     "compare-left", "compare-right", "comparison-close", "comparison-grid",
+    "entity-execution-status", "execution-evidence-link",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -774,6 +775,13 @@ function renderEntityDetail(record) {
   }));
 
   const presentation = executablePresentation(projection, record);
+  const algorithm = record.kind === "algorithm";
+  elements["entity-execution-status"].hidden = !algorithm;
+  elements["entity-execution-status"].textContent = presentation
+    ? "Reviewed local execution available"
+    : "No reviewed local execution";
+  elements["entity-execution-status"].classList.toggle("is-available", Boolean(presentation));
+  elements["entity-execution-status"].classList.toggle("is-unavailable", algorithm && !presentation);
   elements["entity-execute"].hidden = !presentation;
   elements["entity-execute"].dataset.presentationKey = presentation?.key ?? "";
 }
@@ -1032,6 +1040,13 @@ elements["entity-execute"].addEventListener("click", () => {
   runObservation();
   setView("execute");
   document.getElementById("execute-view").scrollIntoView({ block: "start" });
+});
+elements["execution-evidence-link"].addEventListener("click", () => {
+  selectedEntityId = algorithmUi[activeAlgorithm].id;
+  elements["catalog-search"].value = "";
+  elements["catalog-kind"].value = "all";
+  renderCatalog();
+  setView("catalog");
 });
 
 const query = new URLSearchParams(window.location.search);

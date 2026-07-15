@@ -112,7 +112,8 @@ Acceptance:
 
 ### E-M2 - Evidence-centered execution handoff
 
-Status: next active milestone.
+Status: active. Internal baseline and visitor protocol:
+`docs/phase3/e-m2-protocol.md`.
 
 Connect entity detail, sourced complexity, DatasetSpec context and the existing
 visual workbench so visitors can distinguish what is known, what is executed and
@@ -120,6 +121,11 @@ what is merely observed. Begin with a usability protocol over one executable and
 one non-executable algorithm, then make only the smallest handoff changes that
 the observed task failures justify. Do not add another executable algorithm
 solely to fill an empty state.
+
+The internal checkpoint found and corrected two presentation failures: silent
+absence of executable coverage and no explicit return from the workbench to the
+exact registry identity. Automated gates protect those facts, but E-M2 cannot
+close before a representative visitor attempts the frozen protocol.
 
 ### E-M3 - Distribution decision
 

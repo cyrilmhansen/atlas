@@ -1,5 +1,37 @@
 # Progress log
 
+## 2026-07-15 - Establish the E-M2 evidence-handoff checkpoint
+
+### Result
+
+- Froze a comprehension protocol over executable adjacent sortedness and
+  non-executable foreign-corpus BFS traversal.
+- Recorded an internal baseline separately from representative visitor
+  evidence.
+- Made reviewed local execution availability explicit on every algorithm fiche,
+  including the negative state, without adding a sixth executable algorithm.
+- Added an exact `Registry evidence` return from the workbench and sharpened the
+  existing `Worst time claim`, `Auxiliary space claim` and `Local observation`
+  labels.
+
+### Verification
+
+- `scripts/check-web.sh`: complete Web gate passed, including the new evidence
+  availability and exact handoff test.
+- Automated projection inspection confirms exactly five reviewed executable
+  algorithms and no execution for `graph.bfs.traversal`.
+- Headless Chromium inspection passed for executable desktop detail,
+  non-executable mobile detail and the desktop workbench.
+
+### Limits
+
+- This checkpoint validates visible states and navigation logic, not human
+  comprehension.
+- E-M2 remains active until a representative visitor attempts the frozen tasks
+  in `docs/phase3/e-m2-protocol.md`.
+- No schema, registry, DatasetSpec, visual program, WASM instruction or runtime
+  capability changed.
+
 ## 2026-07-15 - Activate GitHub Pages publication
 
 ### Result

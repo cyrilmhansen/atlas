@@ -82,7 +82,10 @@ The review in `docs/phase2/ontology-review.md` is accepted under DEC-067 and
 DEC-068. A disposable experimental decision overlay will be measured against
 unchanged schema 0.1 before any schema 0.2 proposal. `proven` is reserved for an
 auditable claim-to-proof mapping. Protocol `k-m0.3` and the private overlay
-experiment are specified; implementing its parser/validator is the next slice.
+experiment are specified. Its closed Rust parser and validator now reject
+unknown fields, broken atom references, duplicate candidates and unaudited
+`proven` facts. The next slice adds the bounded facts and generic evaluator;
+the 557-line parser/validation cost is part of the experiment result.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

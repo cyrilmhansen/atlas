@@ -34,8 +34,9 @@ empty-state adaptation plus `proven` evidence semantics to the ontology review.
 The bounded ontology review is accepted under DEC-067 and DEC-068. Schema 0.1
 remains authoritative while K-M5 compares it with a disposable private decision
 overlay. `proven` now requires an auditable proof mapping. Protocol `k-m0.3` and
-the overlay experiment boundary are specified; no parser or evaluator is active
-yet.
+the overlay experiment boundary are specified. The private parser/validator is
+complete and tested; no corpus facts, evaluator or CLI surface are active yet.
+Its 557 non-test lines are retained as explicit authoring-cost evidence.
 
 ## Latest closed slice
 

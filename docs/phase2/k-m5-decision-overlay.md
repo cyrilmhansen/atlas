@@ -1,6 +1,6 @@
 # K-M5 experimental decision-overlay specification
 
-Status: private format proposal accepted for implementation under DEC-067
+Status: private parser/validator checkpoint complete under DEC-067; facts and evaluator pending
 
 Compatibility: none; the format may be replaced or deleted after K-M5
 
@@ -45,7 +45,9 @@ atoms:
 candidates:
   - id: candidate.example
     source: registry:algorithm.example
-    provides: [output.distances.all_reachable]
+    provides:
+      - atom: output.distances.all_reachable
+        evidence: { level: declared, source: "docs:source", proof: null }
     requires: []
     guarantees: []
     effects: []
@@ -58,6 +60,7 @@ relations:
     to: output.distances.all_reachable
     kind: projects_to
     requires: []
+    evidence: { level: declared, source: "docs:source", proof: null }
 
 requests:
   - id: request.example
@@ -67,7 +70,7 @@ requests:
     forbids_effects: []
     consumes_state: null
     maximum_costs: []
-    minimum_evidence: declared
+    accepted_evidence: [declared, inferred, tested, observed, proven]
 ```
 
 This example defines shape, not accepted atoms or candidates. The implementation
@@ -100,7 +103,9 @@ Cost metrics in the first experiment are `time`, `retained_memory` and
 `allocation`. Bounds remain opaque normalized atoms or strings; the evaluator
 does exact matching and does not order asymptotic expressions.
 
-Evidence levels retain schema 0.1 names. A fact at `proven` additionally requires
+Evidence levels retain schema 0.1 names but the experiment defines no total
+ordering among them. A request lists the exact accepted levels. A fact at
+`proven` additionally requires
 a proof reference with artifact locator, exact claim locator and review method,
 as required by DEC-068. The validator rejects incomplete proof metadata.
 
@@ -113,7 +118,8 @@ For one request, the evaluator:
 2. follows only explicitly allowed directional relations;
 3. checks set inclusion for conditions, guarantees and forbidden effects;
 4. checks exact state-atom equality when state is required;
-5. checks an exact cost profile and evidence threshold only when requested;
+5. checks an exact cost profile and membership in the request's accepted
+   evidence levels;
 6. returns accepted and rejected candidates with one reason per unsatisfied
    fact.
 
@@ -133,6 +139,11 @@ needing one of those features is an experiment failure, not permission to add it
 
 Exceeding a limit pauses implementation and requires review. Tests may expose a
 private library API; a later CLI demonstration is a separate reversible choice.
+
+The initial typed model, structured errors and validator occupy 557 non-test
+Rust lines. This count is recorded as experiment cost; it is not hidden by
+splitting files or excluded from the K-M5 synthesis. The separate evaluator
+budget remains below 300 non-test lines.
 
 ## Acceptance tests
 

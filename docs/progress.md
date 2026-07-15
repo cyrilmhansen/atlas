@@ -1,5 +1,31 @@
 # Progress log
 
+## 2026-07-15 - Add the private K-M5 overlay parser checkpoint
+
+### Result
+
+- Added closed Rust types for the private overlay, with no new dependency or
+  public CLI command.
+- Validated version and complexity budgets, IDs, typed atom references, closed
+  relation/cost vocabularies, evidence sources and DEC-068 proof mappings.
+- Avoided silently ordering evidence levels: requests list exact accepted levels
+  instead of using an unaccepted trust lattice.
+
+### Verification
+
+- Six focused parser/validator tests pass.
+- All 62 `atlas` library tests and 72 registry integration tests pass.
+- `cargo check -p atlas --all-targets --locked` passes.
+
+### Limits
+
+- The typed model, errors and validator already cost 557 non-test Rust lines;
+  this is a meta-level result to compare with K-M5 decision value.
+- No corpus fact, evaluator, registry cross-check or CLI demonstration exists.
+- Workspace-wide check remains blocked by the frozen MIR shim expecting
+  `MIR_gen_set_code_observer`, absent from the current vendor header; no MIR file
+  was changed in this Atlas Knowledge slice.
+
 ## 2026-07-15 - Accept the bounded ontology experiment
 
 ### Result

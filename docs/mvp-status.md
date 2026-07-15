@@ -40,8 +40,9 @@ Their initial 826 non-test Rust lines are retained as explicit experiment-cost
 evidence. The isolated top-k run agrees operationally but diverges on taxonomy.
 DEC-069's bounded equivalences reconcile four cross-encoding requests while
 raising the total to 1,146 lines. The conditioned heap test succeeds for 23
-additional lines and preserves rejection without spare capacity. K-M5 remains
-active pending validation of the mixed closure recommended by its exit audit.
+additional lines and preserves rejection without spare capacity. DEC-070
+retains that private result and closes K-M5 mixed. K-M6 is the next planned
+milestone and has not yet run.
 
 ## Latest closed slice
 

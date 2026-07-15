@@ -96,8 +96,9 @@ to 1,146 non-test lines. The conditioned heap falsifier also passes without a
 boundary false acceptance, for 23 more lines. The K-M5 exit audit recommends a
 mixed closure at 1,169 private non-test lines: generic overlay decisions are
 supported, while schema 0.1 manifest discovery and the existing CLI remain
-unsupported. Human closure validation is pending; no schema promotion is
-implied.
+unsupported. DEC-070 accepts that mixed closure, retains the private
+condition-aware result and freezes further K-M5 growth. K-M6 is the next planned
+milestone; no schema promotion is implied.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

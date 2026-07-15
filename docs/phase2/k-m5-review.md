@@ -1,6 +1,6 @@
 # K-M5 review - manifest-driven candidate discovery
 
-Status: exit audit complete; mixed closure recommended
+Status: closed mixed under DEC-070
 
 Date: 2026-07-15
 
@@ -64,10 +64,11 @@ The implementation remains bounded, but its infrastructure-to-corpus ratio is
 too high to justify further K-M5 ontology mechanics without a public-schema
 decision.
 
-## Recommendation
+## Closure decision
 
-Close K-M5 as **mixed**, retain the private experiment as falsification evidence
-and freeze further overlay/equivalence growth. Proceed to K-M6 using the
+DEC-070 closes K-M5 as **mixed**, retains the private experiment as
+falsification evidence and freezes further overlay/equivalence growth. K-M6 is
+the next planned milestone and uses the
 accepted existing CLI/text interface, deliberately without granting the agent
 access to implementation source during selection.
 

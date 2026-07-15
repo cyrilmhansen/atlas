@@ -1,5 +1,30 @@
 # Progress log
 
+## 2026-07-15 - Close K-M5 mixed and retain the private trial
+
+### Result
+
+- Recorded `close-km5-A` in DEC-070.
+- Retained the 23-line condition-aware extension as private, reproducible
+  evidence and froze further K-M5 overlay/equivalence growth.
+- Closed K-M5 `mixed`: generic overlay evaluation is supported, while discovery
+  from schema 0.1 manifests and the existing CLI is not.
+- Set K-M6 as the next planned milestone without activating a new API or using
+  the private overlay as an agent interface.
+
+### Verification
+
+- Reconciled the decision record with the K-M5 audit, roadmap, phase plan,
+  project status and README.
+- No code, schema, registry, CLI, dependency or public format changed.
+- Repository whitespace and documentation-reference checks pass.
+
+### Limits
+
+- K-M5's 1,169 non-test Rust lines remain private and compatibility-free.
+- K-M6 has not run and its task/oracle packet is not yet frozen.
+- Any schema 0.2 promotion remains a separate class C decision.
+
 ## 2026-07-15 - Pass the conditioned heap-equivalence falsifier
 
 ### Result

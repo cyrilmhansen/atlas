@@ -1,6 +1,6 @@
 # K-M5 decision-overlay evaluator checkpoint
 
-Status: evaluator and bounded equivalence checkpoint implemented; K-M5 remains open
+Status: retained private evidence; K-M5 closed mixed under DEC-070
 
 Date: 2026-07-15
 

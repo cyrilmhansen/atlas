@@ -1,6 +1,6 @@
 # K-M5 conditioned heap-equivalence result
 
-Status: reversible implementation checkpoint; retention decision pending
+Status: retained as private closure evidence under DEC-070
 
 Date: 2026-07-15
 
@@ -66,4 +66,4 @@ language. This is useful positive evidence for `normalization-B`.
 It does not erase the larger cost: K-M5 now contains 1,169 private non-test Rust
 lines plus several experimental YAML documents. The overlay facts are still
 authored beside schema 0.1 rather than discovered from schema 0.1 manifests.
-Retention and K-M5 closure therefore remain a human decision.
+DEC-070 retains this result as private evidence and closes K-M5 mixed.

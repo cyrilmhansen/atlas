@@ -52,7 +52,8 @@ complete and corpus growth is paused for its bounded ontology review. See
 online-moments source with two open primary reports while retaining a neutral
 algorithm identity. DEC-067 and DEC-068 accept the subsequent bounded ontology
 review without changing schema 0.1: a disposable decision-overlay experiment
-and an auditable meaning of `proven`.
+and an auditable meaning of `proven`. DEC-070 closes K-M5 mixed: the private
+evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged.
 
 ## Project map
 

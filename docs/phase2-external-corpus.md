@@ -269,7 +269,7 @@ schema 0.1 remains unchanged.
 
 ### K-M5 - Manifest-driven candidate discovery
 
-Status: **active; independent authoring and bounded equivalence checkpoint complete**.
+Status: **closed mixed under DEC-070**.
 
 Add at least one implementation whose compatibility is not named in a composer
 scenario. The existing query/composition path must discover, accept or reject it
@@ -298,12 +298,11 @@ one bounded top-k implementation and three pre-adjudicated requests. The author
 receives neither the reference facts nor evaluator tests. A standalone overlay
 avoids exceeding the reference experiment's eight-candidate ceiling.
 
-The isolated submission is now adjudicated. All three operational decisions
-agree without evaluator changes, but taxonomy is mixed: exactness was fused
-into the output capability and allocation was represented as an effect rather
-than a cost. K-M5 remains active until a private normalization rule and a
-cross-encoding request test whether those differences affect discovery beyond
-the original oracle.
+The isolated submission is adjudicated. All three operational decisions agree
+without evaluator changes, but taxonomy is mixed: exactness was fused into the
+output capability and allocation was represented as an effect rather than a
+cost. DEC-069 subsequently tests explicit bounded equivalences rather than
+canonicalizing either representation.
 
 DEC-069 accepts `normalization-B`. Two non-recursive equivalences reconcile both
 top-k encodings for four requests, including the allocation false acceptance in
@@ -315,9 +314,12 @@ The heap falsifier now passes in both directions and preserves rejection without
 spare capacity. Condition transport adds 23 lines, bringing the private Rust
 total to 1,169. `docs/phase2/k-m5-review.md` recommends closing K-M5 as mixed:
 the private evaluator is supported, but schema 0.1 and the existing CLI still
-cannot consume the overlay facts. Human closure validation remains pending.
+cannot consume the overlay facts. DEC-070 accepts that recommendation, retains
+the private condition-aware trial and freezes K-M5.
 
 ### K-M6 - Blind agent-consumer experiment
+
+Status: **next planned milestone; not yet executed**.
 
 Give an agent registry/query/compose tools, task requirements and evidence, but
 withhold implementation source during selection. Use a new task drawn from the

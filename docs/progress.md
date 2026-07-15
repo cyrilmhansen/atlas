@@ -1,5 +1,34 @@
 # Progress log
 
+## 2026-07-15 - Freeze the K-M6 blind agent-consumer packet
+
+### Result
+
+- Froze an exact bounded-top-k selection task with multiplicity, zero-capacity,
+  determinism and `O(k)` retained-value requirements.
+- Defined assisted and control arms with identical general documentation; only
+  the assisted arm receives the existing Atlas CLI and registry.
+- Froze the correct three-entity chain, alternative adjudication, interface
+  limitations and comparison rubric outside both packets.
+- Defined an identical post-selection source reveal and existing integration
+  test for both arms.
+
+### Verification
+
+- Recorded SHA-256 digests for every packet input, oracle and reveal source.
+- Built and exercised the frozen release CLI through a controlled launcher; the
+  selection packet itself contains no implementation source.
+- Confirmed `search`, `show` and `explain` reveal the expected chain while
+  `qualify` cannot express the task and no `compose` scenario covers it.
+
+### Limits
+
+- The release binary is a same-host temporary tool, not a distribution artifact.
+- The current CLI requires a full evidence workspace. Source isolation is
+  therefore procedural, and any direct workspace read invalidates the run.
+- Neither agent has run; no K-M6 comparison result exists.
+- Dual-agent execution and source reveal require explicit authorization.
+
 ## 2026-07-15 - Close K-M5 mixed and retain the private trial
 
 ### Result

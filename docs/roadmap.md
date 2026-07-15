@@ -100,6 +100,12 @@ unsupported. DEC-070 accepts that mixed closure, retains the private
 condition-aware result and freezes further K-M5 growth. K-M6 is the next planned
 milestone; no schema promotion is implied.
 
+K-M6 packet preparation is complete. Its exact bounded-top-k task compares an
+agent using the existing CLI/registry with an isolated control using only common
+project documentation. The selection oracle and identical post-selection source
+reveal are frozen before execution. No structured agent API or K-M5 overlay is
+available to either arm.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

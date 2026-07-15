@@ -42,7 +42,8 @@ DEC-069's bounded equivalences reconcile four cross-encoding requests while
 raising the total to 1,146 lines. The conditioned heap test succeeds for 23
 additional lines and preserves rejection without spare capacity. DEC-070
 retains that private result and closes K-M5 mixed. K-M6 is the next planned
-milestone and has not yet run.
+milestone. Its blind top-k task and two-arm protocol are frozen; the agents have
+not yet run.
 
 ## Latest closed slice
 

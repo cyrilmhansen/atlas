@@ -319,7 +319,7 @@ the private condition-aware trial and freezes K-M5.
 
 ### K-M6 - Blind agent-consumer experiment
 
-Status: **next planned milestone; not yet executed**.
+Status: **active packet checkpoint; dual-agent execution pending**.
 
 Give an agent registry/query/compose tools, task requirements and evidence, but
 withhold implementation source during selection. Use a new task drawn from the
@@ -342,6 +342,11 @@ Acceptance:
 - integration tests pass or failure is correctly attributed;
 - the report measures whether Atlas changed correctness, explanation quality or
   human intervention rather than merely whether a plan was produced.
+
+The frozen top-k task, assisted/control packet boundary, source-reveal procedure
+and qualitative oracle are in `docs/phase2/k-m6-agent-consumer-protocol.md`.
+Neither arm receives the private K-M5 overlay. Execution requires explicit
+dual-agent authorization after packet verification.
 
 ### K-M7 - Phase synthesis
 

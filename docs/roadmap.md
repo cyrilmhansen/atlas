@@ -30,8 +30,9 @@ activate Phase 2. The audit and maintained planning documents are:
 - `docs/project-vocabulary.md`;
 - `docs/phase2-external-corpus.md`.
 
-Atlas Knowledge is active. Atlas Execution Lab is frozen and Atlas Explorer is
-maintained for the duration of Phase 2.
+Phase 2 ran with Atlas Knowledge active, Execution Lab frozen and Explorer
+maintained. DEC-071 now closes that phase mixed and makes Explorer active for
+Phase 3, with Knowledge maintained and Execution Lab still frozen.
 
 K-M0 is complete with a mixed, informative result. Its six isolated imports and
 comparison report are under `docs/phase2/`. BFS and union-find converged at the
@@ -116,8 +117,17 @@ dynamic-structure and streaming families. Provenance/import discipline and
 agent consumption are supported, but public qualified selection and generic
 composition are not. The five competing problems all predate Phase 2, so the
 foreign corpus has not yet tested real alternative selection. The audit
-recommends a bounded comparative foreign-selection Phase 3 before schema 0.2.
-Phase 2 closure and the next trajectory remain an open class-C decision.
+recommends a bounded comparative foreign-selection phase before schema 0.2.
+DEC-071 instead accepts the documented Explorer-first alternative, closes
+Phase 2 mixed and activates Phase 3 without changing schema 0.1.
+
+Phase 3 makes Atlas Explorer active, Knowledge maintained and Execution Lab
+frozen. The existing 31/36/40 static projection and five generated sequence
+executions are the baseline. E-M1 is the next active milestone: relational
+entity detail, exact bidirectional chain navigation and factual side-by-side
+comparison across the full catalog. Runtime growth, publication and stable Web
+formats remain excluded pending separate evidence and decisions. The active
+phase document is `docs/phase3-explorer.md`.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

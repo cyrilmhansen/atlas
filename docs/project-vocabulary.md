@@ -43,7 +43,7 @@ The experimental laboratory:
 - performance-fingerprint experiments.
 
 Execution Lab artifacts are non-normative unless a separate decision promotes a
-result into Atlas Knowledge. Its current Phase 2 status is **frozen**: correction
+result into Atlas Knowledge. Its current Phase 3 status is **frozen**: correction
 and CI maintenance continue, capability expansion does not.
 
 ### Atlas Explorer
@@ -58,7 +58,7 @@ The human-facing product surface:
 
 Explorer derives facts from Knowledge and may invoke bounded Execution Lab
 capabilities. Presentation choices do not become knowledge semantics by use.
-Its current Phase 2 status is **maintained**, without a new feature phase.
+Its current Phase 3 status is **active** under DEC-071.
 
 These programs are ownership and planning boundaries, not new repositories,
 crates or deployment units. A code split requires separate evidence.
@@ -214,6 +214,6 @@ the existing decisions. This reinterpretation does not rewrite those decisions.
 
 | Program | Status | Reason |
 |---|---|---|
-| Atlas Knowledge | `active` through Phase 2 | central hypothesis still under-tested |
-| Atlas Execution Lab | `frozen` | existing instruments are sufficient for corpus falsification |
-| Atlas Explorer | `maintained` | preserve the static artifact without expanding presentation scope |
+| Atlas Knowledge | `maintained` through Phase 3 | preserve schema 0.1, provenance and correctness without active ontology growth |
+| Atlas Execution Lab | `frozen` | the five accepted visual programs are sufficient for the initial product workflows |
+| Atlas Explorer | `active` through Phase 3 | test whether existing knowledge and execution evidence form a useful human-facing product |

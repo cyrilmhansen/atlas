@@ -1,5 +1,35 @@
 # Progress log
 
+## 2026-07-15 - Activate Explorer-first Phase 3
+
+### Result
+
+- Accepted `explorer-C` in DEC-071, closed Phase 2 with its mixed K-M7 verdict
+  and activated **Phase 3 - Explorer product trial**.
+- Made Atlas Explorer active, Atlas Knowledge maintained and Atlas Execution
+  Lab frozen without changing schema 0.1 or any private runtime format.
+- Verified that the current static bundle already projects all 31 problems, 36
+  algorithms and 40 implementations and retains five accepted visual programs.
+- Selected E-M1 relational catalog and factual comparison as the first vertical
+  slice, ahead of executable coverage growth.
+
+### Verification
+
+- `scripts/check-web.sh`: complete Atlas Web acceptance slice passed with the
+  current 31/36/40 projection and all five generated visual executions.
+- Decision, phase boundaries, exclusions, milestones and exit evidence are
+  recorded in `docs/decisions/DEC-071-activate-phase3-explorer.md` and
+  `docs/phase3-explorer.md`.
+
+### Limits
+
+- No schema 0.2, new visual-machine instruction, MIR browser path or corpus
+  growth is authorized.
+- The Web projection, bytecode, presentation description and WASM facade remain
+  private.
+- Publication/deployment remains a later E-M3 decision; Phase 3 starts from the
+  reproducible local artifact.
+
 ## 2026-07-15 - Complete the K-M7 Phase 2 synthesis
 
 ### Result

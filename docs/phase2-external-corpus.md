@@ -1,6 +1,6 @@
 # Phase 2 - External corpus trial
 
-Status: active under DEC-066  
+Status: closed mixed under DEC-071
 Trajectory: Atlas Knowledge first, accepted by DEC-066  
 Inputs: project vision, DEC-064 closure evidence and the external audit recorded
 in `docs/audits/2026-07-14-external-project-audit.md`
@@ -24,7 +24,7 @@ K-M3 added graph, dynamic-structure and streaming families. K-M4 tested
 independent normalization, K-M5 tested private generic decisions and K-M6
 tested blind agent consumption. K-M7 concludes that knowledge preservation is
 supported but public qualified selection and manifest-driven composition are
-not. The mixed synthesis and next-phase alternatives await a closure decision.
+not. DEC-071 accepts the mixed closure and activates Explorer-first Phase 3.
 
 ## Accepted strategic trajectory
 
@@ -355,7 +355,7 @@ verdict, source reveal, timings and CLI cost are recorded in
 
 ### K-M7 - Phase synthesis
 
-Status: **complete; mixed synthesis, phase closure decision pending**.
+Status: **complete; mixed synthesis accepted by DEC-071**.
 
 Produce a phase audit containing:
 
@@ -376,8 +376,8 @@ preservation, independent normalization discipline and bounded agent
 consumption useful, while public qualified selection and manifest-driven
 composition remain unsupported. The literal competition quotas are met only by
 the older sequence corpus. It recommends a short comparative foreign-selection
-phase before schema 0.2; Phase 2 remains administratively active until that
-closure and next-phase choice are accepted.
+phase before schema 0.2; DEC-071 instead accepts the documented Explorer-first
+alternative while retaining that recommendation as future evidence.
 
 ## Phase exit evidence
 

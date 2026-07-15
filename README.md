@@ -42,13 +42,12 @@ removes their imports and dispatch from the browser while retaining the WASM
 exports for differential tests. The current bytecode, predicate intrinsic and
 presentation shapes are not public contracts.
 
-Phase 2 is active under DEC-066 with Atlas Knowledge as the active work program,
-Atlas Execution Lab frozen and Atlas Explorer maintained. It tests external
-corpus fidelity, generic candidate discovery and agent consumption before any
-new runtime or presentation expansion. K-M7 now records a mixed synthesis:
-foreign knowledge preservation is supported, while public qualified selection
-and generic composition remain unsupported. Phase 2 closure and the next
-trajectory are awaiting validation. See `docs/phase2-external-corpus.md` and
+Phase 2 is closed mixed under DEC-071. K-M7 found foreign knowledge preservation
+useful while public qualified selection and generic composition remain
+unsupported. DEC-071 activates **Phase 3 - Explorer product trial**: Atlas
+Explorer is active, Knowledge maintained and Execution Lab frozen. E-M1 focuses
+on relational catalog navigation and factual comparison before any runtime
+growth. See `docs/phase3-explorer.md` and
 `docs/phase2/k-m7-phase-audit.md`. K-M4-W repaired the inaccessible
 online-moments source with two open primary reports while retaining a neutral
 algorithm identity. DEC-067 and DEC-068 accept the subsequent bounded ontology
@@ -87,6 +86,7 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/phase2/k-m6-agent-consumer-protocol.md`: frozen assisted/control task and source-reveal protocol;
 - `docs/phase2/k-m6-result.md`: supported blind agent-consumer comparison and measured interface cost;
 - `docs/phase2/k-m7-phase-audit.md`: mixed Phase 2 synthesis, exit audit and next-phase options;
+- `docs/phase3-explorer.md`: active Explorer product phase, boundaries and milestone plan;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

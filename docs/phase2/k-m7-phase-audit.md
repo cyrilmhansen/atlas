@@ -1,6 +1,6 @@
 # K-M7 Phase 2 synthesis
 
-Status: complete synthesis; Phase 2 closure decision pending
+Status: complete; Phase 2 closed mixed under DEC-071
 
 Date: 2026-07-15
 
@@ -325,6 +325,8 @@ the new families need competing candidates before Atlas stabilizes the facts
 used to compare them. It also prevents K-M5's private vocabulary from becoming
 the public schema merely because it is executable.
 
-Phase 2 should remain active only administratively until this closure and next
-phase are accepted. Execution Lab stays frozen and Explorer maintained. No code,
-schema, dependency, format or public CLI change is authorized by this audit.
+DEC-071 subsequently accepts **Option C** (`explorer-C`) rather than this
+report's recommendation. Phase 2 closes mixed and Phase 3 activates Atlas
+Explorer while preserving schema 0.1, freezing Execution Lab and maintaining
+Knowledge. The recommendation remains audit evidence for a later return to
+foreign candidate competition; it is not the active trajectory.

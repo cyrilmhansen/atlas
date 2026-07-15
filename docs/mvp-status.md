@@ -1,10 +1,11 @@
 # Project status
 
-- Active phase: **Phase 2 - External corpus trial** under DEC-066
-- Phase state: **K-M7 synthesis complete; mixed closure decision pending**
-- Active work program: **Atlas Knowledge**
+- Active phase: **Phase 3 - Explorer product trial** under DEC-071
+- Phase 2: **closed mixed** at the K-M7 synthesis
+- Active work program: **Atlas Explorer**
+- Atlas Knowledge: **maintained**
 - Atlas Execution Lab: **frozen**
-- Atlas Explorer: **maintained**
+- Atlas Explorer: **active**
 - Historical MVP status: MVP 1 through MVP 6 closed; no subsequent MVP activated
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
@@ -13,10 +14,12 @@
 - MVP 5: closed under DEC-060
 - MVP 6: closed under DEC-064
 
-Post-foundation planning is accepted under DEC-065 and DEC-066. The external
-audit, three-program vocabulary and active external-corpus phase are recorded in
+Post-foundation planning is accepted under DEC-065 through DEC-071. The external
+audit, three-program vocabulary, closed external-corpus phase and active
+Explorer phase are recorded in
 `docs/audits/2026-07-14-external-project-audit.md`,
-`docs/project-vocabulary.md` and `docs/phase2-external-corpus.md`.
+`docs/project-vocabulary.md`, `docs/phase2-external-corpus.md` and
+`docs/phase3-explorer.md`.
 
 ## Active slice
 
@@ -45,10 +48,11 @@ additional lines and preserves rejection without spare capacity. DEC-070
 retains that private result and closes K-M5 mixed. K-M6 is complete and
 supported: the assisted agent identified the exact top-k component chain with
 disciplined evidence, while the control retained the right strategy but left
-Atlas identities unresolved. K-M7 now concludes Phase 2 as mixed: foreign
-knowledge preservation is supported, but qualified public selection and generic
-composition remain unsupported. Official closure and the next phase await a
-human trajectory decision.
+Atlas identities unresolved. K-M7 concludes Phase 2 as mixed: foreign knowledge
+preservation is supported, but qualified public selection and generic
+composition remain unsupported. DEC-071 accepts that closure and activates
+Explorer-first Phase 3. E-M1 relational catalog and factual comparison is the
+next active milestone.
 
 ## Latest closed slice
 

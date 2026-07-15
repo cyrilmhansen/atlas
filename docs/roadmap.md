@@ -179,6 +179,12 @@ requires candidates to be restated rather than projected from registry
 relations. The recommended follow-up is to retain this partial control and test
 recurrence in K4-M2 before adding selection infrastructure.
 
+The owner accepts `b2-follow-A`. K4-M2 source review compares a drop-in
+quaternary `dary_heap`, the broader keyed orx queue and an Atlas-authored
+control. It recommends pinned `dary_heap` 0.3.9 because it changes arity while
+preserving the max-heap item model and capacity experiment. No dependency is
+added before the B1 validation.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

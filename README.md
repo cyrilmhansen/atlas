@@ -109,6 +109,7 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/phase4/k4-m1-result.md`: graph candidate discovery and frozen-request adjudication;
 - `docs/phase4/k4-b2-options.md`: executable qualification alternatives after the graph batch;
 - `docs/phase4/k4-b2-result.md`: mixed unchanged-evaluator transfer and follow-up options;
+- `docs/phase4/k4-m2-priority-source-review.md`: dynamic competitor sources and dependency tradeoffs;
 - `docs/decisions/DEC-073-close-phase3-supported.md`: owner acceptance and Phase 3 closure boundary;
 - `docs/decisions/DEC-074-activate-phase4-comparative-selection.md`: Phase 4 authority and exclusions;
 - `docs/decisions/DEC-072-publish-explorer-on-github-pages.md`: public distribution boundary;

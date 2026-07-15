@@ -1,6 +1,6 @@
 # B2 unchanged-evaluator transfer result
 
-Status: mixed; Option A executed and stopped without evaluator changes
+Status: mixed; Option A retained as a partial control under `b2-follow-A`
 
 Date: 2026-07-15
 
@@ -105,3 +105,5 @@ Recommend **Option A (`b2-follow-A`)**. A second structurally different family
 is the minimum evidence needed before adding explicit negative facts or a
 registry-to-qualification projection. Preserve the mixed graph result and move
 to K4-M2 source review without pretending B2-A supplied end-to-end selection.
+
+Owner decision: `b2-follow-A`.

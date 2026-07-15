@@ -75,7 +75,11 @@ reasons, or explicitly demonstrate an unsupported qualification.
 
 ### K4-M2 - Dynamic priority-queue competition
 
-Status: next after B2 qualification-representation choice and source review.
+Status: source reviewed; dependency selection pending.
+
+`b2-follow-A` retains the unchanged evaluator as a partial control. Source
+options are reviewed in `docs/phase4/k4-m2-priority-source-review.md`;
+recommendation: `dary-A`.
 
 Add a structurally distinct priority-queue strategy for at least one existing
 construct/push/pop problem. Test state compatibility, capacity conditions,
@@ -132,6 +136,8 @@ transfers positive guarantees, forbidden effects and conditioned costs without
 evaluator changes, but collapses missing versus refuted guarantees and does not
 project candidates from registry relations. Recommendation: retain it as a
 partial control and proceed to K4-M2 (`b2-follow-A`).
+
+The owner accepts `b2-follow-A`; no evaluator extension precedes K4-M2.
 
 ### C1 - Public schema or CLI promotion
 

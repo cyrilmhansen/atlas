@@ -76,7 +76,9 @@ through registry relations and adjudicated against the frozen requests. B2 is
 executed with the unchanged K-M5 evaluator and a separate graph overlay. The
 transfer is mixed: three decisions reproduce fully, while refuted versus absent
 guarantees and registry-to-overlay discovery remain unsupported. Follow-up B2
-is the next decision before K4-M2.
+Option A is accepted: retain the partial control and proceed. K4-M2 source
+review recommends `dary_heap` 0.3.9 as a quaternary max-heap competitor; the
+dependency choice remains pending.
 
 ## Latest closed slice
 

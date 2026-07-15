@@ -1,5 +1,31 @@
 # Progress log
 
+## 2026-07-15 - Retain B2 control and review K4-M2 sources
+
+### Result
+
+- Accepted `b2-follow-A`: the unchanged K-M5 graph overlay remains a partial
+  control and no selection infrastructure is added before a second family.
+- Compared `dary_heap` 0.3.9, `orx-priority-queue` 1.8.0 and an Atlas-authored
+  quaternary heap for the existing priority-queue push problem.
+- Recommended the pinned `dary_heap::QuaternaryHeap` because it preserves the
+  max-item/API/capacity model while changing arity.
+
+### Verification
+
+- `cargo info` confirms exact versions, permissive licenses and feature sets.
+- Upstream source confirms `dary_heap` uses `Vec`, exposes reserve/capacity and
+  documents isolated `O(n)` push when growth reallocates.
+- Official orx documentation confirms its broader node/key and decrease-key
+  model, making it a less controlled first comparison.
+
+### Limits
+
+- `dary_heap` is derived from standard-library heap code, so code ancestry is
+  not independent even though the project and arity are distinct.
+- No dependency or registry entity is added before `dary-A` validation.
+- B2's missing/refuted distinction and manual candidate restatement remain.
+
 ## 2026-07-15 - Execute B2 unchanged-evaluator transfer
 
 ### Result

@@ -1,0 +1,63 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build static Explorer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install pinned WebAssembly binding tool
+        run: cargo install wasm-bindgen-cli --version 0.2.100 --locked
+
+      - name: Fetch locked dependencies
+        run: cargo fetch --locked
+
+      - name: Build and verify static Explorer
+        run: ./scripts/check-web.sh
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload static Explorer
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: build/web
+
+  deploy:
+    name: Deploy GitHub Pages
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy static Explorer
+        id: deployment
+        uses: actions/deploy-pages@v4

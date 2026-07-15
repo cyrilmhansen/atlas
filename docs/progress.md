@@ -1,5 +1,35 @@
 # Progress log
 
+## 2026-07-15 - Activate GitHub Pages publication
+
+### Result
+
+- Accepted `pages-A` in DEC-072 and resolved E-M3 with a dedicated Pages
+  workflow rather than coupling deployment to the full MIR/RV64 CI job.
+- Configured the repository for Pages deployments from GitHub Actions with HTTPS
+  enforced and the public entry point
+  `https://cyrilmhansen.github.io/atlas/`.
+- Build and deployment jobs remain separate; only the latter receives
+  `pages: write` and `id-token: write`.
+- The workflow runs the complete Web acceptance slice and uploads only
+  `build/web`, leaving generated files outside Git history.
+
+### Verification
+
+- GitHub Pages API reports `build_type: workflow`, `public: true` and the
+  expected repository URL.
+- The workflow YAML parses locally and `scripts/check-web.sh` passes before
+  publication.
+
+### Limits
+
+- The first remote deployment is produced only after the workflow commit reaches
+  `main`.
+- The repository URL is supported, but deep links and private Web formats are
+  not stable contracts.
+- No custom domain, analytics, service worker, remote execution or additional
+  hosting target is introduced.
+
 ## 2026-07-15 - Complete E-M1 relational catalog
 
 ### Result

@@ -123,11 +123,12 @@ solely to fill an empty state.
 
 ### E-M3 - Distribution decision
 
-Candidate milestone after product evaluation, not active yet.
+Status: complete under DEC-072 (`pages-A`).
 
-Decide whether the artifact remains a local reproducible bundle or gains an
-explicit GitHub Pages/release publication workflow. Publication, supported URL
-policy and any stable projection contract require their own decision.
+The reproducible bundle is published by a dedicated GitHub Pages workflow at
+`https://cyrilmhansen.github.io/atlas/`. The repository URL is the supported
+Phase 3 entry point. Publication does not stabilize the private projection,
+WASM facade, generated program or deep-link query parameters.
 
 ## Phase exit evidence
 
@@ -152,7 +153,8 @@ Phase 3 may close supported, mixed or falsified when:
 - automatic visualization of algorithms lacking a reviewed executable model;
 - a server, account system, remote execution, analytics service or network
   dependency;
-- deployment or publication before E-M3 authorization;
+- another deployment target, custom domain or publication channel without a
+  separate decision;
 - stabilizing `atlas-web-private-v0`, visual bytecode or WASM bindings by use.
 
 ## Revisit triggers

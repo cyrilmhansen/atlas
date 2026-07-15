@@ -12,6 +12,10 @@ DEC-050 adds a private read-only `is_sorted` guest import and DEC-051 adds
 checked `reverse` mutation. Latency, executable allocation footprint and
 multi-region memory remain separate work.
 
+The public Atlas Explorer is available at
+<https://cyrilmhansen.github.io/atlas/>. It is a derived static presentation of
+the Git-authoritative registry, not a stable JSON, WASM or URL API.
+
 The authoritative registry now contains 31 problems, 36 algorithms, and 40
 implementations: the 10/15/20 MVP 1 sequence baseline plus the first external
 graph and dynamic-structure batches. The latter separates union-find, binary
@@ -29,8 +33,9 @@ fixtures. DEC-058 adds editable seeded generation, operation-growth views and
 AST-linked incremental WASM execution for `is_sorted`, insertion sort and
 reverse. Analytical traces remain test-only. See `docs/mvp5-web.md` for the
 exact authority, counter, dynamics and timing boundaries. Its projection and
-WASM interfaces remain private, the site is not published, and no subsequent
-MVP was activated by its closure.
+WASM interfaces remain private. MVP 5 did not publish the site or activate a
+subsequent MVP; the later DEC-072 publishes the derived Phase 3 artifact without
+changing that interface boundary.
 
 MVP 6 is closed under DEC-064. Its generated paths compile `sequence.minimum`,
 even `sequence.partition`, adjacent `sequence.is_sorted`, stable insertion and
@@ -49,7 +54,8 @@ Explorer is active, Knowledge maintained and Execution Lab frozen. E-M1 is
 complete with searchable entity detail, exact relation navigation, sourced
 claims and factual same-kind comparison. E-M2 next evaluates the distinction
 between knowledge, bounded execution and local observation before any runtime
-growth. See `docs/phase3-explorer.md`, `docs/phase3/e-m1-review.md` and
+growth. DEC-072 completes E-M3 distribution through the dedicated GitHub Pages
+workflow. See `docs/phase3-explorer.md`, `docs/phase3/e-m1-review.md` and
 `docs/phase2/k-m7-phase-audit.md`. K-M4-W repaired the inaccessible
 online-moments source with two open primary reports while retaining a neutral
 algorithm identity. DEC-067 and DEC-068 accept the subsequent bounded ontology
@@ -65,6 +71,7 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `crates/atlas-mir`: experimental MIR adapter boundary;
 - `crates/atlas-web-wasm`: private curated browser execution facade;
 - `web`: static generated-execution workbench and catalog sources;
+- `.github/workflows/pages.yml`: verified static Explorer publication;
 - `docs/schema-0.1.md`: current public schema contract;
 - `docs/mir-integration.md`: exact MVP 4 MIR build and execution boundary;
 - `docs/mvp5-web.md`: static artifact build, authority and timing boundaries;
@@ -90,6 +97,7 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/phase2/k-m7-phase-audit.md`: mixed Phase 2 synthesis, exit audit and next-phase options;
 - `docs/phase3-explorer.md`: active Explorer product phase, boundaries and milestone plan;
 - `docs/phase3/e-m1-review.md`: relational catalog acceptance evidence and limits;
+- `docs/decisions/DEC-072-publish-explorer-on-github-pages.md`: public distribution boundary;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

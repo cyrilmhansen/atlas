@@ -6,6 +6,7 @@
 - Atlas Knowledge: **maintained**
 - Atlas Execution Lab: **frozen**
 - Atlas Explorer: **active**
+- Public Explorer: `https://cyrilmhansen.github.io/atlas/` under DEC-072
 - Historical MVP status: MVP 1 through MVP 6 closed; no subsequent MVP activated
 - MVP 1: closed locally at baseline `8a2a520`
 - MVP 2: closed locally under DEC-036
@@ -14,7 +15,7 @@
 - MVP 5: closed under DEC-060
 - MVP 6: closed under DEC-064
 
-Post-foundation planning is accepted under DEC-065 through DEC-071. The external
+Post-foundation planning is accepted under DEC-065 through DEC-072. The external
 audit, three-program vocabulary, closed external-corpus phase and active
 Explorer phase are recorded in
 `docs/audits/2026-07-14-external-project-audit.md`,
@@ -56,7 +57,9 @@ complete. All 107 entities now have searchable detail, exact chain navigation
 and sourced claims; same-kind comparison states missing facts explicitly and
 never ranks candidates. The five accepted visual programs remain the only
 execution handoffs. E-M2 evidence-centered handoff is the next active
-milestone.
+milestone. E-M3 distribution is complete under DEC-072: GitHub Pages publishes
+only the Web-verified derived bundle from `main`, without stabilizing its private
+formats.
 
 ## Latest closed slice
 

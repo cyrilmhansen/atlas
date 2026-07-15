@@ -130,8 +130,10 @@ the five accepted executable algorithms to the existing workbench without
 implying execution support for the other 31 algorithms. E-M2 is the next active
 milestone: test whether visitors can distinguish registry knowledge, bounded
 execution and local observation before making further presentation changes.
-Runtime growth, publication and stable Web formats remain excluded pending
-separate evidence and decisions. See `docs/phase3-explorer.md` and
+E-M3 is also complete under DEC-072: a dedicated workflow publishes the verified
+static bundle at `https://cyrilmhansen.github.io/atlas/`. Runtime growth, custom
+domains, other deployment targets and stable Web formats remain excluded
+pending separate evidence and decisions. See `docs/phase3-explorer.md` and
 `docs/phase3/e-m1-review.md`.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
@@ -445,7 +447,8 @@ the memory model or measurement surface.
 ## MVP 5 public interactive artifact
 
 Status: closed under DEC-060 at the extended DEC-058/DEC-059 boundary. No public
-projection format, deployment target or general browser runtime is active.
+projection format or general browser runtime was activated by MVP 5; the later
+DEC-072 publishes its derived successor without stabilizing those interfaces.
 
 The recommended distribution is a static, reproducible website that can be
 hosted on GitHub Pages or opened from a release bundle. It would combine a

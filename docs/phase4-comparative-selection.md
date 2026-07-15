@@ -127,6 +127,12 @@ K4-M1 now supplies that evidence. Options and recommendation are recorded in
 `docs/phase4/k4-b2-options.md`; recommendation: `b2-A`, reuse the unchanged
 K-M5 evaluator with separate Phase 4 input and no public surface.
 
+`b2-A` is executed with a mixed result in `docs/phase4/k4-b2-result.md`. It
+transfers positive guarantees, forbidden effects and conditioned costs without
+evaluator changes, but collapses missing versus refuted guarantees and does not
+project candidates from registry relations. Recommendation: retain it as a
+partial control and proceed to K4-M2 (`b2-follow-A`).
+
 ### C1 - Public schema or CLI promotion
 
 Any schema 0.2 field, persistent qualification format or stable generic query

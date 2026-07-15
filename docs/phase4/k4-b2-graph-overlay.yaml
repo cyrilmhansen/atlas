@@ -1,0 +1,97 @@
+overlay_version: phase2-km5-0
+
+atoms:
+  - { id: output.reachable_component, kind: capability }
+  - { id: condition.known_graph_shape, kind: condition }
+  - { id: guarantee.exact_component_once, kind: guarantee }
+  - { id: guarantee.non_decreasing_hops, kind: guarantee }
+  - { id: effect.allocates_traversal_state, kind: effect }
+
+candidates:
+  - id: candidate.graph.bfs
+    source: registry:graph.bfs.petgraph.0_8_3
+    provides:
+      - atom: output.reachable_component
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_graph_adapters.rs", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.exact_component_once
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_graph_adapters.rs", proof: null }
+    effects:
+      - atom: effect.allocates_traversal_state
+        evidence: { level: declared, source: "registry:graph.bfs.petgraph.0_8_3", proof: null }
+    consumes_state: null
+    produces_state: null
+    costs:
+      - operation: traverse
+        metric: retained_memory
+        regime: worst
+        bound: "O(V)"
+        requires: []
+        evidence: { level: inferred, source: "analysis:phase2/k-m1-graph-corpus", proof: null }
+
+  - id: candidate.graph.dfs
+    source: registry:graph.dfs.petgraph.0_8_3
+    provides:
+      - atom: output.reachable_component
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_graph_adapters.rs", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.exact_component_once
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_graph_adapters.rs", proof: null }
+    effects:
+      - atom: effect.allocates_traversal_state
+        evidence: { level: declared, source: "registry:graph.dfs.petgraph.0_8_3", proof: null }
+    consumes_state: null
+    produces_state: null
+    costs:
+      - operation: traverse
+        metric: retained_memory
+        regime: worst
+        bound: "O(V)"
+        requires: []
+        evidence: { level: inferred, source: "analysis:phase4/k4-m1-petgraph-dfs", proof: null }
+
+relations: []
+
+requests:
+  - id: request.reach.exact_component
+    accepts: output.reachable_component
+    provides_conditions: []
+    requires_guarantees: [guarantee.exact_component_once]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.reach.no_allocation
+    accepts: output.reachable_component
+    provides_conditions: []
+    requires_guarantees: [guarantee.exact_component_once]
+    forbids_effects: [effect.allocates_traversal_state]
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.reach.frontier_for_known_shape
+    accepts: output.reachable_component
+    provides_conditions: [condition.known_graph_shape]
+    requires_guarantees: [guarantee.exact_component_once]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs:
+      - operation: traverse
+        metric: retained_memory
+        regime: worst
+        bound: "O(shape-dependent frontier)"
+        requires: [condition.known_graph_shape]
+    accepted_evidence: [declared, inferred, tested, observed, proven]
+
+  - id: request.reach.non_decreasing_hops
+    accepts: output.reachable_component
+    provides_conditions: []
+    requires_guarantees: [guarantee.exact_component_once, guarantee.non_decreasing_hops]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested, observed, proven]

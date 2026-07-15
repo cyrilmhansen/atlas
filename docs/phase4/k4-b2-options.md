@@ -1,6 +1,6 @@
 # B2 - Phase-local qualification representation
 
-Status: decision required after K4-M1
+Status: Option A accepted under `b2-A`; transfer result mixed
 
 Date: 2026-07-15
 
@@ -79,3 +79,6 @@ branch.
 5. If evaluator code changes, stop and return to B2 rather than expanding it.
 
 Validation question: `b2-A`, `b2-B`, or `b2-C`?
+
+Owner decision: `b2-A`. Result and follow-up options:
+`docs/phase4/k4-b2-result.md`.

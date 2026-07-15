@@ -1,5 +1,33 @@
 # Progress log
 
+## 2026-07-15 - Execute B2 unchanged-evaluator transfer
+
+### Result
+
+- Encoded both graph candidates and four frozen requests in a separate 97-line
+  Phase 4 overlay using the unchanged K-M5 format.
+- Reproduced exact-component acceptance, allocation rejection and missing
+  conditioned-frontier cost through the existing generic evaluator.
+- Demonstrated that missing versus refuted guarantees collapse to the same
+  reason and that candidates remain restated rather than projected from the
+  registry.
+- Stopped without extending the evaluator or misclassifying counterevidence as
+  an effect.
+
+### Verification
+
+- Focused Phase 4 evaluator transfer test passes with exact accepted sets and
+  reasons.
+- Both candidate sources resolve to current registry implementations.
+- Added cost is 97 YAML lines and 43 test lines; non-test Rust remains zero.
+
+### Limits
+
+- B2-A is a partial experimental control, not end-to-end manifest-driven
+  qualified selection.
+- No explicit negative guarantee or outcome class exists in K-M5.
+- Follow-up strategy requires owner validation before K4-M2.
+
 ## 2026-07-15 - Complete K4-M1 graph competition
 
 ### Result

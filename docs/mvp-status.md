@@ -73,7 +73,10 @@ K4-M0 has frozen its cross-family requests and schema 0.1 controls before any
 competitor import or evaluator choice. K4-M1 adds a petgraph DFS competitor
 without a dependency or schema change; both reachability candidates are found
 through registry relations and adjudicated against the frozen requests. B2 is
-the next qualification-representation decision before K4-M2.
+executed with the unchanged K-M5 evaluator and a separate graph overlay. The
+transfer is mixed: three decisions reproduce fully, while refuted versus absent
+guarantees and registry-to-overlay discovery remain unsupported. Follow-up B2
+is the next decision before K4-M2.
 
 ## Latest closed slice
 

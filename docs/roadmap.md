@@ -172,6 +172,13 @@ retains graph-shape frontier qualification as missing and rejects DFS hop-order
 through a tested counterexample. B2 qualification representation is the next
 decision before the dynamic competitor batch.
 
+B2 Option A is executed without evaluator changes. A 97-line separate overlay
+and 43-line test reproduce exact-component, allocation and conditioned-frontier
+decisions. They also show that K-M5 collapses absent and refuted guarantees and
+requires candidates to be restated rather than projected from registry
+relations. The recommended follow-up is to retain this partial control and test
+recurrence in K4-M2 before adding selection infrastructure.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

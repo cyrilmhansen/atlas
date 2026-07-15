@@ -316,6 +316,49 @@ mod tests {
     }
 
     #[test]
+    fn phase4_graph_overlay_reuses_the_evaluator_without_hiding_its_limit() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let overlay =
+            load_decision_overlay(&workspace.join("docs/phase4/k4-b2-graph-overlay.yaml"))
+                .expect("Phase 4 graph overlay must use the unchanged K-M5 format");
+        let registry =
+            load_registry(&workspace.join("registry/atlas.yaml")).expect("committed registry");
+        assert!(validate_overlay_sources(&overlay, &registry, &workspace).is_empty());
+
+        assert_eq!(
+            accepted_candidates(&overlay, "request.reach.exact_component"),
+            ["candidate.graph.bfs", "candidate.graph.dfs"]
+        );
+        assert!(accepted_candidates(&overlay, "request.reach.no_allocation").is_empty());
+        assert!(accepted_candidates(&overlay, "request.reach.frontier_for_known_shape").is_empty());
+        assert!(accepted_candidates(&overlay, "request.reach.non_decreasing_hops").is_empty());
+
+        for decision in evaluate_request(&overlay, "request.reach.no_allocation").unwrap() {
+            assert_eq!(
+                decision.reasons,
+                ["forbidden effect effect.allocates_traversal_state"]
+            );
+        }
+        for decision in
+            evaluate_request(&overlay, "request.reach.frontier_for_known_shape").unwrap()
+        {
+            assert_eq!(
+                decision.reasons,
+                [
+                    "missing exact cost profile traverse RetainedMemory Worst O(shape-dependent frontier)"
+                ]
+            );
+        }
+
+        let hop_decisions =
+            evaluate_request(&overlay, "request.reach.non_decreasing_hops").unwrap();
+        assert_eq!(hop_decisions.len(), 2);
+        assert!(hop_decisions.iter().all(|decision| {
+            decision.reasons == ["missing guarantee guarantee.non_decreasing_hops"]
+        }));
+    }
+
+    #[test]
     fn bounded_equivalences_reconcile_both_top_k_encodings() {
         let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut overlay =

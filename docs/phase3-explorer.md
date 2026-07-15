@@ -75,7 +75,7 @@ Status: complete with this activation.
 
 ### E-M1 - Relational catalog and factual comparison
 
-Status: next active milestone.
+Status: complete. Review: `docs/phase3/e-m1-review.md`.
 
 Smallest vertical slice:
 
@@ -112,12 +112,14 @@ Acceptance:
 
 ### E-M2 - Evidence-centered execution handoff
 
-Candidate milestone after E-M1, not active yet.
+Status: next active milestone.
 
 Connect entity detail, sourced complexity, DatasetSpec context and the existing
 visual workbench so visitors can distinguish what is known, what is executed and
-what is merely observed. Do not add another executable algorithm solely to fill
-an empty state.
+what is merely observed. Begin with a usability protocol over one executable and
+one non-executable algorithm, then make only the smallest handoff changes that
+the observed task failures justify. Do not add another executable algorithm
+solely to fill an empty state.
 
 ### E-M3 - Distribution decision
 

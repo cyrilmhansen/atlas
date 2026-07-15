@@ -45,9 +45,11 @@ presentation shapes are not public contracts.
 Phase 2 is closed mixed under DEC-071. K-M7 found foreign knowledge preservation
 useful while public qualified selection and generic composition remain
 unsupported. DEC-071 activates **Phase 3 - Explorer product trial**: Atlas
-Explorer is active, Knowledge maintained and Execution Lab frozen. E-M1 focuses
-on relational catalog navigation and factual comparison before any runtime
-growth. See `docs/phase3-explorer.md` and
+Explorer is active, Knowledge maintained and Execution Lab frozen. E-M1 is
+complete with searchable entity detail, exact relation navigation, sourced
+claims and factual same-kind comparison. E-M2 next evaluates the distinction
+between knowledge, bounded execution and local observation before any runtime
+growth. See `docs/phase3-explorer.md`, `docs/phase3/e-m1-review.md` and
 `docs/phase2/k-m7-phase-audit.md`. K-M4-W repaired the inaccessible
 online-moments source with two open primary reports while retaining a neutral
 algorithm identity. DEC-067 and DEC-068 accept the subsequent bounded ontology
@@ -87,6 +89,7 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/phase2/k-m6-result.md`: supported blind agent-consumer comparison and measured interface cost;
 - `docs/phase2/k-m7-phase-audit.md`: mixed Phase 2 synthesis, exit audit and next-phase options;
 - `docs/phase3-explorer.md`: active Explorer product phase, boundaries and milestone plan;
+- `docs/phase3/e-m1-review.md`: relational catalog acceptance evidence and limits;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;
 - `docs/mvp1-corpus.md`: accepted and completed pilot corpus;

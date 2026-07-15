@@ -44,7 +44,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   font-size: 0.74rem;
   font-weight: 750;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
 }
 .app-header .product-kicker { color: #7dd8b8; }
 .app-header h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4rem); line-height: 0.92; letter-spacing: 0; }
@@ -191,14 +191,71 @@ textarea { display: block; width: 100%; margin-top: 8px; padding: 12px; resize: 
 .empty-state { align-self: center; justify-self: center; color: var(--muted); }
 .sequence-note { margin: 8px 0 0; color: var(--muted); font-size: 0.7rem; }
 
-.search-field { display: grid; gap: 6px; width: min(360px, 100%); }
+.catalog-controls { display: flex; align-items: end; gap: 12px; width: min(620px, 100%); }
+.catalog-controls > label { display: grid; gap: 6px; }
+.catalog-controls select { min-width: 160px; }
+.search-field { display: grid; gap: 6px; width: min(400px, 100%); flex: 1; }
 .search-field input { min-height: 40px; padding: 0 12px; }
-.catalog-table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--paper); }
-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
-th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
-th { background: #edf1ed; color: var(--muted); font-size: 0.7rem; text-transform: uppercase; }
-td code { color: var(--blue); font-size: 0.78rem; }
 .kind-label { color: var(--green); font-weight: 750; text-transform: uppercase; font-size: 0.68rem; }
+
+.catalog-workspace {
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.34fr) minmax(0, 1fr);
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.catalog-results-panel { min-width: 0; border-right: 1px solid var(--line); background: #f7f9f7; }
+.catalog-results-heading { min-height: 58px; padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid var(--line); }
+.catalog-results-heading span { color: var(--muted); font-size: 0.72rem; }
+.catalog-results { position: relative; max-height: 720px; overflow-y: auto; }
+.catalog-result { width: 100%; min-height: 78px; padding: 12px 16px; display: grid; gap: 4px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
+.catalog-result strong { font-size: 0.83rem; line-height: 1.3; overflow-wrap: anywhere; }
+.catalog-result code { color: var(--blue); font-size: 0.68rem; overflow-wrap: anywhere; }
+.catalog-result:hover { background: #edf2ee; }
+.catalog-result.is-selected { background: var(--ink); color: white; }
+.catalog-result.is-selected .kind-label { color: #7dd8b8; }
+.catalog-result.is-selected code { color: #ffd878; }
+.catalog-empty { padding: 24px 16px; color: var(--muted); font-size: 0.8rem; }
+
+.entity-detail { min-width: 0; padding: clamp(22px, 4vw, 48px); }
+.entity-detail-header { display: flex; align-items: start; justify-content: space-between; gap: 24px; padding-bottom: 24px; border-bottom: 2px solid var(--ink); }
+.entity-detail-header h3 { margin: 5px 0 7px; font-size: clamp(1.35rem, 2.5vw, 2rem); overflow-wrap: anywhere; }
+.entity-detail-header code { color: var(--blue); font-size: 0.76rem; overflow-wrap: anywhere; }
+.entity-actions { display: flex; gap: 8px; }
+.entity-actions button, .comparison-selectors button { min-height: 38px; padding: 0 14px; border: 1px solid #9ca9a2; background: white; color: var(--ink); cursor: pointer; font-weight: 700; }
+.entity-actions .primary-command { border-color: #056c4d; background: var(--green); color: white; }
+.entity-relations, .entity-claims { margin-top: 28px; }
+.entity-relations h4, .entity-claims h4, .comparison-row h4 { margin: 0 0 12px; font-size: 0.74rem; text-transform: uppercase; color: var(--muted); }
+.entity-relation-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.entity-link { min-height: 52px; max-width: 100%; padding: 8px 11px; display: grid; gap: 3px; border: 1px solid #aab5af; background: white; color: var(--ink); text-align: left; cursor: pointer; }
+.entity-link span { color: var(--muted); font-size: 0.66rem; text-transform: uppercase; }
+.entity-link code { color: var(--blue); font-size: 0.72rem; overflow-wrap: anywhere; }
+.entity-link:hover { border-color: var(--blue); background: #eef5fc; }
+.empty-relation { margin: 0; color: var(--muted); font-size: 0.8rem; }
+.entity-claim-list { border-top: 1px solid var(--line); }
+.entity-claim { display: grid; grid-template-columns: minmax(120px, 0.25fr) minmax(0, 1fr); gap: 18px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.entity-claim h5 { margin: 2px 0 0; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; }
+.claim-fact { min-width: 0; }
+.claim-fact.is-absent { color: var(--muted); font-style: italic; font-size: 0.8rem; }
+.claim-value { color: var(--ink); font: 0.8rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-line; overflow-wrap: anywhere; }
+.claim-metadata { margin-top: 7px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.claim-metadata code { color: var(--muted); font-size: 0.66rem; overflow-wrap: anywhere; }
+.evidence-level { padding: 3px 6px; border: 1px solid #aeb9b3; background: #edf1ed; color: var(--ink); font-size: 0.62rem; font-weight: 750; text-transform: uppercase; }
+.evidence-level.is-tested, .evidence-level.is-proven { border-color: #86c9ae; background: var(--green-soft); color: #075b43; }
+.evidence-level.is-inferred { border-color: #9dbddd; background: #e5f0fb; color: #164b83; }
+.evidence-level.is-observed { border-color: #e0b85f; background: #fff4d7; color: #7d5911; }
+
+.comparison-panel { position: relative; left: 50%; width: 100vw; margin: 28px 0 0 -50vw; padding: 28px clamp(20px, 5vw, 72px) 42px; border-block: 1px solid var(--line); background: var(--paper); }
+.comparison-header { display: flex; align-items: end; justify-content: space-between; gap: 30px; }
+.comparison-selectors { display: flex; align-items: end; gap: 10px; }
+.comparison-selectors label { display: grid; gap: 5px; }
+.comparison-selectors select { width: min(320px, 30vw); }
+.comparison-note { margin: 14px 0 20px; color: var(--muted); font-size: 0.76rem; }
+.comparison-grid { border-top: 2px solid var(--ink); }
+.comparison-row { display: grid; grid-template-columns: minmax(120px, 0.22fr) repeat(2, minmax(0, 1fr)); gap: 0; border-bottom: 1px solid var(--line); }
+.comparison-row h4 { margin: 0; padding: 16px 14px 16px 0; }
+.comparison-row .claim-fact { padding: 16px; border-left: 1px solid var(--line); }
 
 footer { min-height: 58px; padding: 16px clamp(20px, 5vw, 72px); background: #e4e9e5; color: var(--muted); display: flex; justify-content: space-between; gap: 20px; font-size: 0.72rem; }
 
@@ -219,6 +276,17 @@ footer { min-height: 58px; padding: 16px clamp(20px, 5vw, 72px); background: #e4
   .generator-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .result-panel { border-left: 0; border-top: 1px solid var(--line); }
   .sequence-visual { min-height: 180px; }
+  .catalog-controls { width: 100%; }
+  .catalog-workspace { min-height: 0; grid-template-columns: 1fr; }
+  .catalog-results-panel { border-right: 0; border-bottom: 1px solid var(--line); }
+  .catalog-results { max-height: 290px; }
+  .entity-detail { padding: 22px clamp(16px, 5vw, 28px); }
+  .comparison-header, .comparison-selectors { align-items: stretch; flex-direction: column; }
+  .comparison-selectors { width: 100%; }
+  .comparison-selectors select { width: 100%; }
+  .comparison-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .comparison-row h4 { grid-column: 1 / -1; padding: 14px 0 8px; }
+  .comparison-row .claim-fact:first-of-type { border-left: 0; }
   footer { flex-direction: column; }
 }
 
@@ -230,4 +298,8 @@ footer { min-height: 58px; padding: 16px clamp(20px, 5vw, 72px); background: #e4
   .source-control, .generator-controls { grid-template-columns: 1fr; }
   .trace-controls { flex-wrap: wrap; }
   .trace-controls label { width: 100%; margin-left: 0; }
+  .catalog-controls, .entity-detail-header, .entity-actions { align-items: stretch; flex-direction: column; }
+  .entity-claim { grid-template-columns: 1fr; gap: 6px; }
+  .comparison-row { grid-template-columns: 1fr; }
+  .comparison-row .claim-fact { border-left: 0; border-top: 1px solid var(--line); }
 }

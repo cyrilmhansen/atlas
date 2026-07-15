@@ -1,5 +1,38 @@
 # Progress log
 
+## 2026-07-15 - Complete E-M1 relational catalog
+
+### Result
+
+- Replaced the flat catalog workflow with searchable Problem, Algorithm and
+  Implementation detail across all 107 projected entities.
+- Added exact forward and reverse knowledge-chain navigation and exposed all
+  existing schema 0.1 claims with evidence level and provenance.
+- Added same-kind factual comparison that renders missing facts as `Not
+  recorded`, without scores, rankings or inferred winners.
+- Added an execution handoff only for the five algorithms backed by accepted
+  generated visual programs.
+- Kept the selected entity visible in the bounded result list and verified the
+  full-width catalog layout on mobile and desktop.
+
+### Verification
+
+- `scripts/check-web.sh`: complete static bundle, projection, catalog,
+  differential execution and reproducibility acceptance passed.
+- `cargo test -p atlas --locked`: complete Atlas test suite passed.
+- Headless Chromium inspection at 390, 768, 1440 and 1920 pixels found no
+  page-wide overflow or incoherent overlap.
+
+### Limits
+
+- The richer Web projection remains private and derived; schema 0.1 is
+  unchanged and authoritative.
+- Comparison is deliberately limited to recorded same-kind facts and cannot
+  qualify substitutability or recommend a winner.
+- Only five sequence algorithms have reviewed executable presentations; Atlas
+  displays absence for every other algorithm rather than synthesizing one.
+- Publication and a stable Web URL remain outside E-M1.
+
 ## 2026-07-15 - Activate Explorer-first Phase 3
 
 ### Result

@@ -7,7 +7,7 @@ use crate::datasets::{
     DatasetClass, GenerationError, IntPredicate, PARTITION_DATASET_SPEC, SORT_DATASET_SPEC,
 };
 use crate::index::ProjectionSummary;
-use crate::registry::{Algorithm, Claim, Implementation, Problem, Registry};
+use crate::registry::{Algorithm, Claim, Effects, Implementation, Problem, Registry};
 use crate::visual_program::{
     VisualProgram, VisualProgramError, compile_insertion_visual_program,
     compile_is_sorted_visual_program, compile_minimum_visual_program,
@@ -49,6 +49,7 @@ struct WebCounts {
 struct WebProblem<'a> {
     id: &'a str,
     input: WebClaim<'a, String>,
+    requires: Option<WebClaim<'a, Vec<String>>>,
     output: WebClaim<'a, String>,
     ensures: WebClaim<'a, Vec<String>>,
 }
@@ -58,7 +59,12 @@ struct WebAlgorithm<'a> {
     id: &'a str,
     solves: &'a str,
     name: WebClaim<'a, String>,
+    requires: Option<WebClaim<'a, Vec<String>>>,
+    stable: Option<WebClaim<'a, bool>>,
+    deterministic: WebClaim<'a, bool>,
+    in_place: Option<WebClaim<'a, bool>>,
     time_worst: WebClaim<'a, String>,
+    time_expected: Option<WebClaim<'a, String>>,
     auxiliary_memory: WebClaim<'a, String>,
 }
 
@@ -67,8 +73,30 @@ struct WebImplementation<'a> {
     id: &'a str,
     implements: &'a str,
     language: WebClaim<'a, String>,
+    version: WebClaim<'a, String>,
+    license: WebClaim<'a, String>,
     target: WebClaim<'a, String>,
+    dependencies: WebClaim<'a, Vec<String>>,
+    abi: WebClaim<'a, String>,
     entrypoint: WebClaim<'a, String>,
+    signature: WebClaim<'a, String>,
+    effects: WebEffectsClaim<'a>,
+    tests: WebClaim<'a, Vec<String>>,
+}
+
+#[derive(Serialize)]
+struct WebEffectsClaim<'a> {
+    value: WebEffects<'a>,
+    level: String,
+    source: &'a str,
+}
+
+#[derive(Serialize)]
+struct WebEffects<'a> {
+    mutates: &'a Vec<String>,
+    io: &'a str,
+    blocking: bool,
+    allocation: &'a str,
 }
 
 #[derive(Serialize)]
@@ -335,6 +363,7 @@ impl<'a> From<&'a Problem> for WebProblem<'a> {
         Self {
             id: &problem.id,
             input: (&problem.input).into(),
+            requires: problem.requires.as_ref().map(Into::into),
             output: (&problem.output).into(),
             ensures: (&problem.ensures).into(),
         }
@@ -347,7 +376,12 @@ impl<'a> From<&'a Algorithm> for WebAlgorithm<'a> {
             id: &algorithm.id,
             solves: &algorithm.solves,
             name: (&algorithm.name).into(),
+            requires: algorithm.requires.as_ref().map(Into::into),
+            stable: algorithm.stable.as_ref().map(Into::into),
+            deterministic: (&algorithm.deterministic).into(),
+            in_place: algorithm.in_place.as_ref().map(Into::into),
             time_worst: (&algorithm.time_worst).into(),
+            time_expected: algorithm.time_expected.as_ref().map(Into::into),
             auxiliary_memory: (&algorithm.auxiliary_memory).into(),
         }
     }
@@ -359,8 +393,30 @@ impl<'a> From<&'a Implementation> for WebImplementation<'a> {
             id: &implementation.id,
             implements: &implementation.implements,
             language: (&implementation.language).into(),
+            version: (&implementation.version).into(),
+            license: (&implementation.license).into(),
             target: (&implementation.target).into(),
+            dependencies: (&implementation.dependencies).into(),
+            abi: (&implementation.abi).into(),
             entrypoint: (&implementation.entrypoint).into(),
+            signature: (&implementation.signature).into(),
+            effects: (&implementation.effects).into(),
+            tests: (&implementation.tests).into(),
+        }
+    }
+}
+
+impl<'a> From<&'a Claim<Effects>> for WebEffectsClaim<'a> {
+    fn from(claim: &'a Claim<Effects>) -> Self {
+        Self {
+            value: WebEffects {
+                mutates: &claim.value.mutates,
+                io: &claim.value.io,
+                blocking: claim.value.blocking,
+                allocation: &claim.value.allocation,
+            },
+            level: claim.level.to_string(),
+            source: &claim.source,
         }
     }
 }
@@ -466,6 +522,40 @@ mod tests {
         assert_eq!(value["counts"]["problems"], 31);
         assert_eq!(value["counts"]["algorithms"], 36);
         assert_eq!(value["counts"]["implementations"], 40);
+        let graph_problem = value["problems"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|problem| problem["id"] == "graph.nonnegative_shortest_distances")
+            .unwrap();
+        assert!(
+            graph_problem["requires"]["value"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|requirement| requirement.as_str().unwrap().contains("nonnegative"))
+        );
+        let reservoir = value["algorithms"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|algorithm| algorithm["id"] == "stream.sample.reservoir_r")
+            .unwrap();
+        assert_eq!(reservoir["deterministic"]["value"], false);
+        let top_k = value["implementations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|implementation| implementation["id"] == "stream.top_k.rust.std_binary_heap.v1")
+            .unwrap();
+        assert_eq!(top_k["version"]["value"], "0.1.0");
+        assert_eq!(top_k["effects"]["level"], "tested");
+        assert!(
+            top_k["effects"]["value"]["allocation"]
+                .as_str()
+                .unwrap()
+                .contains("at most k")
+        );
         assert_eq!(value["datasets"].as_array().unwrap().len(), 10);
         assert_eq!(
             value["datasets"][4]["case_id"],

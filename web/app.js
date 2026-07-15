@@ -1,4 +1,14 @@
 import init, { VisualMachine } from "./pkg/atlas_web.js";
+import {
+  catalogRecords,
+  claimEntries,
+  comparableRows,
+  displayName,
+  executablePresentation,
+  filterCatalog,
+  findRecord,
+  relatedRecords,
+} from "./catalog.mjs";
 import { EXPLORE_MAX_LENGTH, generateSequence, randomSeed } from "./generator.mjs";
 import { PLAYBACK_SPEEDS, isLoopContext, playbackDelay } from "./playback.mjs";
 
@@ -61,7 +71,10 @@ const elements = Object.fromEntries(
     "trace-reset", "trace-previous", "trace-play", "trace-next", "trace-speed",
     "generator-profile", "generator-size", "generator-seed", "generator-random-seed", "generate-button",
     "scale-panel", "scale-operation", "scale-chart", "scale-note",
-    "catalog-search", "catalog-body",
+    "catalog-search", "catalog-kind", "catalog-result-count", "catalog-results",
+    "entity-detail-kind", "entity-detail-name", "entity-detail-id", "entity-compare",
+    "entity-execute", "entity-relation-list", "entity-claim-list", "comparison-panel",
+    "compare-left", "compare-right", "comparison-close", "comparison-grid",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -69,6 +82,7 @@ let projection;
 let wasmReady = false;
 let activeAlgorithm = "is_sorted";
 let generatedInput = null;
+let selectedEntityId;
 const tracePlayback = {
   algorithm: null,
   values: [],
@@ -688,36 +702,176 @@ function generateFromControls() {
   }
 }
 
-function claimSummary(entity, kind) {
-  if (kind === "problem") return [entity.output.value, entity.output.level];
-  if (kind === "algorithm") return [`${entity.time_worst.value} time; ${entity.auxiliary_memory.value} space`, entity.time_worst.level];
-  return [`${entity.language.value}; ${entity.target.value}`, entity.entrypoint.level];
+function formatValue(value) {
+  if (Array.isArray(value)) return value.length === 0 ? "None" : value.join("\n");
+  if (value && typeof value === "object") {
+    return [
+      `mutates: ${value.mutates.length === 0 ? "none" : value.mutates.join(", ")}`,
+      `I/O: ${value.io}`,
+      `blocking: ${value.blocking}`,
+      `allocation: ${value.allocation}`,
+    ].join("\n");
+  }
+  return String(value);
+}
+
+function claimFact(claim, absentLabel = "Not recorded") {
+  const fact = document.createElement("div");
+  fact.className = "claim-fact";
+  if (!claim) {
+    fact.classList.add("is-absent");
+    fact.textContent = absentLabel;
+    return fact;
+  }
+  const value = document.createElement("div");
+  value.className = "claim-value";
+  value.textContent = formatValue(claim.value);
+  const metadata = document.createElement("div");
+  metadata.className = "claim-metadata";
+  const level = document.createElement("span");
+  level.className = `evidence-level is-${claim.level}`;
+  level.textContent = claim.level;
+  const source = document.createElement("code");
+  source.textContent = claim.source;
+  metadata.append(level, source);
+  fact.append(value, metadata);
+  return fact;
+}
+
+function relationButton(relation) {
+  const button = document.createElement("button");
+  button.className = "entity-link";
+  button.type = "button";
+  button.dataset.entityId = relation.entity.id;
+  const label = document.createElement("span");
+  label.textContent = relation.relation;
+  const id = document.createElement("code");
+  id.textContent = relation.entity.id;
+  button.append(label, id);
+  return button;
+}
+
+function renderEntityDetail(record) {
+  elements["entity-detail-kind"].textContent = record.kind;
+  elements["entity-detail-name"].textContent = displayName(record);
+  elements["entity-detail-id"].textContent = record.entity.id;
+
+  const relations = relatedRecords(projection, record);
+  elements["entity-relation-list"].replaceChildren(...(relations.length > 0
+    ? relations.map(relationButton)
+    : [Object.assign(document.createElement("p"), {
+      className: "empty-relation",
+      textContent: "No related entity is recorded.",
+    })]));
+
+  elements["entity-claim-list"].replaceChildren(...claimEntries(record).map((entry) => {
+    const row = document.createElement("div");
+    row.className = "entity-claim";
+    const label = document.createElement("h5");
+    label.textContent = entry.label;
+    row.append(label, claimFact(entry.claim));
+    return row;
+  }));
+
+  const presentation = executablePresentation(projection, record);
+  elements["entity-execute"].hidden = !presentation;
+  elements["entity-execute"].dataset.presentationKey = presentation?.key ?? "";
+}
+
+function renderComparisonOptions(record) {
+  const records = catalogRecords(projection).filter((candidate) => candidate.kind === record.kind);
+  const options = (selectedId) => records.map((candidate) => {
+    const option = document.createElement("option");
+    option.value = candidate.entity.id;
+    option.textContent = `${displayName(candidate)} - ${candidate.entity.id}`;
+    option.selected = candidate.entity.id === selectedId;
+    return option;
+  });
+  const other = records.find((candidate) => candidate.entity.id !== record.entity.id) ?? record;
+  elements["compare-left"].replaceChildren(...options(record.entity.id));
+  elements["compare-right"].replaceChildren(...options(other.entity.id));
+}
+
+function renderComparison() {
+  const left = findRecord(projection, elements["compare-left"].value);
+  const right = findRecord(projection, elements["compare-right"].value);
+  if (!left || !right) return;
+  elements["comparison-grid"].replaceChildren(...comparableRows(left, right).map((comparison) => {
+    const row = document.createElement("div");
+    row.className = "comparison-row";
+    const label = document.createElement("h4");
+    label.textContent = comparison.label;
+    row.append(label, claimFact(comparison.left), claimFact(comparison.right));
+    return row;
+  }));
+}
+
+function openComparison(rightId) {
+  const record = findRecord(projection, selectedEntityId);
+  if (!record) return;
+  renderComparisonOptions(record);
+  const right = findRecord(projection, rightId);
+  if (right?.kind === record.kind) elements["compare-right"].value = right.entity.id;
+  renderComparison();
+  elements["comparison-panel"].hidden = false;
+}
+
+function selectCatalogEntity(id, reveal = false) {
+  const record = findRecord(projection, id);
+  if (!record) return;
+  selectedEntityId = id;
+  renderEntityDetail(record);
+  let selectedItem;
+  elements["catalog-results"].querySelectorAll("[data-entity-id]").forEach((item) => {
+    const selected = item.dataset.entityId === id;
+    item.classList.toggle("is-selected", selected);
+    item.setAttribute("aria-selected", String(selected));
+    if (selected) selectedItem = item;
+  });
+  if (!reveal || !selectedItem) return;
+  const results = elements["catalog-results"];
+  const itemTop = selectedItem.offsetTop;
+  const itemBottom = itemTop + selectedItem.offsetHeight;
+  if (itemTop < results.scrollTop || itemBottom > results.scrollTop + results.clientHeight) {
+    results.scrollTop = itemTop - (results.clientHeight - selectedItem.offsetHeight) / 2;
+  }
 }
 
 function renderCatalog() {
-  const term = elements["catalog-search"].value.trim().toLowerCase();
-  const rows = [
-    ...projection.problems.map((entity) => ["problem", entity, "defines"]),
-    ...projection.algorithms.map((entity) => ["algorithm", entity, `solves ${entity.solves}`]),
-    ...projection.implementations.map((entity) => ["implementation", entity, `implements ${entity.implements}`]),
-  ].filter(([, entity, relation]) => `${entity.id} ${relation} ${JSON.stringify(entity)}`.toLowerCase().includes(term));
-
-  elements["catalog-body"].replaceChildren(...rows.map(([kind, entity, relation]) => {
-    const row = document.createElement("tr");
-    const summary = claimSummary(entity, kind);
-    const kindCell = document.createElement("td");
-    kindCell.innerHTML = `<span class="kind-label">${kind}</span>`;
-    const idCell = document.createElement("td");
-    const code = document.createElement("code");
-    code.textContent = entity.id;
-    idCell.append(code);
-    const relationCell = document.createElement("td");
-    relationCell.textContent = `${relation}; ${summary[0]}`;
-    const evidenceCell = document.createElement("td");
-    evidenceCell.textContent = summary[1];
-    row.append(kindCell, idCell, relationCell, evidenceCell);
-    return row;
+  const records = filterCatalog(
+    projection,
+    elements["catalog-search"].value,
+    elements["catalog-kind"].value,
+  );
+  elements["catalog-result-count"].textContent = `${records.length} result${records.length === 1 ? "" : "s"}`;
+  elements["catalog-results"].replaceChildren(...records.map((record) => {
+    const button = document.createElement("button");
+    button.className = "catalog-result";
+    button.type = "button";
+    button.dataset.entityId = record.entity.id;
+    button.setAttribute("role", "option");
+    const kind = document.createElement("span");
+    kind.className = "kind-label";
+    kind.textContent = record.kind;
+    const name = document.createElement("strong");
+    name.textContent = displayName(record);
+    const id = document.createElement("code");
+    id.textContent = record.entity.id;
+    button.append(kind, name, id);
+    return button;
   }));
+
+  if (records.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "catalog-empty";
+    empty.textContent = "No registry entity matches these filters.";
+    elements["catalog-results"].append(empty);
+    return;
+  }
+  if (!records.some((record) => record.entity.id === selectedEntityId)) {
+    selectedEntityId = records[0].entity.id;
+  }
+  selectCatalogEntity(selectedEntityId, true);
 }
 
 function applyProjection() {
@@ -754,6 +908,18 @@ function applyProjection() {
   renderCatalog();
 }
 
+function setView(view) {
+  document.querySelectorAll("[data-view]").forEach((item) => {
+    const selected = item.dataset.view === view;
+    item.classList.toggle("is-active", selected);
+    item.setAttribute("aria-selected", String(selected));
+    document.getElementById(`${item.dataset.view}-view`).hidden = !selected;
+  });
+  if (view === "catalog" && projection && selectedEntityId) {
+    selectCatalogEntity(selectedEntityId, true);
+  }
+}
+
 document.querySelector(".algorithm-selector").addEventListener("click", (event) => {
   const option = event.target.closest("[data-algorithm]");
   if (!option) return;
@@ -765,14 +931,7 @@ document.querySelector(".algorithm-selector").addEventListener("click", (event) 
 });
 
 document.querySelectorAll("[data-view]").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll("[data-view]").forEach((item) => {
-      const selected = item === tab;
-      item.classList.toggle("is-active", selected);
-      item.setAttribute("aria-selected", String(selected));
-      document.getElementById(`${item.dataset.view}-view`).hidden = !selected;
-    });
-  });
+  tab.addEventListener("click", () => setView(tab.dataset.view));
 });
 
 elements["dataset-select"].addEventListener("change", () => {
@@ -845,11 +1004,42 @@ elements["run-button"].addEventListener("click", () => {
   if (runObservation()) setEditedInputPending(false);
 });
 elements["catalog-search"].addEventListener("input", renderCatalog);
+elements["catalog-kind"].addEventListener("change", renderCatalog);
+elements["catalog-results"].addEventListener("click", (event) => {
+  const item = event.target.closest("[data-entity-id]");
+  if (item) selectCatalogEntity(item.dataset.entityId);
+});
+elements["entity-relation-list"].addEventListener("click", (event) => {
+  const item = event.target.closest("[data-entity-id]");
+  if (!item) return;
+  elements["catalog-search"].value = "";
+  elements["catalog-kind"].value = "all";
+  renderCatalog();
+  selectCatalogEntity(item.dataset.entityId, true);
+});
+elements["entity-compare"].addEventListener("click", () => openComparison());
+elements["comparison-close"].addEventListener("click", () => {
+  elements["comparison-panel"].hidden = true;
+});
+elements["compare-left"].addEventListener("change", renderComparison);
+elements["compare-right"].addEventListener("change", renderComparison);
+elements["entity-execute"].addEventListener("click", () => {
+  const key = elements["entity-execute"].dataset.presentationKey;
+  if (!algorithmUi[key]) return;
+  selectAlgorithm(key);
+  populateDatasets();
+  applyProjection();
+  runObservation();
+  setView("execute");
+  document.getElementById("execute-view").scrollIntoView({ block: "start" });
+});
 
 const query = new URLSearchParams(window.location.search);
 renderPlaybackSpeeds();
 syncSeedMode(true);
 const requestedAlgorithm = query.get("algorithm");
+const requestedEntity = query.get("entity");
+const requestedComparison = query.get("compare");
 
 try {
   const [projectionResponse] = await Promise.all([
@@ -860,8 +1050,13 @@ try {
   projection = await projectionResponse.json();
   hydrateGeneratedAlgorithms();
   if (requestedAlgorithm && algorithmUi[requestedAlgorithm]) selectAlgorithm(requestedAlgorithm);
+  if (requestedEntity && findRecord(projection, requestedEntity)) selectedEntityId = requestedEntity;
   populateDatasets();
   applyProjection();
+  if (requestedEntity) {
+    setView("catalog");
+    if (requestedComparison) openComparison(requestedComparison);
+  }
   wasmReady = true;
   setRuntimeStatus("WASM ready", "ready");
   const requestedProfile = query.get("profile");

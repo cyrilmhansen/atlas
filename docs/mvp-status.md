@@ -51,8 +51,12 @@ disciplined evidence, while the control retained the right strategy but left
 Atlas identities unresolved. K-M7 concludes Phase 2 as mixed: foreign knowledge
 preservation is supported, but qualified public selection and generic
 composition remain unsupported. DEC-071 accepts that closure and activates
-Explorer-first Phase 3. E-M1 relational catalog and factual comparison is the
-next active milestone.
+Explorer-first Phase 3. E-M1 relational catalog and factual comparison is
+complete. All 107 entities now have searchable detail, exact chain navigation
+and sourced claims; same-kind comparison states missing facts explicitly and
+never ranks candidates. The five accepted visual programs remain the only
+execution handoffs. E-M2 evidence-centered handoff is the next active
+milestone.
 
 ## Latest closed slice
 

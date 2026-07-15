@@ -97,4 +97,20 @@ assert.ok(algorithm.time_worst.source);
 assert.equal(algorithm.auxiliary_memory.value, "O(1)");
 assert.ok(algorithm.auxiliary_memory.source);
 
+const graphProblem = projection.problems.find((item) => item.id === "graph.nonnegative_shortest_distances");
+assert.ok(graphProblem.requires);
+assert.match(graphProblem.requires.value.join(" "), /nonnegative/);
+
+const reservoir = projection.algorithms.find((item) => item.id === "stream.sample.reservoir_r");
+assert.equal(reservoir.deterministic.value, false);
+assert.equal(reservoir.requires, null);
+
+const topK = projection.implementations.find((item) => item.id === "stream.top_k.rust.std_binary_heap.v1");
+assert.equal(topK.version.value, "0.1.0");
+assert.equal(topK.license.value, "MIT");
+assert.match(topK.signature.value, /bounded_top_k/);
+assert.match(topK.effects.value.allocation, /at most k/);
+assert.equal(topK.effects.level, "tested");
+assert.equal(topK.tests.value.length, 1);
+
 console.log("Derived Web projection identity, datasets and sourced complexity passed.");

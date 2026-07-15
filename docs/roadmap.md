@@ -123,11 +123,16 @@ Phase 2 mixed and activates Phase 3 without changing schema 0.1.
 
 Phase 3 makes Atlas Explorer active, Knowledge maintained and Execution Lab
 frozen. The existing 31/36/40 static projection and five generated sequence
-executions are the baseline. E-M1 is the next active milestone: relational
-entity detail, exact bidirectional chain navigation and factual side-by-side
-comparison across the full catalog. Runtime growth, publication and stable Web
-formats remain excluded pending separate evidence and decisions. The active
-phase document is `docs/phase3-explorer.md`.
+executions are the baseline. E-M1 is complete: the local artifact now provides
+relational entity detail, exact bidirectional chain navigation, sourced claim
+inspection and factual same-kind comparison across the full catalog. It hands
+the five accepted executable algorithms to the existing workbench without
+implying execution support for the other 31 algorithms. E-M2 is the next active
+milestone: test whether visitors can distinguish registry knowledge, bounded
+execution and local observation before making further presentation changes.
+Runtime growth, publication and stable Web formats remain excluded pending
+separate evidence and decisions. See `docs/phase3-explorer.md` and
+`docs/phase3/e-m1-review.md`.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

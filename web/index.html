@@ -208,21 +208,76 @@
         <div class="catalog-header">
           <div>
             <p class="entity-id">Validated registry projection</p>
-            <h2>Problems, algorithms and implementations</h2>
+            <h2>Follow the knowledge chain</h2>
           </div>
-          <label class="search-field" for="catalog-search">
-            <span>Search</span>
-            <input id="catalog-search" type="search" placeholder="ID, name, relation">
-          </label>
+          <div class="catalog-controls">
+            <label class="search-field" for="catalog-search">
+              <span>Search</span>
+              <input id="catalog-search" type="search" placeholder="ID, name, claim, relation">
+            </label>
+            <label for="catalog-kind">Entity type
+              <select id="catalog-kind">
+                <option value="all">All entities</option>
+                <option value="problem">Problems</option>
+                <option value="algorithm">Algorithms</option>
+                <option value="implementation">Implementations</option>
+              </select>
+            </label>
+          </div>
         </div>
-        <div class="catalog-table-wrap">
-          <table>
-            <thead>
-              <tr><th>Kind</th><th>Identifier</th><th>Relation or characteristic</th><th>Evidence</th></tr>
-            </thead>
-            <tbody id="catalog-body"></tbody>
-          </table>
+
+        <section id="comparison-panel" class="comparison-panel" aria-labelledby="comparison-heading" hidden>
+          <div class="comparison-header">
+            <div>
+              <p class="section-index">Factual comparison</p>
+              <h3 id="comparison-heading">Recorded claims side by side</h3>
+            </div>
+            <div class="comparison-selectors">
+              <label for="compare-left">Left
+                <select id="compare-left"></select>
+              </label>
+              <label for="compare-right">Right
+                <select id="compare-right"></select>
+              </label>
+              <button id="comparison-close" type="button" aria-label="Close comparison">Close</button>
+            </div>
+          </div>
+          <p class="comparison-note">Atlas displays recorded facts and absences. It does not score or infer a winner.</p>
+          <div id="comparison-grid" class="comparison-grid"></div>
+        </section>
+
+        <div class="catalog-workspace">
+          <section class="catalog-results-panel" aria-labelledby="catalog-results-heading">
+            <div class="catalog-results-heading">
+              <h3 id="catalog-results-heading">Registry entities</h3>
+              <span id="catalog-result-count">0 results</span>
+            </div>
+            <div id="catalog-results" class="catalog-results" role="listbox" aria-label="Registry entities"></div>
+          </section>
+
+          <section class="entity-detail" aria-labelledby="entity-detail-name">
+            <div class="entity-detail-header">
+              <div>
+                <span id="entity-detail-kind" class="kind-label">Entity</span>
+                <h3 id="entity-detail-name">Select an entity</h3>
+                <code id="entity-detail-id">No identity selected</code>
+              </div>
+              <div class="entity-actions">
+                <button id="entity-compare" type="button">Compare</button>
+                <button id="entity-execute" class="primary-command" type="button" hidden>Open execution</button>
+              </div>
+            </div>
+            <div class="entity-relations">
+              <h4>Knowledge chain</h4>
+              <div id="entity-relation-list" class="entity-relation-list"></div>
+            </div>
+            <div class="entity-claims">
+              <h4>Recorded claims</h4>
+              <div id="entity-claim-list" class="entity-claim-list"></div>
+            </div>
+          </section>
         </div>
+
       </section>
     </main>
 

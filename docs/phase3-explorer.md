@@ -130,8 +130,9 @@ close before a representative visitor attempts the frozen protocol.
 Owner trial 1 is recorded in `docs/phase3/e-m2-owner-trial.md`. It additionally
 found confusion between the interactive WASM model and registered Rust
 implementation, and between behavioral tests and inferred complexity. Targeted
-labels and untruncated provenance are implemented; a confirmation pass remains
-open.
+labels and untruncated provenance are implemented. The corrected owner
+confirmation passes; E-M2 remains open only for an independent visitor run of
+the same frozen protocol.
 
 ### E-M3 - Distribution decision
 

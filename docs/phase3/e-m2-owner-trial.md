@@ -2,7 +2,8 @@
 
 Date: 2026-07-15
 
-Status: completed against checkpoint `c31fbe7`
+Status: initial response completed against `c31fbe7`; corrected confirmation
+passed against `5563c27`
 
 Protocol: `docs/phase3/e-m2-protocol.md`
 
@@ -48,3 +49,17 @@ whether Rust build tests determined what to do.
 
 No response justifies another executable algorithm, backend, DatasetSpec,
 schema field or evidence level.
+
+## Corrected confirmation
+
+After the targeted corrections, the owner confirmed:
+
+1. the `Open WASM model` backend boundary is unambiguous;
+2. `declared` and `inferred` evidence pills on breadth-first traversal are
+   visually distinct and clearly mean different things;
+3. `Registry evidence` returns clearly to the correct fiche.
+
+The three corrected dimensions therefore pass the informed-owner confirmation.
+The result supports publishing the E-M2 candidate, but does not remove the
+participant-boundary limitation: an independent visitor has not yet attempted
+the protocol.

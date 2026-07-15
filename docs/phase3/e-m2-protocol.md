@@ -1,6 +1,7 @@
 # E-M2 evidence-centered handoff protocol
 
-Status: active after owner trial 1 on 2026-07-15
+Status: implementation candidate confirmed by the owner; independent visitor
+run pending on 2026-07-15
 
 Authority: DEC-071 and `docs/phase3-explorer.md`
 
@@ -86,5 +87,6 @@ two additional boundary failures:
 
 The corrected interface names the WASM model explicitly, keeps implementation
 evidence separate, and renders the complete evidence level and provenance for
-workbench complexity claims. A confirmation pass remains required; the owner
-trial is informed rather than independent.
+workbench complexity claims. The owner confirmation passes all three corrected
+dimensions. An independent confirmation remains required because the owner
+trial is informed rather than blind.

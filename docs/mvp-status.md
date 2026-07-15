@@ -61,7 +61,8 @@ milestone. Its internal baseline now makes execution availability explicit and
 adds an exact workbench-to-registry return; representative visitor validation
 remains pending. Owner trial 1 then exposed confusion between the WASM model,
 Rust implementation tests and inferred complexity; the corrected labels and
-full provenance await confirmation. E-M3 distribution is complete under DEC-072: GitHub Pages publishes
+full provenance pass owner confirmation. Independent confirmation remains the
+E-M2 closure gate. E-M3 distribution is complete under DEC-072: GitHub Pages publishes
 only the Web-verified derived bundle from `main`, without stabilizing its private
 formats.
 

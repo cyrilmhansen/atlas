@@ -21,13 +21,15 @@
 - Desktop Chromium shows complete `DECLARED` complexity sources in the
   workbench; mobile BFS shows the distinct missing-WASM/available-evidence
   boundary without overlap.
+- The corrected owner confirmation passes backend identity, evidence-category
+  distinction and exact registry return.
 
 ### Limits
 
 - The owner is informed and therefore not an independent representative
   visitor.
-- Exact return-path use and the corrected BFS distinction require a confirmation
-  response before E-M2 closure.
+- Independent use of the corrected paths remains required before E-M2 closure;
+  the informed-owner confirmation alone is not generalized.
 - No registry claim, evidence level, implementation test, visual program or
   runtime changed.
 

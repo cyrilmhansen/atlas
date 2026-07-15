@@ -1,5 +1,34 @@
 # Progress log
 
+## 2026-07-15 - Adjudicate the independent K-M5 top-k submission
+
+### Result
+
+- Ran one isolated author against the frozen six-file packet in 2 minutes 27
+  seconds, with one under-one-minute parser-shape clarification.
+- Preserved the 85-line YAML and 132-line work record without semantic repair.
+- Validated 4 atoms, 1 registry-resolved candidate, 1 relation and 3 requests.
+- Obtained all three expected decisions from the unchanged generic evaluator:
+  two acceptances and one allocation rejection.
+- Classified the result as operationally convergent but taxonomically mixed:
+  output/exactness and effect/cost boundaries differ in ways that can affect
+  broader substitution.
+
+### Verification
+
+- All six supplied-file digests matched before and after authoring.
+- The independent adjudication test passes and names the exact negative reason.
+- No production evaluator, public schema, registry, CLI or dependency changed.
+
+### Limits
+
+- The frozen specification omitted nonempty cost-item syntax and required one
+  intervention; this is retained as protocol cost.
+- Three operational requests did not force canonical output/guarantee or
+  effect/cost decomposition.
+- K-M5 remains open pending a reversible private normalization choice and one
+  cross-encoding request.
+
 ## 2026-07-15 - Freeze the K-M5 independent-authoring packet
 
 ### Result

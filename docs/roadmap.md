@@ -88,8 +88,11 @@ facts. A bounded YAML overlay now exercises all seven discriminants through ten
 requests, and a 230-line generic evaluator produces five positive and five
 negative adjudications without candidate-specific branches. The full 826-line
 non-test Rust cost is part of the experiment result. K-M5 remains open for the
-independent-authoring test. Its isolated bounded top-k packet and three semantic
-requests are now frozen; no public schema promotion is implied.
+independent-authoring test. Its isolated bounded top-k submission agrees on all
+three frozen decisions without evaluator changes. The result remains mixed:
+output/exactness and effect/cost boundaries diverged taxonomically and can alter
+broader substitution. K-M5 therefore remains open for one private normalization
+choice and cross-encoding request; no public schema promotion is implied.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

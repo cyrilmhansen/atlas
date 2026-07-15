@@ -233,12 +233,45 @@ mod tests {
     use std::path::Path;
 
     use super::*;
-    use crate::decision_overlay::load_decision_overlay;
+    use crate::decision_overlay::{load_decision_overlay, validate_overlay_sources};
+    use crate::registry::load_registry;
 
     fn fixture() -> DecisionOverlay {
         let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         load_decision_overlay(&workspace.join("docs/phase2/k-m5-overlay.yaml"))
             .expect("committed K-M5 overlay must validate")
+    }
+
+    #[test]
+    fn independent_top_k_submission_matches_the_frozen_oracle() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let overlay = load_decision_overlay(
+            &workspace.join("docs/phase2/imports/k-m5/independent-topk/submission.yaml"),
+        )
+        .expect("independent submission must validate without repair");
+        let registry =
+            load_registry(&workspace.join("registry/atlas.yaml")).expect("committed registry");
+        assert!(validate_overlay_sources(&overlay, &registry, &workspace).is_empty());
+
+        let cases = [
+            ("request.empty_when_capacity_zero", true),
+            ("request.exact_with_bounded_retention", true),
+            ("request.exact_without_allocation", false),
+        ];
+        for (request_id, expected) in cases {
+            let decision = evaluate_request(&overlay, request_id)
+                .expect("mapped request")
+                .into_iter()
+                .find(|decision| decision.candidate_id == "candidate.bounded_top_k.binary_heap")
+                .expect("independently authored candidate");
+            assert_eq!(decision.accepted, expected, "request {request_id}");
+            if request_id == "request.exact_without_allocation" {
+                assert_eq!(
+                    decision.reasons,
+                    ["forbidden effect effect.allocates.retained_and_output_storage"]
+                );
+            }
+        }
     }
 
     #[test]

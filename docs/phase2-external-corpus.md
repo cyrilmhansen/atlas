@@ -298,6 +298,13 @@ one bounded top-k implementation and three pre-adjudicated requests. The author
 receives neither the reference facts nor evaluator tests. A standalone overlay
 avoids exceeding the reference experiment's eight-candidate ceiling.
 
+The isolated submission is now adjudicated. All three operational decisions
+agree without evaluator changes, but taxonomy is mixed: exactness was fused
+into the output capability and allocation was represented as an effect rather
+than a cost. K-M5 remains active until a private normalization rule and a
+cross-encoding request test whether those differences affect discovery beyond
+the original oracle.
+
 ### K-M6 - Blind agent-consumer experiment
 
 Give an agent registry/query/compose tools, task requirements and evidence, but

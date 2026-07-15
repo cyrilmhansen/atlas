@@ -1,6 +1,6 @@
 # K-M5 decision-overlay evaluator checkpoint
 
-Status: evaluator implemented; independent authoring and control-cost comparison pending
+Status: evaluator implemented; independent authoring operationally passes but taxonomy review remains
 
 Date: 2026-07-15
 
@@ -69,7 +69,8 @@ tests alone does not justify schema 0.2.
 ## Next experiment
 
 The reproducible task and isolation boundary are frozen in
-`k-m5-independent-authoring-packet.md`. Give that packet to an independent
-author without the committed overlay facts. Compare operational decisions after
-ID normalization, then record authoring time, reused atoms, new atoms and
-decision-changing differences. K-M5 remains open until this test is complete.
+`k-m5-independent-authoring-packet.md`. Its result is recorded in
+`k-m5-independent-authoring-result.md`: all three decisions agree, but the
+author independently fused output with exactness and represented allocation as
+an effect rather than a cost. K-M5 remains open for a private normalization
+choice and one cross-encoding request before any closure recommendation.

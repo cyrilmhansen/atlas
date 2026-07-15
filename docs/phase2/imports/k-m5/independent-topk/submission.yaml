@@ -1,0 +1,85 @@
+overlay_version: phase2-km5-0
+
+atoms:
+  - id: result.top_k.exact_occurrences
+    kind: capability
+  - id: result.sequence.empty
+    kind: capability
+  - id: condition.capacity.zero
+    kind: condition
+  - id: effect.allocates.retained_and_output_storage
+    kind: effect
+
+candidates:
+  - id: candidate.bounded_top_k.binary_heap
+    source: registry:stream.top_k.rust.std_binary_heap.v1
+    provides:
+      - atom: result.top_k.exact_occurrences
+        evidence:
+          level: tested
+          source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+          proof: null
+    requires: []
+    guarantees: []
+    effects:
+      - atom: effect.allocates.retained_and_output_storage
+        evidence:
+          level: tested
+          source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+          proof: null
+    consumes_state: null
+    produces_state: null
+    costs:
+      - operation: bounded_top_k
+        metric: retained_memory
+        regime: worst
+        bound: "O(k) persistent retained elements"
+        requires: []
+        evidence:
+          level: inferred
+          source: "docs:phase2/k-m3-streaming-approximation.md"
+          proof: null
+
+relations:
+  - from: result.top_k.exact_occurrences
+    to: result.sequence.empty
+    kind: projects_to
+    requires:
+      - condition.capacity.zero
+    evidence:
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+      proof: null
+
+requests:
+  - id: request.empty_when_capacity_zero
+    accepts: result.sequence.empty
+    provides_conditions:
+      - condition.capacity.zero
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [tested]
+  - id: request.exact_with_bounded_retention
+    accepts: result.top_k.exact_occurrences
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs:
+      - operation: bounded_top_k
+        metric: retained_memory
+        regime: worst
+        bound: "O(k) persistent retained elements"
+        requires: []
+    accepted_evidence: [tested, inferred]
+  - id: request.exact_without_allocation
+    accepts: result.top_k.exact_occurrences
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects:
+      - effect.allocates.retained_and_output_storage
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [tested]

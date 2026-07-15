@@ -127,6 +127,12 @@ absence of executable coverage and no explicit return from the workbench to the
 exact registry identity. Automated gates protect those facts, but E-M2 cannot
 close before a representative visitor attempts the frozen protocol.
 
+Owner trial 1 is recorded in `docs/phase3/e-m2-owner-trial.md`. It additionally
+found confusion between the interactive WASM model and registered Rust
+implementation, and between behavioral tests and inferred complexity. Targeted
+labels and untruncated provenance are implemented; a confirmation pass remains
+open.
+
 ### E-M3 - Distribution decision
 
 Status: complete under DEC-072 (`pages-A`).

@@ -739,6 +739,15 @@ function claimFact(claim, absentLabel = "Not recorded") {
   return fact;
 }
 
+function renderClaimProvenance(container, claim) {
+  const level = document.createElement("span");
+  level.className = `evidence-level is-${claim.level}`;
+  level.textContent = claim.level;
+  const source = document.createElement("code");
+  source.textContent = claim.source;
+  container.replaceChildren(level, source);
+}
+
 function relationButton(relation) {
   const button = document.createElement("button");
   button.className = "entity-link";
@@ -778,8 +787,8 @@ function renderEntityDetail(record) {
   const algorithm = record.kind === "algorithm";
   elements["entity-execution-status"].hidden = !algorithm;
   elements["entity-execution-status"].textContent = presentation
-    ? "Reviewed local execution available"
-    : "No reviewed local execution";
+    ? "Interactive WASM model available; implementation evidence is separate"
+    : "No interactive WASM model; implementation evidence remains available";
   elements["entity-execution-status"].classList.toggle("is-available", Boolean(presentation));
   elements["entity-execution-status"].classList.toggle("is-unavailable", algorithm && !presentation);
   elements["entity-execute"].hidden = !presentation;
@@ -895,9 +904,9 @@ function applyProjection() {
   elements["algorithm-id"].textContent = algorithm.id;
   elements["algorithm-name"].textContent = algorithm.name.value;
   elements["time-complexity"].textContent = algorithm.time_worst.value;
-  elements["time-provenance"].textContent = `${algorithm.time_worst.level}: ${algorithm.time_worst.source}`;
+  renderClaimProvenance(elements["time-provenance"], algorithm.time_worst);
   elements["space-complexity"].textContent = algorithm.auxiliary_memory.value;
-  elements["space-provenance"].textContent = `${algorithm.auxiliary_memory.level}: ${algorithm.auxiliary_memory.source}`;
+  renderClaimProvenance(elements["space-provenance"], algorithm.auxiliary_memory);
   elements["execution-boundary"].textContent = ui.boundary;
   elements["result-label"].textContent = ui.resultLabel;
   elements["comparison-label"].textContent = ui.comparisonLabel;

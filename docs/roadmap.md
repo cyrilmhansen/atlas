@@ -133,6 +133,10 @@ explicit for both covered and uncovered algorithms, and the workbench returns
 to exact registry evidence. A representative visitor run of
 `docs/phase3/e-m2-protocol.md` remains the closure gate; automated interface
 checks are not treated as comprehension evidence.
+The first informed owner trial found backend and evidence-category confusion.
+Atlas now names the interactive WASM model, keeps registered implementation
+evidence separate and shows complete claim provenance in the workbench. E-M2
+still requires a confirmation pass and should not grow another execution path.
 E-M3 is also complete under DEC-072: a dedicated workflow publishes the verified
 static bundle at `https://cyrilmhansen.github.io/atlas/`. Runtime growth, custom
 domains, other deployment targets and stable Web formats remain excluded

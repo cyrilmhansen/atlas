@@ -25,7 +25,7 @@ const CLAIMS = {
     ["entrypoint", "Entrypoint"],
     ["signature", "Signature"],
     ["effects", "Effects"],
-    ["tests", "Tests"],
+    ["tests", "Test evidence"],
   ],
 };
 

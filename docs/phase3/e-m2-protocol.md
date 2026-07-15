@@ -1,6 +1,6 @@
 # E-M2 evidence-centered handoff protocol
 
-Status: active baseline on 2026-07-15
+Status: active after owner trial 1 on 2026-07-15
 
 Authority: DEC-071 and `docs/phase3-explorer.md`
 
@@ -73,3 +73,18 @@ The only authorized corrections for this checkpoint are therefore an explicit
 availability state and an exact workbench-to-registry command. Theoretical
 claims, DatasetSpec presentation and local observation remain otherwise
 unchanged.
+
+## Owner trial 1 correction checkpoint
+
+`docs/phase3/e-m2-owner-trial.md` records the first human response. It exposed
+two additional boundary failures:
+
+- the interactive WASM model was confused with the registered Rust
+  implementation;
+- behavioral implementation tests were confused with, or expected to decide,
+  the algorithm complexity claim.
+
+The corrected interface names the WASM model explicitly, keeps implementation
+evidence separate, and renders the complete evidence level and provenance for
+workbench complexity claims. A confirmation pass remains required; the owner
+trial is informed rather than independent.

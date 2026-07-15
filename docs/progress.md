@@ -1,5 +1,36 @@
 # Progress log
 
+## 2026-07-15 - Correct E-M2 after owner trial 1
+
+### Result
+
+- Archived the informed project-owner response and scored it against the frozen
+  E-M2 rubric without presenting it as independent evidence.
+- Identified two substantive failures: the private WASM visual model was
+  confused with the registered Rust implementation, and behavioral build tests
+  were expected to determine the BFS complexity claim.
+- Renamed catalog availability and its command around the interactive WASM
+  model while stating that implementation evidence is separate.
+- Replaced truncated workbench provenance with explicit evidence badges and the
+  complete source; implementation `tests` now render as `Test evidence`.
+
+### Verification
+
+- `scripts/check-web.sh`: complete gate passed and asserts BFS traversal time as
+  `O(V + E)`, `inferred`, from `analysis:phase2/k-m1-graph-corpus`.
+- Desktop Chromium shows complete `DECLARED` complexity sources in the
+  workbench; mobile BFS shows the distinct missing-WASM/available-evidence
+  boundary without overlap.
+
+### Limits
+
+- The owner is informed and therefore not an independent representative
+  visitor.
+- Exact return-path use and the corrected BFS distinction require a confirmation
+  response before E-M2 closure.
+- No registry claim, evidence level, implementation test, visual program or
+  runtime changed.
+
 ## 2026-07-15 - Establish the E-M2 evidence-handoff checkpoint
 
 ### Result

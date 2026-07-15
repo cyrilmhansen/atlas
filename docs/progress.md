@@ -20,11 +20,16 @@
   expected repository URL.
 - The workflow YAML parses locally and `scripts/check-web.sh` passes before
   publication.
+- Pages run `29404848290` completed successfully for commit `07286bd`; the
+  public HTML, JavaScript, registry JSON and WASM resources all return HTTPS
+  `200` responses.
+- A headless Chromium load of the public BFS deep link rendered the expected
+  107-entity catalog and authoritative registry digest.
 
 ### Limits
 
-- The first remote deployment is produced only after the workflow commit reaches
-  `main`.
+- Only commits reaching `main` or an explicit manual dispatch can produce a
+  deployment.
 - The repository URL is supported, but deep links and private Web formats are
   not stable contracts.
 - No custom domain, analytics, service worker, remote execution or additional

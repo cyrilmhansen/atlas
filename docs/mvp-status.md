@@ -66,6 +66,11 @@ E-M2 closure gate. E-M3 distribution is complete under DEC-072: GitHub Pages pub
 only the Web-verified derived bundle from `main`, without stabilizing its private
 formats.
 
+The provisional exit audit in `docs/phase3/phase3-exit-audit.md` supports every
+technical Phase 3 criterion and isolates the unchanged independent visitor run
+as the sole closure blocker. Explorer feature growth is frozen while that
+evidence is pending; no Phase 4 program is active.
+
 ## Latest closed slice
 
 MVP 6 replaces algorithm-specific Web steppers and rendering branches with one

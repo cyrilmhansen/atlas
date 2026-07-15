@@ -144,6 +144,15 @@ domains, other deployment targets and stable Web formats remain excluded
 pending separate evidence and decisions. See `docs/phase3-explorer.md` and
 `docs/phase3/e-m1-review.md`.
 
+The provisional Phase 3 exit audit maps every criterion to current evidence.
+All technical and provenance criteria are supported; representative
+comprehension remains the sole blocking gap because the successful owner
+confirmation is informed and non-independent. Explorer feature work is frozen
+until that unchanged protocol is attempted independently. If it passes, the
+recommended next program is the deferred bounded comparative foreign-selection
+experiment in Atlas Knowledge, not further Explorer or Execution Lab growth;
+this recommendation does not activate Phase 4.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

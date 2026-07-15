@@ -1,5 +1,32 @@
 # Progress log
 
+## 2026-07-15 - Prepare the provisional Phase 3 exit audit
+
+### Result
+
+- Mapped every Phase 3 exit criterion to E-M1, E-M2, responsive, reproducible
+  build and public-distribution evidence.
+- Classified the technical and provenance criteria as supported while keeping
+  representative comprehension partial and blocking.
+- Froze additional Explorer feature work until one independent visitor attempts
+  the unchanged E-M2 protocol.
+- Recommended the deferred Knowledge comparative foreign-selection experiment
+  after Phase 3 closure without activating Phase 4.
+
+### Verification
+
+- The audit links the frozen protocol, owner trial, E-M1 review and DEC-072
+  publication boundary directly.
+- The public candidate remains the Web-verified static artifact; the latest
+  implementation gate passed before this documentation-only audit.
+
+### Limits
+
+- No independent visitor response has been collected, so E-M2 and Phase 3
+  remain open.
+- No code, registry claim, schema, runtime or private Web format changed.
+- No Phase 4 work program was activated.
+
 ## 2026-07-15 - Correct E-M2 after owner trial 1
 
 ### Result

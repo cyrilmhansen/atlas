@@ -2,6 +2,8 @@
 
 Status: active under DEC-071
 
+Provisional exit audit: `docs/phase3/phase3-exit-audit.md`
+
 Active program: Atlas Explorer
 
 Inputs: K-M7 mixed Phase 2 audit, the closed MVP 5/MVP 6 artifact and current
@@ -133,6 +135,10 @@ implementation, and between behavioral tests and inferred complexity. Targeted
 labels and untruncated provenance are implemented. The corrected owner
 confirmation passes; E-M2 remains open only for an independent visitor run of
 the same frozen protocol.
+
+No additional Explorer feature work is authorized while that evidence is
+pending. Only an observed defect that prevents a frozen protocol task may
+justify a targeted correction.
 
 ### E-M3 - Distribution decision
 

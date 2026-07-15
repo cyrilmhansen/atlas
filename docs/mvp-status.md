@@ -1,9 +1,9 @@
 # Project status
 
-- Active phase: **none**; Phase 3 closed supported under DEC-073
+- Active phase: **Phase 4 - Comparative foreign selection** under DEC-074
 - Phase 2: **closed mixed** at the K-M7 synthesis
-- Active work program: **none pending the next phase decision**
-- Atlas Knowledge: **maintained**
+- Active work program: **Atlas Knowledge**
+- Atlas Knowledge: **active**
 - Atlas Execution Lab: **frozen**
 - Atlas Explorer: **maintained and publicly available**
 - Public Explorer: `https://cyrilmhansen.github.io/atlas/` under DEC-072
@@ -15,7 +15,7 @@
 - MVP 5: closed under DEC-060
 - MVP 6: closed under DEC-064
 
-Post-foundation planning is accepted under DEC-065 through DEC-073. The external
+Post-foundation planning is accepted under DEC-065 through DEC-074. The external
 audit, three-program vocabulary and closed external-corpus and Explorer phases
 are recorded in
 `docs/audits/2026-07-14-external-project-audit.md`,
@@ -68,8 +68,9 @@ complete under DEC-072: GitHub Pages publishes only the Web-verified derived
 bundle from `main`, without stabilizing its private formats.
 
 The exit audit in `docs/phase3/phase3-exit-audit.md` supports every technical
-Phase 3 criterion. No Phase 4 program is active; comparative foreign selection
-remains the recommended next decision.
+Phase 3 criterion. DEC-074 activates Phase 4 comparative foreign selection.
+K4-M0 has frozen its cross-family requests and schema 0.1 controls before any
+competitor import or evaluator choice. K4-M1 graph source review is next.
 
 ## Latest closed slice
 

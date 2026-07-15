@@ -1,5 +1,82 @@
 # Progress log
 
+## 2026-07-15 - Review K4-M1 DFS sources
+
+### Result
+
+- Compared the already pinned petgraph DFS, the independent rs-graph DFS and an
+  Atlas-authored translation from a cited external description.
+- Recommended petgraph 0.8.3 as the controlled first competitor: no dependency
+  change, explicit stack/discovered state and direct incremental traversal.
+- Preserved its same-upstream limitation and deferred stronger implementation-
+  source diversity to the next foreign-family batches.
+
+### Verification
+
+- Official petgraph 0.8.3 documentation confirms DFS preorder, reachable-only
+  traversal, explicit stack/discovered state and MIT/Apache-2.0 licensing.
+- Official rs-graph documentation confirms iterator DFS and GPL-3.0+ licensing.
+- The Princeton source states the expected linear bounds and GPLv3 code
+  boundary; Atlas would cite, not copy, it.
+
+### Limits
+
+- B1 remains open; no source option is implemented before owner validation.
+- Option A does not provide independent upstream-project diversity from BFS.
+- No dependency, registry entity, test or selection behavior changed.
+
+## 2026-07-15 - Freeze the K4-M0 selection baseline
+
+### Result
+
+- Inventoried the sole current graph reachability, priority-queue push and exact
+  top-k candidates.
+- Froze twelve candidate-independent requests spanning positive, negative,
+  missing-fact and missing-query outcomes before competitor import.
+- Defined source independence, implementation provenance, falsifiers and stop
+  conditions for the three comparison batches.
+
+### Verification
+
+- The current CLI discovers `priority_queue.push.rust.std.1_85` for the
+  `--in-place` request.
+- Allocation-free graph reachability and top-k controls return no candidates.
+- `docs/phase4/k4-m0-protocol.md` records the exact commands and authority
+  boundary.
+
+### Limits
+
+- Empty public qualification output does not explain rejection versus missing
+  facts.
+- Conditioned claims, state compatibility, output order and asymptotic
+  thresholds remain outside the public query.
+- The Phase 4 experimental qualification representation remains undecided.
+
+## 2026-07-15 - Activate Phase 4 comparative foreign selection
+
+### Result
+
+- Accepted `phase4-A` in DEC-074 and activated Atlas Knowledge while keeping
+  Explorer maintained and Execution Lab frozen.
+- Defined a three-family experiment over graph reachability, dynamic priority
+  queues and exact bounded top-k.
+- Made frozen pre-import requests and schema 0.1 controls the first milestone,
+  before choosing an evaluator or importing a competitor.
+- Preserved schema 0.1 and the K-M5 overlay as unchanged controls.
+
+### Verification
+
+- The phase question, competing hypotheses, milestones, exit evidence and
+  explicit exclusions are recorded in `docs/phase4-comparative-selection.md`.
+- Roadmap, status, vocabulary and README agree on program ownership.
+
+### Limits
+
+- No competitor source or new dependency is selected yet.
+- No schema, CLI, evaluator, registry, runtime or Explorer behavior changed.
+- Public schema/CLI promotion remains a class C decision after cross-family
+  evidence.
+
 ## 2026-07-15 - Close Phase 3 supported
 
 ### Result

@@ -32,7 +32,8 @@ activate Phase 2. The audit and maintained planning documents are:
 
 Phase 2 ran with Atlas Knowledge active, Execution Lab frozen and Explorer
 maintained. DEC-071 closed that phase mixed and made Explorer active for Phase
-3; DEC-073 now closes Phase 3 supported with no subsequent phase active.
+3; DEC-073 closes Phase 3 supported. DEC-074 now activates Phase 4 comparative
+foreign selection with Knowledge active and the other programs constrained.
 
 K-M0 is complete with a mixed, informative result. Its six isolated imports and
 comparison report are under `docs/phase2/`. BFS and union-find converged at the
@@ -150,7 +151,18 @@ and provenance criteria are supported; owner comprehension is accepted with a
 documented independence limitation. The recommended next program is the
 deferred bounded comparative foreign-selection experiment in Atlas Knowledge,
 not further Explorer or Execution Lab growth;
-this recommendation does not activate Phase 4.
+DEC-074 accepts this recommendation as Phase 4. K4-M0 freezes the selection
+requests and schema 0.1 controls before any competitor or evaluator change. The
+phase then exercises graph reachability, dynamic priority queues and exact
+bounded top-k before any schema 0.2 proposal.
+
+K4-M0 is complete in `docs/phase4/k4-m0-protocol.md`. It inventories one current
+candidate per target problem and freezes positive, negative, missing-fact and
+missing-query cases without naming future candidates. The public control finds
+the existing in-place priority-queue push and rejects allocation-free graph and
+top-k requests, but cannot express conditioned costs, state compatibility,
+output ordering or asymptotic thresholds. K4-M1 source review is next; no
+qualification representation has yet been selected.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

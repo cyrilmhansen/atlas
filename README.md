@@ -50,15 +50,16 @@ presentation shapes are not public contracts.
 Phase 2 is closed mixed under DEC-071. K-M7 found foreign knowledge preservation
 useful while public qualified selection and generic composition remain
 unsupported. DEC-071 activated **Phase 3 - Explorer product trial** and DEC-073
-closes it supported: Atlas Explorer is now maintained and public while no new
-phase is active. E-M1 is complete with searchable entity detail, exact relation
+closes it supported. DEC-074 activates **Phase 4 - Comparative foreign
+selection** with Knowledge active, Explorer maintained and Execution Lab
+frozen. E-M1 is complete with searchable entity detail, exact relation
 navigation, sourced
 claims and factual same-kind comparison. E-M2 validates the distinction between
 knowledge, bounded execution and local observation with the informed-owner
 limitation recorded explicitly. DEC-072 completes E-M3 distribution through
 the dedicated GitHub Pages workflow. See `docs/phase3-explorer.md`,
 `docs/phase3/e-m1-review.md` and
-`docs/phase3/phase3-exit-audit.md`, plus
+`docs/phase3/phase3-exit-audit.md`, `docs/phase4-comparative-selection.md` and
 `docs/phase2/k-m7-phase-audit.md`. K-M4-W repaired the inaccessible
 online-moments source with two open primary reports while retaining a neutral
 algorithm identity. DEC-067 and DEC-068 accept the subsequent bounded ontology
@@ -101,7 +102,11 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/phase3-explorer.md`: closed Explorer product phase, boundaries and milestone plan;
 - `docs/phase3/e-m1-review.md`: relational catalog acceptance evidence and limits;
 - `docs/phase3/phase3-exit-audit.md`: supported Phase 3 verdict and its evidence limitation;
+- `docs/phase4-comparative-selection.md`: active cross-family competitor and selection experiment;
+- `docs/phase4/k4-m0-protocol.md`: frozen pre-import requests and schema 0.1 control baseline;
+- `docs/phase4/k4-m1-dfs-source-review.md`: first competitor source options and dependency tradeoffs;
 - `docs/decisions/DEC-073-close-phase3-supported.md`: owner acceptance and Phase 3 closure boundary;
+- `docs/decisions/DEC-074-activate-phase4-comparative-selection.md`: Phase 4 authority and exclusions;
 - `docs/decisions/DEC-072-publish-explorer-on-github-pages.md`: public distribution boundary;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;

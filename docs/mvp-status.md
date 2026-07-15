@@ -1,11 +1,11 @@
 # Project status
 
-- Active phase: **Phase 3 - Explorer product trial** under DEC-071
+- Active phase: **none**; Phase 3 closed supported under DEC-073
 - Phase 2: **closed mixed** at the K-M7 synthesis
-- Active work program: **Atlas Explorer**
+- Active work program: **none pending the next phase decision**
 - Atlas Knowledge: **maintained**
 - Atlas Execution Lab: **frozen**
-- Atlas Explorer: **active**
+- Atlas Explorer: **maintained and publicly available**
 - Public Explorer: `https://cyrilmhansen.github.io/atlas/` under DEC-072
 - Historical MVP status: MVP 1 through MVP 6 closed; no subsequent MVP activated
 - MVP 1: closed locally at baseline `8a2a520`
@@ -15,9 +15,9 @@
 - MVP 5: closed under DEC-060
 - MVP 6: closed under DEC-064
 
-Post-foundation planning is accepted under DEC-065 through DEC-072. The external
-audit, three-program vocabulary, closed external-corpus phase and active
-Explorer phase are recorded in
+Post-foundation planning is accepted under DEC-065 through DEC-073. The external
+audit, three-program vocabulary and closed external-corpus and Explorer phases
+are recorded in
 `docs/audits/2026-07-14-external-project-audit.md`,
 `docs/project-vocabulary.md`, `docs/phase2-external-corpus.md` and
 `docs/phase3-explorer.md`.
@@ -52,24 +52,24 @@ disciplined evidence, while the control retained the right strategy but left
 Atlas identities unresolved. K-M7 concludes Phase 2 as mixed: foreign knowledge
 preservation is supported, but qualified public selection and generic
 composition remain unsupported. DEC-071 accepts that closure and activates
-Explorer-first Phase 3. E-M1 relational catalog and factual comparison is
-complete. All 107 entities now have searchable detail, exact chain navigation
+Explorer-first Phase 3. Phase 3 is now closed supported under DEC-073. E-M1
+relational catalog and factual comparison is complete. All 107 entities now
+have searchable detail, exact chain navigation
 and sourced claims; same-kind comparison states missing facts explicitly and
 never ranks candidates. The five accepted visual programs remain the only
-execution handoffs. E-M2 evidence-centered handoff is the next active
-milestone. Its internal baseline now makes execution availability explicit and
-adds an exact workbench-to-registry return; representative visitor validation
-remains pending. Owner trial 1 then exposed confusion between the WASM model,
+execution handoffs. E-M2 evidence-centered handoff is complete. Its internal
+baseline makes execution availability explicit and adds an exact
+workbench-to-registry return. Representative visitor validation was not
+performed. Owner trial 1 instead exposed confusion between the WASM model,
 Rust implementation tests and inferred complexity; the corrected labels and
-full provenance pass owner confirmation. Independent confirmation remains the
-E-M2 closure gate. E-M3 distribution is complete under DEC-072: GitHub Pages publishes
-only the Web-verified derived bundle from `main`, without stabilizing its private
-formats.
+full provenance pass owner confirmation. DEC-073 accepts this result while
+retaining its informed, non-independent limitation. E-M3 distribution is
+complete under DEC-072: GitHub Pages publishes only the Web-verified derived
+bundle from `main`, without stabilizing its private formats.
 
-The provisional exit audit in `docs/phase3/phase3-exit-audit.md` supports every
-technical Phase 3 criterion and isolates the unchanged independent visitor run
-as the sole closure blocker. Explorer feature growth is frozen while that
-evidence is pending; no Phase 4 program is active.
+The exit audit in `docs/phase3/phase3-exit-audit.md` supports every technical
+Phase 3 criterion. No Phase 4 program is active; comparative foreign selection
+remains the recommended next decision.
 
 ## Latest closed slice
 

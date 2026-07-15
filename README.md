@@ -49,13 +49,15 @@ presentation shapes are not public contracts.
 
 Phase 2 is closed mixed under DEC-071. K-M7 found foreign knowledge preservation
 useful while public qualified selection and generic composition remain
-unsupported. DEC-071 activates **Phase 3 - Explorer product trial**: Atlas
-Explorer is active, Knowledge maintained and Execution Lab frozen. E-M1 is
-complete with searchable entity detail, exact relation navigation, sourced
-claims and factual same-kind comparison. E-M2 next evaluates the distinction
-between knowledge, bounded execution and local observation before any runtime
-growth. DEC-072 completes E-M3 distribution through the dedicated GitHub Pages
-workflow. See `docs/phase3-explorer.md`, `docs/phase3/e-m1-review.md` and
+unsupported. DEC-071 activated **Phase 3 - Explorer product trial** and DEC-073
+closes it supported: Atlas Explorer is now maintained and public while no new
+phase is active. E-M1 is complete with searchable entity detail, exact relation
+navigation, sourced
+claims and factual same-kind comparison. E-M2 validates the distinction between
+knowledge, bounded execution and local observation with the informed-owner
+limitation recorded explicitly. DEC-072 completes E-M3 distribution through
+the dedicated GitHub Pages workflow. See `docs/phase3-explorer.md`,
+`docs/phase3/e-m1-review.md` and
 `docs/phase3/phase3-exit-audit.md`, plus
 `docs/phase2/k-m7-phase-audit.md`. K-M4-W repaired the inaccessible
 online-moments source with two open primary reports while retaining a neutral
@@ -80,7 +82,7 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/mvp6-review.md`: MVP 6 closure audit and reproducibility evidence;
 - `docs/audits/2026-07-14-external-project-audit.md`: external post-foundation audit;
 - `docs/project-vocabulary.md`: accepted work-program and planning vocabulary;
-- `docs/phase2-external-corpus.md`: active external-corpus and agent-consumer phase;
+- `docs/phase2-external-corpus.md`: closed external-corpus and agent-consumer phase;
 - `docs/phase2/k-m1-graph-corpus.md`: first external graph batch and model-friction report;
 - `docs/phase2/k-m4-dual-import-comparison.md`: independent normalization agreement and divergence gate;
 - `docs/phase2/k-m4-w-comparison.md`: open-access source repair for incremental second central moments;
@@ -96,9 +98,10 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/phase2/k-m6-agent-consumer-protocol.md`: frozen assisted/control task and source-reveal protocol;
 - `docs/phase2/k-m6-result.md`: supported blind agent-consumer comparison and measured interface cost;
 - `docs/phase2/k-m7-phase-audit.md`: mixed Phase 2 synthesis, exit audit and next-phase options;
-- `docs/phase3-explorer.md`: active Explorer product phase, boundaries and milestone plan;
+- `docs/phase3-explorer.md`: closed Explorer product phase, boundaries and milestone plan;
 - `docs/phase3/e-m1-review.md`: relational catalog acceptance evidence and limits;
-- `docs/phase3/phase3-exit-audit.md`: provisional exit evidence and the remaining independent visitor gate;
+- `docs/phase3/phase3-exit-audit.md`: supported Phase 3 verdict and its evidence limitation;
+- `docs/decisions/DEC-073-close-phase3-supported.md`: owner acceptance and Phase 3 closure boundary;
 - `docs/decisions/DEC-072-publish-explorer-on-github-pages.md`: public distribution boundary;
 - `docs/performance-model-research.md`: non-normative layered performance-model research;
 - `docs/vision.md`: authoritative project vision;

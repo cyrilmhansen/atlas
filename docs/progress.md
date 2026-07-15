@@ -1,5 +1,28 @@
 # Progress log
 
+## 2026-07-15 - Close Phase 3 supported
+
+### Result
+
+- Recorded the owner's explicit acceptance of the corrected E-M2 protocol in
+  DEC-073 instead of retaining an indefinite independent-visitor gate.
+- Closed E-M2 and Phase 3 supported while preserving the informed,
+  non-independent evidence limitation.
+- Kept Explorer public and maintained, Execution Lab frozen and Phase 4
+  inactive pending a separate trajectory decision.
+
+### Verification
+
+- The final exit audit maps every Phase 3 criterion to its exact evidence and
+  acceptance qualification.
+- Roadmap, project status, phase document and README agree on closure.
+
+### Limits
+
+- No independent or representative usability result is claimed.
+- No code, schema, registry, runtime or private Web interface changed.
+- Comparative foreign selection is recommended but not activated.
+
 ## 2026-07-15 - Prepare the provisional Phase 3 exit audit
 
 ### Result

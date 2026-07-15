@@ -31,8 +31,8 @@ activate Phase 2. The audit and maintained planning documents are:
 - `docs/phase2-external-corpus.md`.
 
 Phase 2 ran with Atlas Knowledge active, Execution Lab frozen and Explorer
-maintained. DEC-071 now closes that phase mixed and makes Explorer active for
-Phase 3, with Knowledge maintained and Execution Lab still frozen.
+maintained. DEC-071 closed that phase mixed and made Explorer active for Phase
+3; DEC-073 now closes Phase 3 supported with no subsequent phase active.
 
 K-M0 is complete with a mixed, informative result. Its six isolated imports and
 comparison report are under `docs/phase2/`. BFS and union-find converged at the
@@ -121,36 +121,35 @@ recommends a bounded comparative foreign-selection phase before schema 0.2.
 DEC-071 instead accepts the documented Explorer-first alternative, closes
 Phase 2 mixed and activates Phase 3 without changing schema 0.1.
 
-Phase 3 makes Atlas Explorer active, Knowledge maintained and Execution Lab
-frozen. The existing 31/36/40 static projection and five generated sequence
-executions are the baseline. E-M1 is complete: the local artifact now provides
+Phase 3 made Atlas Explorer active, Knowledge maintained and Execution Lab
+frozen. It is closed supported under DEC-073. The existing 31/36/40 static
+projection and five generated sequence executions are the baseline. E-M1 is
+complete: the local artifact now provides
 relational entity detail, exact bidirectional chain navigation, sourced claim
 inspection and factual same-kind comparison across the full catalog. It hands
 the five accepted executable algorithms to the existing workbench without
-implying execution support for the other 31 algorithms. E-M2 is the next active
-milestone and its internal checkpoint is complete: execution availability is
-explicit for both covered and uncovered algorithms, and the workbench returns
+implying execution support for the other 31 algorithms. E-M2 is complete:
+execution availability is explicit for both covered and uncovered algorithms,
+and the workbench returns
 to exact registry evidence. A representative visitor run of
-`docs/phase3/e-m2-protocol.md` remains the closure gate; automated interface
-checks are not treated as comprehension evidence.
+`docs/phase3/e-m2-protocol.md` was retained as the comprehension protocol;
+automated interface checks are not treated as comprehension evidence.
 The first informed owner trial found backend and evidence-category confusion.
 Atlas now names the interactive WASM model, keeps registered implementation
 evidence separate and shows complete claim provenance in the workbench. E-M2
-passes its informed-owner confirmation and is ready for public independent
-confirmation. It should not grow another execution path.
+passes its informed-owner confirmation. DEC-073 accepts that evidence while
+recording its non-independent limit. It should not grow another execution path.
 E-M3 is also complete under DEC-072: a dedicated workflow publishes the verified
 static bundle at `https://cyrilmhansen.github.io/atlas/`. Runtime growth, custom
 domains, other deployment targets and stable Web formats remain excluded
 pending separate evidence and decisions. See `docs/phase3-explorer.md` and
 `docs/phase3/e-m1-review.md`.
 
-The provisional Phase 3 exit audit maps every criterion to current evidence.
-All technical and provenance criteria are supported; representative
-comprehension remains the sole blocking gap because the successful owner
-confirmation is informed and non-independent. Explorer feature work is frozen
-until that unchanged protocol is attempted independently. If it passes, the
-recommended next program is the deferred bounded comparative foreign-selection
-experiment in Atlas Knowledge, not further Explorer or Execution Lab growth;
+The Phase 3 exit audit maps every criterion to current evidence. All technical
+and provenance criteria are supported; owner comprehension is accepted with a
+documented independence limitation. The recommended next program is the
+deferred bounded comparative foreign-selection experiment in Atlas Knowledge,
+not further Explorer or Execution Lab growth;
 this recommendation does not activate Phase 4.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR

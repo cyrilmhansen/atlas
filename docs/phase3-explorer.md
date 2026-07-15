@@ -1,10 +1,10 @@
 # Phase 3 - Explorer product trial
 
-Status: active under DEC-071
+Status: closed supported under DEC-073
 
-Provisional exit audit: `docs/phase3/phase3-exit-audit.md`
+Exit audit: `docs/phase3/phase3-exit-audit.md`
 
-Active program: Atlas Explorer
+Phase program: Atlas Explorer
 
 Inputs: K-M7 mixed Phase 2 audit, the closed MVP 5/MVP 6 artifact and current
 31/36/40 registry projection
@@ -22,7 +22,7 @@ The phase tests product usefulness, not a new ontology or runtime.
 
 | Program | Status | Allowed work |
 |---|---|---|
-| Atlas Explorer | `active` | catalog workflows, relation navigation, factual comparison, existing interactive execution, responsive presentation |
+| Atlas Explorer | `maintained` | public artifact and blocking correctness fixes only after Phase 3 closure |
 | Atlas Knowledge | `maintained` | correctness, provenance, schema 0.1 compatibility and blocking projection fixes only |
 | Atlas Execution Lab | `frozen` | CI/correction maintenance and use of the five accepted visual programs only |
 
@@ -42,8 +42,8 @@ No repository or crate split follows from these ownership boundaries.
 - native/WASM/differential gates and multi-width browser evidence retained from
   MVP 5 and MVP 6.
 
-The primary baseline gap is not entity coverage. Visitors cannot naturally
-move through Problem -> Algorithm -> Implementation chains, inspect all relevant
+At activation, the primary baseline gap was not entity coverage. Visitors could
+not naturally move through Problem -> Algorithm -> Implementation chains, inspect all relevant
 claims in context or compare two candidates without mentally reconstructing the
 registry from table rows.
 
@@ -114,7 +114,7 @@ Acceptance:
 
 ### E-M2 - Evidence-centered execution handoff
 
-Status: active. Internal baseline and visitor protocol:
+Status: complete under DEC-073. Internal baseline and visitor protocol:
 `docs/phase3/e-m2-protocol.md`.
 
 Connect entity detail, sourced complexity, DatasetSpec context and the existing
@@ -126,19 +126,17 @@ solely to fill an empty state.
 
 The internal checkpoint found and corrected two presentation failures: silent
 absence of executable coverage and no explicit return from the workbench to the
-exact registry identity. Automated gates protect those facts, but E-M2 cannot
-close before a representative visitor attempts the frozen protocol.
+exact registry identity. Automated gates protect those facts. The initial
+protocol required a representative visitor before closure; DEC-073 later
+accepted the corrected owner trial as sufficient.
 
 Owner trial 1 is recorded in `docs/phase3/e-m2-owner-trial.md`. It additionally
 found confusion between the interactive WASM model and registered Rust
 implementation, and between behavioral tests and inferred complexity. Targeted
 labels and untruncated provenance are implemented. The corrected owner
-confirmation passes; E-M2 remains open only for an independent visitor run of
-the same frozen protocol.
-
-No additional Explorer feature work is authorized while that evidence is
-pending. Only an observed defect that prevents a frozen protocol task may
-justify a targeted correction.
+confirmation passes. DEC-073 accepts that evidence as sufficient to complete
+E-M2 while retaining the explicit limitation that the trial was informed and
+non-independent.
 
 ### E-M3 - Distribution decision
 

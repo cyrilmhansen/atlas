@@ -5,6 +5,8 @@ pub mod datasets;
 mod decision_equivalence;
 pub mod decision_evaluator;
 pub mod decision_overlay;
+#[cfg(test)]
+mod decision_projection;
 pub mod executions;
 pub mod expressions;
 pub mod index;

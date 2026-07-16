@@ -6,7 +6,8 @@ decision record differ.
 
 ## Current position
 
-MVP 1 through MVP 6 are closed. No subsequent MVP is active. GitHub CI runs the
+MVP 1 through MVP 6 and post-MVP Phases 2 through 5 are closed. No phase is
+active. GitHub CI runs the
 reproducible MVP 2 acceptance gate, all workspace targets, the RV64 LP64 probe
 and the MIR RV64 generator probe on pushes and pull requests. The project has a
 Git-authoritative YAML registry (31 problems, 39 algorithms and 43
@@ -194,6 +195,13 @@ selection with a distinct `O(n + k log k)` / `2k` tradeoff. K4-M4 closes the
 phase: discovery is generic and adjudication conservative, but fact projection
 remains manual and cost expressions remain opaque. No evaluator or schema
 extension is justified by the result.
+
+Phase 5 executes one bounded consumer case without a public interface. A
+private test-only projector derives candidate identity, declared problem
+compatibility and allocation effects directly from schema 0.1. It rejects both
+allocating top-k candidates and automatically accepts an executed test-only
+caller-storage implementation added only to the manifest fixture. The phase closes supported
+for this request; no generic projector or schema change follows.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

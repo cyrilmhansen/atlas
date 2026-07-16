@@ -10,7 +10,7 @@ selection code or a premature public schema change.
 
 ## Demonstrated state
 
-- Phase 4 is closed supported with explicit query limitations.
+- Phase 5 is closed supported for one bounded consumer projection.
 - The registry contains 31 Problems, 39 Algorithms and 43 Implementations.
 - Graph reachability, priority-queue push and exact bounded top-k each have two
   candidates discovered through `solves` and `implements` alone.
@@ -25,27 +25,24 @@ None. No new phase is active.
 
 ## Principal recent result
 
-K4-M3 imports itertools 0.15.0 relaxed top-k selection. Direct tests establish
-exact multiplicity, descending output and all capacity boundaries. Its
-`O(n + k log k)` time and `2k` buffer provide a real alternative to the current
-`O(n log k)` / `k` heap. The evaluator cannot compare the two cost expressions
-because bounds are opaque strings; no extension was added.
+A private test-only projector derives exact-problem capability and allocation
+effects from schema 0.1. It rejects both allocating top-k implementations, then
+discovers and accepts an executed test-only caller-storage implementation added
+only to the manifest fixture. No candidate identifier, handwritten overlay or
+format is required for this request.
 
 ## Open uncertainty
 
-Generic end-to-end selection is not demonstrated: candidate discovery is
-automatic, but decision facts are still manually projected into private
-overlays. Phase 4 found no recurring missing public fact that justifies schema
-0.2.
+Projection is demonstrated only for declared problem compatibility and one
+structured effect. Conditioned costs, concrete state, negative evidence and
+complexity comparison remain outside the result.
 
 ## Next falsifiable action
 
-Before starting another phase, define one concrete consumer request whose
-correct answer depends on automatic registry-to-query projection. The test must
-add a conforming implementation without changing selection code and observe
-whether it enters the accepted or rejected set with a sourced explanation.
+Before starting another phase, choose one consumer request that requires a fact
+class not projected in Phase 5 and state its expected unsupported boundary.
 
 ## Blocking structural decisions
 
-None for maintenance. A new phase, public selection interface, stable
+None for maintenance. Another phase, public selection interface, stable
 qualification format or schema change requires human validation.

@@ -84,6 +84,9 @@ candidates. The unchanged evaluator handles conditioned cost and concrete
 state when facts are manually projected, confirming that projection/query
 machinery rather than a recurring missing schema fact is the current limit.
 K4-M3 exact bounded top-k competition is next.
+Its B1 source review recommends `topk-relaxed-A`, the exact descending
+`itertools` 0.15.0 relaxed-selection path with `O(n + k log k)` time and `2k`
+buffering. No dependency or entity is added before owner validation.
 
 ## Latest closed slice
 

@@ -191,6 +191,14 @@ Manual registry-to-overlay projection recurs; absent-versus-refuted collapse
 does not recur because growth is an explicit effect. K4-M3 exact bounded top-k
 competition is next, with no evaluator extension authorized.
 
+K4-M3 source review now compares itertools relaxed batched selection, its
+binary-heap sibling and a full-buffer standard-library selection control. It
+recommends `topk-relaxed-A`: pinned itertools 0.15.0 changes the current
+`O(n log k)` / `k` heap tradeoff to documented `O(n + k log k)` / `2k`, while
+preserving exact multiplicity and descending output. The dependency remains
+unadded pending B1 validation. The experiment must retain the unchanged
+evaluator's opaque-bound limitation rather than introduce cost algebra.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

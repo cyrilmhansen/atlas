@@ -1,5 +1,33 @@
 # Progress log
 
+## 2026-07-17 - Review K4-M3 exact top-k sources
+
+### Result
+
+- Compared itertools relaxed batched selection, itertools binary-heap top-k and
+  standard-library full-buffer selection for the existing `stream.top_k`
+  Problem.
+- Recommended pinned itertools 0.15.0 `k_largest_relaxed`: direct foreign code,
+  exact duplicate-preserving output, descending order, `O(k)` retained memory
+  and a distinct `O(n + k log k)` / `2k` tradeoff.
+- Kept approximate heavy-hitter crates outside the candidate set because they
+  do not satisfy the exact-occurrence problem contract.
+
+### Verification
+
+- Exact crate metadata confirms MIT/Apache-2.0, Rust 1.63 minimum and a narrow
+  `use_alloc` feature with one mandatory `either` dependency.
+- Upstream source confirms batched `select_nth_unstable`, `2k` buffering,
+  truncation and final sorting.
+
+### Limits
+
+- No dependency or registry entity is added before B1 validation.
+- The unchanged evaluator cannot compare opaque `O(n + k log k)` and
+  `O(n log k)` bounds algebraically; K4-M3 must expose rather than patch this.
+- The constant-factor `2k` memory tradeoff remains visible even though both
+  candidates are asymptotically `O(k)`.
+
 ## 2026-07-15 - Complete K4-M2 priority-queue competition
 
 ### Result

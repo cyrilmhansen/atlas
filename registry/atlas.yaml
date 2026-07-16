@@ -1302,6 +1302,24 @@ algorithms:
       value: "O(k) persistent retained elements"
       level: inferred
       source: "docs:phase2/k-m3-streaming-approximation.md"
+  - id: stream.top_k.relaxed_selection
+    solves: stream.top_k
+    name:
+      value: "bounded top-k with batched relaxed selection"
+      level: declared
+      source: "docs:phase4/k4-m3-top-k-source-review.md"
+    deterministic:
+      value: true
+      level: declared
+      source: "docs:https://docs.rs/itertools/0.15.0/itertools/trait.Itertools.html#method.k_largest_relaxed"
+    time_worst:
+      value: "O(n + k log k)"
+      level: declared
+      source: "docs:https://docs.rs/itertools/0.15.0/itertools/trait.Itertools.html#method.k_smallest_relaxed"
+    auxiliary_memory:
+      value: "O(k) retained elements, with capacity up to 2k"
+      level: declared
+      source: "docs:https://docs.rs/itertools/0.15.0/itertools/trait.Itertools.html#method.k_smallest_relaxed"
   - id: stream.moments.welford
     solves: stream.population_moments
     name:
@@ -2767,6 +2785,24 @@ implementations:
       source: "file:crates/atlas/tests/external_streaming_adapters.rs"
     tests:
       value: ["external_streaming_adapters::bounded_top_k_is_exact_and_never_exceeds_its_budget"]
+      level: tested
+      source: "file:crates/atlas/tests/external_streaming_adapters.rs"
+  - id: stream.top_k.itertools.relaxed.0_15_0
+    implements: stream.top_k.relaxed_selection
+    language: { value: rust, level: declared, source: "docs:phase4/k4-m3-top-k-source-review.md" }
+    version: { value: "0.15.0", level: declared, source: "file:Cargo.toml" }
+    license: { value: "MIT OR Apache-2.0", level: declared, source: "docs:https://docs.rs/crate/itertools/0.15.0" }
+    target: { value: "Rust target with alloc; tested on a std host", level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs" }
+    dependencies: { value: ["itertools 0.15.0 with use_alloc", "either through itertools"], level: declared, source: "file:crates/atlas/Cargo.toml" }
+    abi: { value: "Rust calling convention; no stable ABI", level: declared, source: "definition:rust-api-contract" }
+    entrypoint: { value: "itertools::Itertools::k_largest_relaxed", level: declared, source: "docs:https://docs.rs/itertools/0.15.0/itertools/trait.Itertools.html#method.k_largest_relaxed" }
+    signature: { value: "fn k_largest_relaxed(self, k: usize) -> IntoIter<Self::Item>", level: declared, source: "docs:https://docs.rs/itertools/0.15.0/itertools/trait.Itertools.html#method.k_largest_relaxed" }
+    effects:
+      value: { mutates: [retained_buffer], io: none, blocking: false, allocation: "allocates one retained Vec with capacity up to 2k and reuses it for sorted output" }
+      level: inferred
+      source: "docs:phase4/k4-m3-top-k-source-review.md"
+    tests:
+      value: ["external_streaming_adapters::itertools_relaxed_top_k_matches_full_sort_and_descending_order"]
       level: tested
       source: "file:crates/atlas/tests/external_streaming_adapters.rs"
   - id: stream.moments.welford.rust.f64.v1

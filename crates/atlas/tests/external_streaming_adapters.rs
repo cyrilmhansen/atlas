@@ -1,6 +1,8 @@
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
+use itertools::Itertools;
+
 fn bounded_top_k(values: &[i32], k: usize) -> Vec<i32> {
     let mut retained = BinaryHeap::<Reverse<i32>>::with_capacity(k);
     for &value in values {
@@ -111,6 +113,33 @@ fn bounded_top_k_is_exact_and_never_exceeds_its_budget() {
     assert_eq!(bounded_top_k(&[4, 1, 8, 3, 8, 2, 7], 3), [8, 8, 7]);
     assert_eq!(bounded_top_k(&[2, 1], 5), [2, 1]);
     assert!(bounded_top_k(&[3, 2, 1], 0).is_empty());
+}
+
+fn sorted_top_k_oracle(values: &[i32], k: usize) -> Vec<i32> {
+    let mut expected = values.to_vec();
+    expected.sort_unstable_by(|left, right| right.cmp(left));
+    expected.truncate(k);
+    expected
+}
+
+#[test]
+fn itertools_relaxed_top_k_matches_full_sort_and_descending_order() {
+    let cases: &[&[i32]] = &[
+        &[],
+        &[7],
+        &[8, 3, 8, 7, 8, 2, 7],
+        &[1, 2, 3, 4, 5, 6],
+        &[6, 5, 4, 3, 2, 1],
+        &[4, -1, 4, 0, -1, 9, 9, 2],
+    ];
+
+    for values in cases {
+        for k in [0, 1, 3, values.len(), values.len() + 2] {
+            let actual = values.iter().copied().k_largest_relaxed(k).collect_vec();
+            assert_eq!(actual, sorted_top_k_oracle(values, k));
+            assert!(actual.windows(2).all(|pair| pair[0] >= pair[1]));
+        }
+    }
 }
 
 #[test]

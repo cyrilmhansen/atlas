@@ -1,6 +1,6 @@
 # K4-M3 exact bounded top-k source review
 
-Status: B1 source decision pending
+Status: complete; `topk-relaxed-A` implemented and adjudicated
 
 Date: 2026-07-17
 
@@ -41,7 +41,7 @@ Cost:
 
 - one pinned dev-dependency plus its small transitive `either` dependency;
 - one Algorithm, one Implementation and one focused direct-upstream test;
-- one import worksheet and one unchanged-evaluator overlay extension.
+- this living experiment record and one unchanged-evaluator overlay input.
 
 Risks:
 
@@ -110,4 +110,38 @@ through special-case code.
    the unchanged K-M5 evaluator.
 6. Stop after the two-candidate matrix; add no cost algebra or schema field.
 
-Validation question: `topk-relaxed-A`, `topk-heap-B`, or `topk-buffer-C`?
+Owner choice: `topk-relaxed-A`.
+
+## Result
+
+The pinned, allocation-only itertools implementation is registered as
+`stream.top_k.relaxed_selection` and
+`stream.top_k.itertools.relaxed.0_15_0`. Atlas calls
+`k_largest_relaxed` directly. Tests compare it with a full descending sort for
+empty, singleton, duplicate-heavy, ascending, descending and mixed inputs at
+`k = 0`, `k = 1`, ordinary `k` and `k > n`.
+
+Registry relations discover exactly two Algorithms and two Implementations for
+`stream.top_k`; the discovery test contains no candidate identifier branch.
+
+## Frozen requests
+
+| Request | Minimum heap | Relaxed selection | Verdict |
+|---|---|---|---|
+| `top_k.exact_bounded` | accepted | accepted | both preserve exact multiplicity with `O(k)` retained elements |
+| `top_k.no_allocation` | rejected | rejected | both allocate bounded retained/output storage |
+| `top_k.n_log_k_worst` | accepted | unsupported by evaluator | documentary analysis accepts `O(n + k log k)` as no worse than `O(n log k)` for nontrivial `2 <= k <= n`; the evaluator only matches identical cost strings |
+| `top_k.sorted_output` | accepted | accepted | both tests and the itertools contract establish descending output |
+
+The unchanged evaluator produces the expected missing-exact-cost reason for
+the relaxed candidate. No algebraic rule, special case or evaluator extension
+was added. Boundary cases `k < 2` are established behaviorally rather than by
+forcing a degenerate two-parameter asymptotic expression.
+
+## Verdict
+
+K4-M3 passes. Atlas can ingest and discover a foreign strategy with a genuinely
+different time/memory tradeoff, then reuse the same exactness, effect, memory
+and output-order vocabulary. Its remaining failure is query normalization of
+equivalent or dominating cost expressions, not missing top-k knowledge. That
+single limitation does not justify extending the evaluator or public schema.

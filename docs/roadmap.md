@@ -9,12 +9,11 @@ decision record differ.
 MVP 1 through MVP 6 are closed. No subsequent MVP is active. GitHub CI runs the
 reproducible MVP 2 acceptance gate, all workspace targets, the RV64 LP64 probe
 and the MIR RV64 generator probe on pushes and pull requests. The project has a
-Git-authoritative YAML registry (31 problems, 38 algorithms and 42
+Git-authoritative YAML registry (31 problems, 39 algorithms and 43
 implementations), a rebuildable SQLite projection, deterministic datasets and
 reproducible local observations, plus five bounded composition scenarios with
 compiled Rust orchestration. The current counts include the 10/15/20 MVP 1
-sequence baseline plus the complete Phase 2 graph, dynamic-structure and
-streaming batches and the first Phase 4 graph competitor.
+sequence baseline plus the complete Phase 2 corpus and Phase 4 competitors.
 
 MVP 5 delivered the reproducible static interactive artifact. MVP 6 replaced
 its specialized browser execution paths with five AST-derived private programs,
@@ -32,8 +31,9 @@ activate Phase 2. The audit and maintained planning documents are:
 
 Phase 2 ran with Atlas Knowledge active, Execution Lab frozen and Explorer
 maintained. DEC-071 closed that phase mixed and made Explorer active for Phase
-3; DEC-073 closes Phase 3 supported. DEC-074 now activates Phase 4 comparative
-foreign selection with Knowledge active and the other programs constrained.
+3; DEC-073 closes Phase 3 supported. DEC-074 activated Phase 4 comparative
+foreign selection, now closed supported with the other programs still
+constrained. No subsequent phase is active.
 
 K-M0 is complete with a mixed, informative result. Its six isolated imports and
 comparison report are under `docs/phase2/`. BFS and union-find converged at the
@@ -188,16 +188,12 @@ discovery. Both candidates mutate in place and may grow storage. Their
 conditioned `O(log n)` cost and concrete state compatibility are adjudicable in
 the unchanged private evaluator, but remain unsupported by the public query.
 Manual registry-to-overlay projection recurs; absent-versus-refuted collapse
-does not recur because growth is an explicit effect. K4-M3 exact bounded top-k
-competition is next, with no evaluator extension authorized.
-
-K4-M3 source review now compares itertools relaxed batched selection, its
-binary-heap sibling and a full-buffer standard-library selection control. It
-recommends `topk-relaxed-A`: pinned itertools 0.15.0 changes the current
-`O(n log k)` / `k` heap tradeoff to documented `O(n + k log k)` / `2k`, while
-preserving exact multiplicity and descending output. The dependency remains
-unadded pending B1 validation. The experiment must retain the unchanged
-evaluator's opaque-bound limitation rather than introduce cost algebra.
+does not recur because growth is an explicit effect. K4-M3 adds the accepted
+itertools relaxed-selection candidate and confirms exact, sorted `O(k)` top-k
+selection with a distinct `O(n + k log k)` / `2k` tradeoff. K4-M4 closes the
+phase: discovery is generic and adjudication conservative, but fact projection
+remains manual and cost expressions remain opaque. No evaluator or schema
+extension is justified by the result.
 
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an

@@ -1,8 +1,8 @@
 # Phase 4 - Comparative foreign selection
 
-Status: active under DEC-074
+Status: closed supported with explicit query limitations
 
-Active program: Atlas Knowledge
+Program: Atlas Knowledge
 
 Inputs: Phase 2 mixed selection verdict, K-M5 private evaluator evidence and
 the closed-supported Phase 3 Explorer artifact
@@ -29,7 +29,7 @@ facts are absent rather than choosing a plausible candidate.
 
 | Program | Status | Allowed work |
 |---|---|---|
-| Atlas Knowledge | `active` | bounded competitor imports, frozen decision requests, candidate discovery and selection evidence |
+| Atlas Knowledge | `maintained` | registry, corpus and selection evidence |
 | Atlas Explorer | `maintained` | public artifact, compatibility and blocking correctness fixes only |
 | Atlas Execution Lab | `frozen` | CI/correction maintenance only; no new executable representation |
 
@@ -90,6 +90,8 @@ encode binary-heap or competitor identifiers.
 
 ### K4-M3 - Exact bounded top-k competition
 
+Status: complete in `docs/phase4/k4-m3-top-k-source-review.md`.
+
 Add a second exact bounded-top-k strategy with a materially different
 time/memory tradeoff from the existing minimum heap. Preserve capacity-zero,
 duplicate and output-order semantics explicitly.
@@ -98,6 +100,8 @@ Exit evidence: the same qualification machinery handles a streaming candidate
 and exposes absent facts rather than borrowing them from the implementation.
 
 ### K4-M4 - Cross-family synthesis
+
+Status: complete below; no separate closure audit.
 
 Compare recurring decision facts, authoring cost, evaluator cost and public
 control failures. Recommend deletion, continued private experimentation or the
@@ -108,7 +112,36 @@ family; positive and negative decisions are explained; no accepted decision
 depends on a source-family branch; any public schema proposal is supported by
 decision-changing evidence from at least two families.
 
-## Decisions still open
+## K4-M4 synthesis and phase verdict
+
+All three foreign competitors enter their candidate sets through the existing
+`solves` and `implements` relations. No discovery path contains a family or
+candidate branch. Across graph traversal, priority-queue mutation and bounded
+top-k, the same private vocabulary handles positive guarantees, forbidden
+effects, conditioned costs, retained memory and concrete state.
+
+The experiment also separates three limits:
+
+- graph evidence can distinguish a refuted guarantee from an absent one, while
+  the evaluator currently collapses them;
+- candidate facts are manually projected from the registry into each private
+  overlay;
+- asymptotic bounds are opaque strings, so `O(n + k log k)` is not recognized
+  as satisfying `O(n log k)` without an identical spelling.
+
+Only manual projection recurs in every family. The other limits affect correct
+explanations or one query class, but none caused Atlas to choose an incorrect
+implementation: the system reports unsupported instead. No recurring missing
+public fact supports schema 0.2.
+
+**Verdict:** Phase 4 is closed supported for automatic candidate discovery and
+conservative, explainable adjudication. Generic end-to-end selection remains
+unproven because projection is manual. Retain the K-M5 evaluator and Phase 4
+overlays as private test evidence; do not extend or promote them. A future
+public selection interface would require a concrete consumer use case and a
+separate structural decision.
+
+## Decisions resolved during the phase
 
 ### B1 - Source and implementation for each competitor
 

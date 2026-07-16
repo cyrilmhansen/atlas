@@ -1,9 +1,9 @@
 # Project status
 
-- Active phase: **Phase 4 - Comparative foreign selection** under DEC-074
+- Active phase: **none**; Phase 4 is closed supported with query limitations
 - Phase 2: **closed mixed** at the K-M7 synthesis
-- Active work program: **Atlas Knowledge**
-- Atlas Knowledge: **active**
+- Active work program: **none**
+- Atlas Knowledge: **maintained**
 - Atlas Execution Lab: **frozen**
 - Atlas Explorer: **maintained and publicly available**
 - Public Explorer: `https://cyrilmhansen.github.io/atlas/` under DEC-072
@@ -83,10 +83,11 @@ reserved and exhausted capacity, and registry relations discover both push
 candidates. The unchanged evaluator handles conditioned cost and concrete
 state when facts are manually projected, confirming that projection/query
 machinery rather than a recurring missing schema fact is the current limit.
-K4-M3 exact bounded top-k competition is next.
-Its B1 source review recommends `topk-relaxed-A`, the exact descending
-`itertools` 0.15.0 relaxed-selection path with `O(n + k log k)` time and `2k`
-buffering. No dependency or entity is added before owner validation.
+K4-M3 adds the accepted exact descending itertools relaxed-selection candidate
+and exposes the unchanged evaluator's opaque cost-string comparison. K4-M4
+closes Phase 4 supported for relation-driven discovery and conservative
+adjudication, but not for end-to-end automatic selection because fact
+projection remains manual. No schema or evaluator extension follows.
 
 ## Latest closed slice
 

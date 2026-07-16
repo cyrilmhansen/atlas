@@ -16,15 +16,14 @@ The public Atlas Explorer is available at
 <https://cyrilmhansen.github.io/atlas/>. It is a derived static presentation of
 the Git-authoritative registry, not a stable JSON, WASM or URL API.
 
-The authoritative registry now contains 31 problems, 38 algorithms, and 42
+The authoritative registry now contains 31 problems, 39 algorithms, and 43
 implementations: the 10/15/20 MVP 1 sequence baseline plus the first external
-graph and dynamic-structure batches, plus Phase 4 DFS and quaternary-heap
-competitors. The dynamic corpus separates union-find, binary and quaternary
-heap and collision-aware hash-table operations and adds tested petgraph,
-standard-library, dary_heap and hashbrown boundaries. A streaming batch adds bounded
-top-k, online moments, reservoir sampling and Bloom membership. Schema hardening, local evidence
-integrity, deterministic indexing, the acceptance gate, and the local Git
-baseline are complete.
+graph and dynamic-structure batches, plus Phase 4 DFS, quaternary-heap and
+relaxed-selection top-k competitors. The dynamic corpus separates union-find,
+binary and quaternary heap and collision-aware hash-table operations. The
+streaming corpus includes two exact bounded top-k strategies, online moments,
+reservoir sampling and Bloom membership. Schema hardening, local evidence
+integrity, deterministic indexing and the acceptance gate are complete.
 
 MVP 5 is closed under DEC-060. Its static Web artifact projects the complete
 registry and executes adjacent `is_sorted`, stable insertion sort and symmetric

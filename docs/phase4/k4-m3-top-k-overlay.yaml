@@ -1,0 +1,104 @@
+overlay_version: phase2-km5-0
+
+atoms:
+  - { id: output.exact_top_k_occurrences, kind: capability }
+  - { id: guarantee.descending_output, kind: guarantee }
+  - { id: effect.allocates_bounded_storage, kind: effect }
+
+candidates:
+  - id: candidate.top_k.binary_heap
+    source: registry:stream.top_k.rust.std_binary_heap.v1
+    provides:
+      - atom: output.exact_top_k_occurrences
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.descending_output
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs", proof: null }
+    effects:
+      - atom: effect.allocates_bounded_storage
+        evidence: { level: tested, source: "registry:stream.top_k.rust.std_binary_heap.v1", proof: null }
+    consumes_state: null
+    produces_state: null
+    costs:
+      - operation: top_k
+        metric: retained_memory
+        regime: worst
+        bound: "O(k)"
+        requires: []
+        evidence: { level: inferred, source: "registry:stream.top_k.min_heap", proof: null }
+      - operation: top_k
+        metric: time
+        regime: worst
+        bound: "O(n log k)"
+        requires: []
+        evidence: { level: inferred, source: "registry:stream.top_k.min_heap", proof: null }
+
+  - id: candidate.top_k.relaxed_selection
+    source: registry:stream.top_k.itertools.relaxed.0_15_0
+    provides:
+      - atom: output.exact_top_k_occurrences
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs", proof: null }
+    requires: []
+    guarantees:
+      - atom: guarantee.descending_output
+        evidence: { level: tested, source: "file:crates/atlas/tests/external_streaming_adapters.rs", proof: null }
+    effects:
+      - atom: effect.allocates_bounded_storage
+        evidence: { level: inferred, source: "registry:stream.top_k.itertools.relaxed.0_15_0", proof: null }
+    consumes_state: null
+    produces_state: null
+    costs:
+      - operation: top_k
+        metric: retained_memory
+        regime: worst
+        bound: "O(k)"
+        requires: []
+        evidence: { level: declared, source: "registry:stream.top_k.relaxed_selection", proof: null }
+      - operation: top_k
+        metric: time
+        regime: worst
+        bound: "O(n + k log k)"
+        requires: []
+        evidence: { level: declared, source: "registry:stream.top_k.relaxed_selection", proof: null }
+
+relations: []
+
+requests:
+  - id: request.top_k.exact_bounded
+    accepts: output.exact_top_k_occurrences
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs:
+      - { operation: top_k, metric: retained_memory, regime: worst, bound: "O(k)", requires: [] }
+    accepted_evidence: [declared, inferred, tested]
+
+  - id: request.top_k.no_allocation
+    accepts: output.exact_top_k_occurrences
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects: [effect.allocates_bounded_storage]
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested]
+
+  - id: request.top_k.n_log_k_worst
+    accepts: output.exact_top_k_occurrences
+    provides_conditions: []
+    requires_guarantees: []
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs:
+      - { operation: top_k, metric: time, regime: worst, bound: "O(n log k)", requires: [] }
+    accepted_evidence: [declared, inferred, tested]
+
+  - id: request.top_k.sorted_output
+    accepts: output.exact_top_k_occurrences
+    provides_conditions: []
+    requires_guarantees: [guarantee.descending_output]
+    forbids_effects: []
+    consumes_state: null
+    maximum_costs: []
+    accepted_evidence: [declared, inferred, tested]

@@ -412,6 +412,45 @@ mod tests {
     }
 
     #[test]
+    fn phase4_top_k_overlay_exposes_opaque_cost_comparison_without_extension() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let overlay =
+            load_decision_overlay(&workspace.join("docs/phase4/k4-m3-top-k-overlay.yaml"))
+                .expect("Phase 4 top-k overlay must use the unchanged K-M5 format");
+        let registry =
+            load_registry(&workspace.join("registry/atlas.yaml")).expect("committed registry");
+        assert!(validate_overlay_sources(&overlay, &registry, &workspace).is_empty());
+
+        let both = [
+            "candidate.top_k.binary_heap",
+            "candidate.top_k.relaxed_selection",
+        ];
+        assert_eq!(
+            accepted_candidates(&overlay, "request.top_k.exact_bounded"),
+            both
+        );
+        assert!(accepted_candidates(&overlay, "request.top_k.no_allocation").is_empty());
+        assert_eq!(
+            accepted_candidates(&overlay, "request.top_k.n_log_k_worst"),
+            ["candidate.top_k.binary_heap"]
+        );
+        assert_eq!(
+            accepted_candidates(&overlay, "request.top_k.sorted_output"),
+            both
+        );
+
+        let relaxed = evaluate_request(&overlay, "request.top_k.n_log_k_worst")
+            .unwrap()
+            .into_iter()
+            .find(|decision| decision.candidate_id == "candidate.top_k.relaxed_selection")
+            .expect("relaxed-selection decision");
+        assert_eq!(
+            relaxed.reasons,
+            ["missing exact cost profile top_k Time Worst O(n log k)"]
+        );
+    }
+
+    #[test]
     fn bounded_equivalences_reconcile_both_top_k_encodings() {
         let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut overlay =

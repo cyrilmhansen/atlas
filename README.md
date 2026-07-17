@@ -136,6 +136,7 @@ cargo run -p atlas -- show search.linear
 cargo run -p atlas -- search "merge sort"
 cargo run -p atlas -- explain search.binary.rust.slice.v1
 cargo run -p atlas -- qualify sequence.sort --stable --in-place --allocation none
+cargo run -p atlas -- qualify priority_queue.push --cost time worst 'O(log n)' --condition state.spare_capacity
 cargo run -p atlas -- compose cleanup
 cargo run -p atlas -- compose cleanup --goal expected-time
 cargo run -p atlas -- compose cleanup --rust
@@ -241,6 +242,9 @@ files, implementation evidence, and Rust test symbols.
 
 `qualify` is intentionally narrow: it filters recorded properties and prints
 their evidence; it does not rank implementations or infer missing metadata.
+`--cost METRIC REGIME BOUND` matches one schema 0.2 profile exactly.
+Repeated `--condition ID` arguments form its exact required-condition set;
+unknown conditions are rejected rather than treated as absent knowledge.
 
 `compose cleanup` is the first MVP 3 experiment. It renders one internal,
 non-persistent `filter -> sort -> deduplicate` plan with a selected candidate,

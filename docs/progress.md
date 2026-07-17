@@ -21,13 +21,13 @@ selection code or a premature public schema change.
 
 ## Active experiment
 
-None. The schema 0.2 adoption slice is complete.
+None. The bounded public selection slice is complete.
 
 ## Principal recent result
 
-Heap and hash-map conditioned requests now succeed from public facts. CLI,
-SQLite projection v2 and Web projection v1 preserve qualified profiles and
-condition provenance across the full corpus.
+`atlas qualify` now selects exact schema 0.2 cost profiles and prints their
+evidence. It distinguishes conditioned heap and hash-map facts and keeps the two
+opaque top-k memory bounds separate.
 
 ## Open uncertainty
 
@@ -36,9 +36,10 @@ strings without asymptotic ordering.
 
 ## Next falsifiable action
 
-Expose one bounded public selection request over the adopted facts without
-stabilizing the private overlay format.
+Give an independent agent only the public Atlas CLI and three frozen requests
+across heap, hash-map and top-k, then compare its candidate choices with the
+known exact-profile results.
 
 ## Blocking structural decisions
 
-A new public selection interface remains subject to human validation.
+None.

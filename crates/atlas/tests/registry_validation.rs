@@ -1028,6 +1028,169 @@ fn cli_qualify_composes_in_place_with_stability_and_allocation() {
 }
 
 #[test]
+fn cli_qualifies_exact_conditioned_heap_costs() {
+    let workspace = workspace_root();
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "priority_queue.push",
+            "--cost",
+            "time",
+            "worst",
+            "O(log n)",
+            "--condition",
+            "state.spare_capacity",
+        ])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("implementation\tpriority_queue.push.rust.std.1_85\n"));
+    assert!(stdout.contains("implementation\tpriority_queue.push.dary_heap.quaternary.0_3_9\n"));
+    assert!(stdout.contains("cost\ttime\tworst\tO(log n)\tinferred\t"));
+    assert!(stdout.contains("condition\tstate.spare_capacity\t"));
+    assert!(stdout.contains("\tdeclared\tdefinition:state.spare_capacity\n"));
+}
+
+#[test]
+fn cli_qualify_requires_an_exact_condition_set() {
+    let workspace = workspace_root();
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "priority_queue.push",
+            "--cost",
+            "time",
+            "worst",
+            "O(log n)",
+        ])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn cli_qualifies_expected_hash_cost_under_declared_workload() {
+    let workspace = workspace_root();
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "associative_map.insert",
+            "--cost",
+            "time",
+            "expected",
+            "O(1)",
+            "--condition",
+            "workload.nonadversarial_hash_distribution",
+        ])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("implementation\tassociative_map.insert.hashbrown.0_17_1\n"));
+    assert!(stdout.contains("cost\ttime\texpected\tO(1)\tdeclared\t"));
+    assert!(stdout.contains("condition\tworkload.nonadversarial_hash_distribution\t"));
+}
+
+#[test]
+fn cli_qualifies_an_exact_auxiliary_memory_profile() {
+    let workspace = workspace_root();
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "stream.top_k",
+            "--cost",
+            "auxiliary_memory",
+            "worst",
+            "O(k) persistent retained elements",
+        ])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("implementation\tstream.top_k.rust.std_binary_heap.v1\n"));
+    assert!(!stdout.contains("stream.top_k.itertools.relaxed.0_15_0"));
+    assert!(
+        stdout.contains(
+            "cost\tauxiliary_memory\tworst\tO(k) persistent retained elements\tinferred\t"
+        )
+    );
+}
+
+#[test]
+fn cli_qualify_rejects_invalid_cost_constraints() {
+    let workspace = workspace_root();
+    let invalid = [
+        vec![
+            "qualify",
+            "priority_queue.push",
+            "--cost",
+            "latency",
+            "worst",
+            "O(1)",
+        ],
+        vec!["qualify", "priority_queue.push", "--cost", "time"],
+        vec![
+            "qualify",
+            "priority_queue.push",
+            "--condition",
+            "state.spare_capacity",
+        ],
+        vec![
+            "qualify",
+            "priority_queue.push",
+            "--cost",
+            "time",
+            "worst",
+            "O(log n)",
+            "--condition",
+            "state.spare_capacity",
+            "--condition",
+            "state.spare_capacity",
+        ],
+    ];
+
+    for arguments in invalid {
+        let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+            .args(arguments)
+            .current_dir(&workspace)
+            .output()
+            .expect("atlas binary must run");
+        assert_eq!(output.status.code(), Some(2));
+        assert!(!output.stderr.is_empty());
+    }
+
+    let unknown = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "priority_queue.push",
+            "--cost",
+            "time",
+            "worst",
+            "O(log n)",
+            "--condition",
+            "state.unknown",
+        ])
+        .current_dir(workspace)
+        .output()
+        .expect("atlas binary must run");
+    assert_eq!(unknown.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&unknown.stderr).contains("condition \"state.unknown\" not found")
+    );
+}
+
+#[test]
 fn cli_qualify_rejects_unknown_constraints() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))

@@ -18,7 +18,8 @@ use atlas::composition::{
 use atlas::executions::{ExecutionMode, ExecutionRecord};
 use atlas::index::rebuild_database;
 use atlas::registry::{
-    Algorithm, Claim, Effects, Implementation, Problem, Registry, load_registry,
+    Algorithm, Claim, CostMetric, CostProfile, CostRegime, Effects, Implementation, Problem,
+    Registry, load_registry,
 };
 
 const DEFAULT_REGISTRY: &str = "registry/atlas.yaml";
@@ -502,6 +503,14 @@ struct QualificationConstraints {
     stable: bool,
     in_place: bool,
     allocation_none: bool,
+    cost: Option<CostConstraint>,
+}
+
+struct CostConstraint {
+    metric: CostMetric,
+    regime: CostRegime,
+    bound: String,
+    conditions: Vec<String>,
 }
 
 fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
@@ -532,9 +541,68 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
                     }
                 }
             }
+            Some("--cost") if constraints.cost.is_none() => {
+                let Some(metric) = arguments.next().and_then(|value| value.into_string().ok())
+                else {
+                    eprintln!("--cost requires METRIC REGIME BOUND in valid UTF-8");
+                    return ExitCode::from(2);
+                };
+                let Some(regime) = arguments.next().and_then(|value| value.into_string().ok())
+                else {
+                    eprintln!("--cost requires METRIC REGIME BOUND in valid UTF-8");
+                    return ExitCode::from(2);
+                };
+                let Some(bound) = arguments.next().and_then(|value| value.into_string().ok())
+                else {
+                    eprintln!("--cost requires METRIC REGIME BOUND in valid UTF-8");
+                    return ExitCode::from(2);
+                };
+                let Some(metric) = parse_cost_metric(&metric) else {
+                    eprintln!(
+                        "unknown cost metric {metric:?}; expected time, auxiliary_memory, retained_memory, or allocation"
+                    );
+                    return ExitCode::from(2);
+                };
+                let Some(regime) = parse_cost_regime(&regime) else {
+                    eprintln!(
+                        "unknown cost regime {regime:?}; expected worst, expected, or amortized"
+                    );
+                    return ExitCode::from(2);
+                };
+                if bound.trim().is_empty() || bound.starts_with("--") {
+                    eprintln!("--cost requires a non-empty BOUND after METRIC and REGIME");
+                    return ExitCode::from(2);
+                }
+                constraints.cost = Some(CostConstraint {
+                    metric,
+                    regime,
+                    bound,
+                    conditions: Vec::new(),
+                });
+            }
+            Some("--condition") => {
+                let Some(condition) = arguments.next().and_then(|value| value.into_string().ok())
+                else {
+                    eprintln!("--condition requires an ID in valid UTF-8");
+                    return ExitCode::from(2);
+                };
+                if condition.starts_with("--") || condition.trim().is_empty() {
+                    eprintln!("--condition requires a non-empty condition ID");
+                    return ExitCode::from(2);
+                }
+                let Some(cost) = constraints.cost.as_mut() else {
+                    eprintln!("--condition requires a preceding --cost METRIC REGIME BOUND");
+                    return ExitCode::from(2);
+                };
+                if cost.conditions.contains(&condition) {
+                    eprintln!("duplicate qualify condition {condition:?}");
+                    return ExitCode::from(2);
+                }
+                cost.conditions.push(condition);
+            }
             Some(value) => {
                 eprintln!(
-                    "unknown qualify constraint {value:?}; expected --stable, --in-place, or --allocation none"
+                    "unknown qualify constraint {value:?}; expected --stable, --in-place, --allocation none, --cost METRIC REGIME BOUND, or --condition ID"
                 );
                 return ExitCode::from(2);
             }
@@ -544,7 +612,11 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             }
         }
     }
-    if !constraints.stable && !constraints.in_place && !constraints.allocation_none {
+    if !constraints.stable
+        && !constraints.in_place
+        && !constraints.allocation_none
+        && constraints.cost.is_none()
+    {
         eprintln!("qualify requires at least one constraint");
         return ExitCode::from(2);
     }
@@ -558,6 +630,18 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
             {
                 eprintln!("problem {problem_id:?} not found in {DEFAULT_REGISTRY}");
                 return ExitCode::FAILURE;
+            }
+            if let Some(cost) = &constraints.cost {
+                for condition in &cost.conditions {
+                    if !registry
+                        .conditions
+                        .iter()
+                        .any(|known| known.id == *condition)
+                    {
+                        eprintln!("condition {condition:?} not found in {DEFAULT_REGISTRY}");
+                        return ExitCode::FAILURE;
+                    }
+                }
             }
             print_qualified_implementations(&registry, problem_id, &constraints);
             ExitCode::SUCCESS
@@ -596,6 +680,13 @@ fn print_qualified_implementations(
         if constraints.allocation_none && implementation.effects.value.allocation != "none" {
             continue;
         }
+        let matched_cost = constraints
+            .cost
+            .as_ref()
+            .map(|constraint| matching_cost(algorithm, constraint));
+        if matches!(matched_cost, Some(None)) {
+            continue;
+        }
 
         println!("implementation\t{}", implementation.id);
         println!("algorithm\t{}", algorithm.id);
@@ -617,6 +708,62 @@ fn print_qualified_implementations(
             implementation.effects.level,
             implementation.effects.source
         );
+        if let Some(Some(cost)) = matched_cost {
+            println!(
+                "cost\t{}\t{}\t{}\t{}\t{}",
+                cost.value.metric, cost.value.regime, cost.value.bound, cost.level, cost.source
+            );
+            for condition_id in &cost.value.requires {
+                let condition = registry
+                    .conditions
+                    .iter()
+                    .find(|condition| condition.id == *condition_id)
+                    .expect("validated cost condition must resolve");
+                println!(
+                    "condition\t{}\t{}\t{}\t{}",
+                    condition.id,
+                    condition.statement.value,
+                    condition.statement.level,
+                    condition.statement.source
+                );
+            }
+        }
+    }
+}
+
+fn matching_cost<'a>(
+    algorithm: &'a Algorithm,
+    constraint: &CostConstraint,
+) -> Option<&'a Claim<CostProfile>> {
+    algorithm.costs.iter().find(|claim| {
+        claim.value.metric == constraint.metric
+            && claim.value.regime == constraint.regime
+            && claim.value.bound == constraint.bound
+            && claim.value.requires.len() == constraint.conditions.len()
+            && claim
+                .value
+                .requires
+                .iter()
+                .all(|condition| constraint.conditions.contains(condition))
+    })
+}
+
+fn parse_cost_metric(value: &str) -> Option<CostMetric> {
+    match value {
+        "time" => Some(CostMetric::Time),
+        "auxiliary_memory" => Some(CostMetric::AuxiliaryMemory),
+        "retained_memory" => Some(CostMetric::RetainedMemory),
+        "allocation" => Some(CostMetric::Allocation),
+        _ => None,
+    }
+}
+
+fn parse_cost_regime(value: &str) -> Option<CostRegime> {
+    match value {
+        "worst" => Some(CostRegime::Worst),
+        "expected" => Some(CostRegime::Expected),
+        "amortized" => Some(CostRegime::Amortized),
+        _ => None,
     }
 }
 
@@ -926,6 +1073,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none]\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--force ID|--forbid ID] [--rust]\n  atlas compose find [--force ID|--forbid ID] [--rust]\n  atlas compose merge-sorted [--force ID|--forbid ID] [--rust]\n  atlas compose partition-sort [--force ID|--forbid ID] [--rust]\n  atlas compose unique-sort [--force ID|--forbid ID] [--rust]\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none] [--cost METRIC REGIME BOUND] [--condition ID]...\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--force ID|--forbid ID] [--rust]\n  atlas compose find [--force ID|--forbid ID] [--rust]\n  atlas compose merge-sorted [--force ID|--forbid ID] [--rust]\n  atlas compose partition-sort [--force ID|--forbid ID] [--rust]\n  atlas compose unique-sort [--force ID|--forbid ID] [--rust]\n  atlas index [DB_PATH]"
     );
 }

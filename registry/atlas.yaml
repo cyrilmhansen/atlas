@@ -551,6 +551,22 @@ problems:
     - under the stated hash model, the false-positive probability is approximately (1 - exp(-hash_count * inserted_count / bit_count))^hash_count
     level: declared
     source: docs:https://dl.acm.org/doi/10.1145/362686.362692
+- id: sequence.run_length_encode
+  input:
+    value: 'input: Sequence<T>; equivalent: Equivalence<T>'
+    level: declared
+    source: docs:phase-demo.md
+  output:
+    value: 'runs: Sequence<(T, PositiveCount)>'
+    level: declared
+    source: docs:phase-demo.md
+  ensures:
+    value:
+    - expanding runs reconstructs input exactly
+    - adjacent output runs have non-equivalent symbols
+    - empty input produces no runs
+    level: tested
+    source: file:crates/atlas-web-wasm/src/rle.rs
 algorithms:
 - id: sort.merge.top_down
   solves: sequence.sort
@@ -1740,6 +1756,31 @@ algorithms:
       metric: auxiliary_memory
       regime: worst
       bound: O(1) excluding persistent filter state
+      requires: []
+- id: codec.rle.adjacent_runs
+  solves: sequence.run_length_encode
+  name:
+    value: adjacent run-length encoding
+    level: declared
+    source: docs:phase-demo.md
+  deterministic:
+    value: true
+    level: declared
+    source: docs:phase-demo.md
+  costs:
+  - source: file:crates/atlas-web-wasm/src/rle.rs
+    level: inferred
+    value:
+      metric: time
+      regime: worst
+      bound: O(n)
+      requires: []
+  - source: file:crates/atlas-web-wasm/src/rle.rs
+    level: inferred
+    value:
+      metric: auxiliary_memory
+      regime: worst
+      bound: O(1) excluding output runs
       requires: []
 implementations:
 - id: sort.merge.rust.slice.v1
@@ -3853,6 +3894,54 @@ implementations:
     - external_streaming_adapters::bloom_filter_has_no_false_negatives_and_can_return_false_positives
     level: tested
     source: file:crates/atlas/tests/external_streaming_adapters.rs
+- id: codec.rle.rust.bytes.v1
+  implements: codec.rle.adjacent_runs
+  language:
+    value: rust
+    level: declared
+    source: file:crates/atlas-web-wasm/src/rle.rs
+  version:
+    value: 0.1.0
+    level: declared
+    source: file:crates/atlas-web-wasm/Cargo.toml
+  license:
+    value: MIT
+    level: declared
+    source: file:Cargo.toml
+  target:
+    value: Rust target with alloc; browser experience uses wasm32-unknown-unknown
+    level: tested
+    source: file:crates/atlas-web-wasm/src/rle.rs
+  dependencies:
+    value: []
+    level: declared
+    source: file:crates/atlas-web-wasm/src/rle.rs
+  abi:
+    value: Rust calling convention; no stable ABI
+    level: declared
+    source: definition:rust-api-contract
+  entrypoint:
+    value: atlas_web_wasm::encode_ascii
+    level: declared
+    source: file:crates/atlas-web-wasm/src/rle.rs
+  signature:
+    value: 'fn encode_ascii(input: &[u8]) -> Vec<Run>'
+    level: declared
+    source: file:crates/atlas-web-wasm/src/rle.rs
+  effects:
+    value:
+      mutates: []
+      io: none
+      blocking: false
+      allocation: allocates one output entry per adjacent run
+    level: tested
+    source: file:crates/atlas-web-wasm/src/rle.rs
+  tests:
+    value:
+    - rle::tests::incremental_machine_matches_direct_encoding
+    - rle::tests::empty_single_and_alternating_inputs_are_exact
+    level: tested
+    source: command:cargo test -p atlas-web-wasm
 executions: []
 conditions:
 - id: state.spare_capacity

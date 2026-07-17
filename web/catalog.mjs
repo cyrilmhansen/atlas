@@ -138,5 +138,6 @@ export function executablePresentation(projection, record) {
   if (record.entity.id === "disjoint_set.rank_path_halving.union") {
     return { key: "union_find" };
   }
+  if (record.entity.id === "codec.rle.adjacent_runs") return { key: "rle" };
   return undefined;
 }

@@ -29,6 +29,7 @@ node web/tests/reverse_visual_machine.cjs "$node_output/atlas_web.js" "$output_d
 node web/tests/minimum_visual_machine.cjs "$node_output/atlas_web.js" "$output_dir/data/atlas.json"
 node web/tests/partition_visual_machine.cjs "$node_output/atlas_web.js" "$output_dir/data/atlas.json"
 node web/tests/union_find.cjs "$node_output/atlas_web.js"
+node web/tests/rle.cjs "$node_output/atlas_web.js"
 node web/tests/generator.mjs
 node web/tests/playback.mjs
 node web/tests/scale_growth.mjs "$node_output/atlas_web.js"

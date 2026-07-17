@@ -10,20 +10,20 @@ experiences, recording only Atlas limitations that materially block them.
 ## Demonstrated state
 
 - Schema 0.2 is authoritative under DEC-075; all existing consumers are migrated.
-- The registry contains 31 Problems, 39 Algorithms and 43 Implementations.
+- The registry contains 32 Problems, 40 Algorithms and 44 Implementations.
 - Public schema 0.2 and the selection CLI remain unchanged.
 - The Web Explorer derives sequence demonstrations from five generated programs.
-- Union-find now has a bounded real WASM stepper and full-width component view.
+- Union-find and RLE have bounded real WASM steppers and full-width domain views.
 - Catalog identity, costs and evidence handoff remain registry-derived.
 
 ## Active experiment
 
-Run-length encoding with visible incremental input and encoded output.
+A* frontier and path evolution on a small editable grid.
 
 ## Principal recent result
 
-Union-find exposes representative inspection before mutation, supports repeated
-and redundant unions, and requires no public schema or visual-bytecode change.
+RLE exposes input consumption, its pending run and emitted output without a
+stored trace or public schema/visual-bytecode change.
 
 ## Open uncertainty
 
@@ -32,8 +32,8 @@ structure to justify a private generated experience description.
 
 ## Next falsifiable action
 
-Implement incremental RLE in WASM and verify that input consumption and output
-emission remain inspectable without stored presentation traces.
+Implement incremental A* in WASM and verify frontier/path state against a direct
+oracle on deterministic grids.
 
 ## Blocking structural decisions
 

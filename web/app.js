@@ -1,4 +1,4 @@
-import init, { UnionFindMachine, VisualMachine } from "./pkg/atlas_web.js";
+import init, { RleMachine, UnionFindMachine, VisualMachine } from "./pkg/atlas_web.js";
 import {
   catalogRecords,
   claimEntries,
@@ -52,6 +52,11 @@ function hydrateGeneratedAlgorithms() {
     boundary: "Persistent disjoint-set state stays inside WASM; each operation exposes representative inspection before mutation.",
     experience: "union_find",
   };
+  algorithmUi.rle = {
+    id: "codec.rle.adjacent_runs",
+    boundary: "ASCII input and incremental encoded output stay inside WASM; the visible state is a current snapshot, not a stored trace.",
+    experience: "rle",
+  };
 }
 
 function selectAlgorithm(key) {
@@ -85,6 +90,9 @@ const elements = Object.fromEntries(
     "union-left", "union-right", "union-prepare", "union-next", "union-play", "union-reset",
     "union-speed", "union-attempts", "union-successes", "union-steps", "sequence-workbench",
     "sequence-panel",
+    "rle-panel", "rle-status", "rle-input", "rle-apply", "rle-source", "rle-output",
+    "rle-event", "rle-next", "rle-play", "rle-reset", "rle-speed", "rle-reads",
+    "rle-comparisons", "rle-runs",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -96,6 +104,9 @@ let selectedEntityId;
 let unionMachine = null;
 let unionTimer = null;
 let unionSelectionTarget = "left";
+let rleMachine = null;
+let rleTimer = null;
+let rleAppliedInput = null;
 const tracePlayback = {
   algorithm: null,
   values: [],
@@ -243,17 +254,122 @@ function playUnion() {
 
 function setExecutionExperience(experience) {
   const unionFind = experience === "union_find";
+  const rle = experience === "rle";
   elements["union-find-panel"].hidden = !unionFind;
-  elements["dynamics-panel"].hidden = unionFind;
-  elements["sequence-workbench"].hidden = unionFind;
-  elements["scale-panel"].hidden = unionFind || elements["scale-panel"].hidden;
-  elements["sequence-panel"].hidden = unionFind;
+  elements["rle-panel"].hidden = !rle;
+  elements["dynamics-panel"].hidden = unionFind || rle;
+  elements["sequence-workbench"].hidden = unionFind || rle;
+  elements["scale-panel"].hidden = unionFind || rle || elements["scale-panel"].hidden;
+  elements["sequence-panel"].hidden = unionFind || rle;
   if (unionFind) {
     stopTracePlayback();
+    stopRlePlayback();
     if (!unionMachine) initializeUnionFind();
+  } else if (rle) {
+    stopTracePlayback();
+    stopUnionPlayback();
+    if (!rleMachine) initializeRle();
   } else {
     stopUnionPlayback();
+    stopRlePlayback();
   }
+}
+
+function stopRlePlayback() {
+  if (rleTimer !== null) window.clearTimeout(rleTimer);
+  rleTimer = null;
+  elements["rle-play"].textContent = "Play";
+}
+
+function rleSnapshot() {
+  return JSON.parse(rleMachine.snapshot_json());
+}
+
+function rleSymbol(byte) {
+  return byte === 32 ? "space" : String.fromCharCode(byte);
+}
+
+function initializeRle(input = rleAppliedInput ?? elements["rle-input"].value) {
+  stopRlePlayback();
+  let nextMachine;
+  try {
+    nextMachine = new RleMachine(input);
+  } catch (error) {
+    elements["rle-status"].textContent = "Input rejected";
+    elements["rle-event"].textContent = error instanceof Error ? error.message : String(error);
+    return false;
+  }
+  rleMachine?.free();
+  rleMachine = nextMachine;
+  rleAppliedInput = input;
+  elements["rle-input"].value = input;
+  elements["rle-apply"].disabled = true;
+  renderRle(rleSnapshot());
+  return true;
+}
+
+function renderRle(snapshot) {
+  elements["rle-source"].replaceChildren(...snapshot.input.map((byte, index) => {
+    const cell = document.createElement("span");
+    cell.className = "rle-symbol";
+    cell.classList.toggle("is-consumed", index < snapshot.cursor);
+    cell.classList.toggle("is-current", index === snapshot.cursor - 1 && !snapshot.phase.includes("complete"));
+    cell.textContent = rleSymbol(byte);
+    return cell;
+  }));
+  const runs = snapshot.output.map((run) => ({ ...run, pending: false }));
+  if (snapshot.current_symbol !== null) {
+    runs.push({ symbol: snapshot.current_symbol, count: snapshot.current_count, pending: true });
+  }
+  elements["rle-output"].replaceChildren(...runs.map((run) => {
+    const token = document.createElement("span");
+    token.className = "rle-run";
+    token.classList.toggle("is-pending", run.pending);
+    token.textContent = `${rleSymbol(run.symbol)} × ${run.count}`;
+    return token;
+  }));
+  if (snapshot.input.length === 0) elements["rle-source"].textContent = "Empty input";
+  if (runs.length === 0) elements["rle-output"].textContent = "No runs emitted";
+  elements["rle-status"].textContent = snapshot.phase === "complete" ? "Complete" : `${snapshot.cursor} / ${snapshot.input.length} consumed`;
+  const messages = {
+    start_run: "Started the first run.",
+    extend_run: "The next symbol matched; the current run grew.",
+    emit_and_start: "The symbol changed; emitted the completed run and started another.",
+    emit_final: "Input exhausted; emitted the final run.",
+  };
+  elements["rle-event"].textContent = messages[snapshot.last_operation] ?? (snapshot.phase === "complete" ? "Empty input encodes to no runs." : "Ready to consume the first symbol.");
+  elements["rle-reads"].textContent = String(snapshot.reads);
+  elements["rle-comparisons"].textContent = String(snapshot.comparisons);
+  elements["rle-runs"].textContent = String(snapshot.emitted_runs);
+  elements["rle-next"].disabled = snapshot.phase === "complete";
+  document.querySelectorAll("[data-rle-operation]").forEach((line) => {
+    line.classList.toggle("is-active", line.dataset.rleOperation === snapshot.last_operation);
+  });
+}
+
+function stepRle() {
+  rleMachine.step();
+  renderRle(rleSnapshot());
+}
+
+function playRle() {
+  if (rleTimer !== null) {
+    stopRlePlayback();
+    return;
+  }
+  if (rleSnapshot().phase === "complete" && !initializeRle(rleAppliedInput)) return;
+  elements["rle-play"].textContent = "Pause";
+  const advance = () => {
+    rleMachine.step();
+    const snapshot = rleSnapshot();
+    renderRle(snapshot);
+    if (snapshot.phase === "complete") {
+      stopRlePlayback();
+      return;
+    }
+    rleTimer = window.setTimeout(advance, Number(elements["rle-speed"].value));
+  };
+  rleTimer = window.setTimeout(advance, Number(elements["rle-speed"].value));
 }
 
 function clearTrace(message) {
@@ -1071,8 +1187,9 @@ function applyProjection() {
   renderClaimProvenance(elements["space-provenance"], space);
   elements["execution-boundary"].textContent = ui.boundary;
   setExecutionExperience(ui.experience);
-  if (ui.experience === "union_find") {
-    renderUnionFind(unionSnapshot());
+  if (ui.experience === "union_find" || ui.experience === "rle") {
+    if (ui.experience === "union_find") renderUnionFind(unionSnapshot());
+    else renderRle(rleSnapshot());
     renderCatalog();
     return;
   }
@@ -1116,7 +1233,7 @@ document.querySelector(".algorithm-selector").addEventListener("click", (event) 
   if (!option) return;
   selectAlgorithm(option.dataset.algorithm);
   if (!projection) return;
-  if (algorithmUi[activeAlgorithm].experience === "union_find") {
+  if (algorithmUi[activeAlgorithm].experience) {
     applyProjection();
     return;
   }
@@ -1137,6 +1254,15 @@ elements["union-components"].addEventListener("click", (event) => {
   target.value = node.dataset.unionElement;
   unionSelectionTarget = unionSelectionTarget === "left" ? "right" : "left";
   renderUnionFind(unionSnapshot());
+});
+elements["rle-apply"].addEventListener("click", () => initializeRle(elements["rle-input"].value));
+elements["rle-next"].addEventListener("click", stepRle);
+elements["rle-play"].addEventListener("click", playRle);
+elements["rle-reset"].addEventListener("click", () => initializeRle(rleAppliedInput));
+elements["rle-input"].addEventListener("input", () => {
+  stopRlePlayback();
+  elements["rle-status"].textContent = "Edited input pending";
+  elements["rle-apply"].disabled = false;
 });
 
 document.querySelectorAll("[data-view]").forEach((tab) => {
@@ -1236,9 +1362,9 @@ elements["entity-execute"].addEventListener("click", () => {
   const key = elements["entity-execute"].dataset.presentationKey;
   if (!algorithmUi[key]) return;
   selectAlgorithm(key);
-  if (algorithmUi[key].experience !== "union_find") populateDatasets();
+  if (!algorithmUi[key].experience) populateDatasets();
   applyProjection();
-  if (algorithmUi[key].experience !== "union_find") runObservation();
+  if (!algorithmUi[key].experience) runObservation();
   setView("execute");
   document.getElementById("execute-view").scrollIntoView({ block: "start" });
 });
@@ -1267,8 +1393,8 @@ try {
   hydrateGeneratedAlgorithms();
   if (requestedAlgorithm && algorithmUi[requestedAlgorithm]) selectAlgorithm(requestedAlgorithm);
   if (requestedEntity && findRecord(projection, requestedEntity)) selectedEntityId = requestedEntity;
-  const unionFindRequested = algorithmUi[activeAlgorithm].experience === "union_find";
-  if (!unionFindRequested) populateDatasets();
+  const domainExperienceRequested = Boolean(algorithmUi[activeAlgorithm].experience);
+  if (!domainExperienceRequested) populateDatasets();
   applyProjection();
   if (requestedEntity) {
     setView("catalog");
@@ -1283,14 +1409,14 @@ try {
     .some((option) => option.value === requestedProfile);
   const sizeExists = [...elements["generator-size"].options]
     .some((option) => option.value === requestedSize);
-  if (!unionFindRequested && profileExists && sizeExists && /^\d+$/.test(requestedSeed ?? "")) {
+  if (!domainExperienceRequested && profileExists && sizeExists && /^\d+$/.test(requestedSeed ?? "")) {
     elements["generator-profile"].value = requestedProfile;
     elements["generator-size"].value = requestedSize;
     elements["generator-seed"].value = requestedSeed;
     elements["generator-random-seed"].checked = false;
     syncSeedMode(false);
     generateFromControls();
-  } else if (!unionFindRequested) {
+  } else if (!domainExperienceRequested) {
     runObservation();
   }
 } catch (error) {

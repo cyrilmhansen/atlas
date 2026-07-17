@@ -567,7 +567,7 @@ mod tests {
 
         let summary = rebuild_connection(&registry(), &mut connection).unwrap();
 
-        assert_eq!(summary.entities, 115);
+        assert_eq!(summary.entities, 118);
         assert!(summary.relations > 82);
         assert!(summary.claims > 650);
         assert_eq!(summary.digest.len(), 64);
@@ -586,7 +586,7 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(versions, 43);
+        assert_eq!(versions, 44);
         let cost_profiles: i64 = connection
             .query_row(
                 "SELECT COUNT(*) FROM claims WHERE path LIKE 'costs[%]%'",

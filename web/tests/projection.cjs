@@ -9,7 +9,7 @@ assert.match(projection.build.rustc, /^rustc /);
 assert.equal(projection.build.wasm_bindgen, "wasm-bindgen 0.2.100");
 assert.equal(projection.build.target, "wasm32-unknown-unknown");
 assert.equal(projection.build.profile, "release");
-assert.deepEqual(projection.counts, { conditions: 2, problems: 31, algorithms: 39, implementations: 43 });
+assert.deepEqual(projection.counts, { conditions: 2, problems: 32, algorithms: 40, implementations: 44 });
 assert.equal(projection.conditions[0].id, "state.spare_capacity");
 
 assert.equal(projection.datasets.length, 10);

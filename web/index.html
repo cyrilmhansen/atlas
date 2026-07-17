@@ -33,6 +33,7 @@
               <button class="algorithm-option" type="button" data-algorithm="insertion" aria-pressed="false">Insertion sort</button>
               <button class="algorithm-option" type="button" data-algorithm="reverse" aria-pressed="false">Reverse</button>
               <button class="algorithm-option" type="button" data-algorithm="union_find" aria-pressed="false">Union-find</button>
+              <button class="algorithm-option" type="button" data-algorithm="rle" aria-pressed="false">RLE</button>
             </div>
             <div class="algorithm-heading">
               <div>
@@ -154,6 +155,70 @@
               <span>Attempts <strong id="union-attempts">0</strong></span>
               <span>Successful unions <strong id="union-successes">0</strong></span>
               <span>Semantic steps <strong id="union-steps">0</strong></span>
+            </div>
+          </div>
+        </section>
+
+        <section id="rle-panel" class="rle-panel" aria-labelledby="rle-heading" hidden>
+          <div class="rle-code">
+            <div class="section-heading">
+              <div>
+                <p class="section-index">Algorithm</p>
+                <h3 id="rle-heading">Adjacent run-length encoding</h3>
+              </div>
+              <code>live WASM state</code>
+            </div>
+            <div class="pseudocode-code" aria-label="Run-length encoding pseudocode">
+              <div class="pseudo-line is-operation" data-rle-operation="start_run">current &lt;- read(input)</div>
+              <div class="pseudo-line is-control" data-rle-operation="extend_run">if next == current</div>
+              <div class="pseudo-line is-operation" data-rle-operation="extend_run" style="--indent: 1">count &lt;- count + 1</div>
+              <div class="pseudo-line is-control" data-rle-operation="emit_and_start">else</div>
+              <div class="pseudo-line is-operation" data-rle-operation="emit_and_start" style="--indent: 1">emit(current, count)</div>
+              <div class="pseudo-line is-operation" data-rle-operation="emit_final">emit final run</div>
+            </div>
+          </div>
+          <div class="rle-execution">
+            <div class="section-heading">
+              <div>
+                <p class="section-index">Execution</p>
+                <h3>Input consumption and output emission</h3>
+              </div>
+              <span id="rle-status" class="trace-progress">Ready</span>
+            </div>
+            <label class="rle-input-label" for="rle-input">ASCII input - edit directly</label>
+            <div class="rle-input-row">
+              <input id="rle-input" type="text" maxlength="64" value="AAAABBBCCDAA" spellcheck="false">
+              <button id="rle-apply" type="button">Apply input</button>
+            </div>
+            <div class="rle-state-grid">
+              <div>
+                <span class="rle-state-label">Input</span>
+                <div id="rle-source" class="rle-source"></div>
+              </div>
+              <div>
+                <span class="rle-state-label">Encoded runs</span>
+                <div id="rle-output" class="rle-output"></div>
+              </div>
+            </div>
+            <p id="rle-event" class="trace-event">Ready to consume the first symbol.</p>
+            <div class="rle-controls">
+              <button id="rle-next" type="button">Next step</button>
+              <button id="rle-play" class="primary-command" type="button">Play</button>
+              <button id="rle-reset" type="button">Reset</button>
+              <label for="rle-speed">Speed
+                <select id="rle-speed">
+                  <option value="1200">0.5x</option>
+                  <option value="600" selected>1x</option>
+                  <option value="300">2x</option>
+                  <option value="150">4x</option>
+                  <option value="75">8x</option>
+                </select>
+              </label>
+            </div>
+            <div class="union-counters">
+              <span>Reads <strong id="rle-reads">0</strong></span>
+              <span>Comparisons <strong id="rle-comparisons">0</strong></span>
+              <span>Emitted runs <strong id="rle-runs">0</strong></span>
             </div>
           </div>
         </section>

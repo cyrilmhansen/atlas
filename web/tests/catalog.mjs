@@ -13,9 +13,9 @@ import {
 
 const projection = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 
-assert.equal(catalogRecords(projection).length, 115);
+assert.equal(catalogRecords(projection).length, 118);
 assert.equal(filterCatalog(projection, "", "condition").length, 2);
-assert.equal(filterCatalog(projection, "", "problem").length, 31);
+assert.equal(filterCatalog(projection, "", "problem").length, 32);
 assert.equal(filterCatalog(projection, "graph", "problem").length, 4);
 
 const problem = findRecord(projection, "graph.reachable_traversal");
@@ -51,6 +51,8 @@ const insertion = findRecord(projection, "sort.insertion");
 assert.equal(executablePresentation(projection, insertion).key, "insertion");
 const unionFind = findRecord(projection, "disjoint_set.rank_path_halving.union");
 assert.equal(executablePresentation(projection, unionFind).key, "union_find");
+const rle = findRecord(projection, "codec.rle.adjacent_runs");
+assert.equal(executablePresentation(projection, rle).key, "rle");
 assert.equal(executablePresentation(projection, algorithm), undefined);
 
 const spareCapacity = findRecord(projection, "state.spare_capacity");

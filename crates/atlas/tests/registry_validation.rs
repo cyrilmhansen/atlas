@@ -89,9 +89,9 @@ fn accepts_the_committed_registry() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../registry/atlas.yaml");
     let registry = load_registry(&path).expect("committed registry must be valid");
 
-    assert_eq!(registry.problems.len(), 31);
-    assert_eq!(registry.algorithms.len(), 39);
-    assert_eq!(registry.implementations.len(), 43);
+    assert_eq!(registry.problems.len(), 32);
+    assert_eq!(registry.algorithms.len(), 40);
+    assert_eq!(registry.implementations.len(), 44);
     assert_eq!(registry.conditions.len(), 2);
     assert!(registry.executions.is_empty());
     let linear_search = registry
@@ -142,7 +142,7 @@ fn accepts_the_committed_registry() {
         .iter()
         .filter(|implementation| implementation.version.value == "0.1.0")
         .collect::<Vec<_>>();
-    assert_eq!(atlas_implementations.len(), 27);
+    assert_eq!(atlas_implementations.len(), 28);
     assert!(
         atlas_implementations
             .iter()
@@ -673,7 +673,7 @@ fn cli_accepts_an_explicit_registry_path() {
         "stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(String::from_utf8_lossy(&output.stdout).contains("Validated 31 problem(s)"));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Validated 32 problem(s)"));
 }
 
 #[test]
@@ -1913,7 +1913,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
     let first = run();
     assert!(first.status.success());
     let first_stdout = String::from_utf8(first.stdout).expect("UTF-8 CLI output");
-    assert!(first_stdout.contains("Indexed 115 entities,"));
+    assert!(first_stdout.contains("Indexed 118 entities,"));
     let first_digest = first_stdout
         .lines()
         .find(|line| line.starts_with("Logical SHA-256: "))
@@ -1945,7 +1945,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(entities, 115);
+    assert_eq!(entities, 118);
     assert_eq!(stale, 0);
     drop(connection);
     fs::remove_file(database).unwrap();

@@ -7,10 +7,11 @@ const projection = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
 assert.doesNotMatch(source, /\b(?:InsertionSortStepper|IsSortedStepper|ReverseStepper)\b/);
 assert.doesNotMatch(source, /\bobserve_(?:insertion_sort|is_sorted|reverse)_i32\b/);
 assert.doesNotMatch(source, /activeAlgorithm\s*===/);
-assert.match(source, /import init, \{ UnionFindMachine, VisualMachine \}/);
+assert.match(source, /import init, \{ RleMachine, UnionFindMachine, VisualMachine \}/);
 assert.match(source, /function runGeneratedAlgorithm\(/);
 assert.match(source, /id: "disjoint_set\.rank_path_halving\.union"/);
 assert.match(source, /new UnionFindMachine\(size\)/);
+assert.match(source, /new RleMachine\(input\)/);
 
 assert.equal(projection.dynamics.length, 5);
 for (const dynamics of projection.dynamics) {
@@ -18,4 +19,4 @@ for (const dynamics of projection.dynamics) {
   assert.ok(dynamics.presentation, `${dynamics.algorithm_id} has no presentation`);
 }
 
-console.log("Sequence execution stays generated; union-find uses its bounded domain WASM machine.");
+console.log("Sequence execution stays generated; union-find and RLE use bounded domain WASM machines.");

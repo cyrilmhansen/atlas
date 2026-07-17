@@ -36,10 +36,22 @@ renderer were clearer and exposed the actual operation. This is the
 first measurement of experience-specific code, not yet evidence for a generic
 experience format.
 
-## Active experiment: run-length encoding
+## Run-length encoding result
 
-Test whether a codec with separate visible input and output can reuse the same
-registry/evidence boundary while executing incrementally in WASM. The test is
-falsified if the demonstration requires a public schema change, stores a trace
-as presentation state, or must pretend the sequence visual bytecode represents
-stream emission.
+`codec.rle.adjacent_runs` adds one Problem, Algorithm and Rust Implementation.
+Its direct encoder is the oracle for a bounded WASM machine that consumes ASCII
+input incrementally. The browser separates consumed input, the pending run and
+emitted runs; edits require an explicit apply action and no presentation trace
+is stored. Empty, singleton, alternating, invalid and oversized cases are tested.
+
+This second case also required no public schema change. The experience shares a
+small control cycle with union-find, but its state and rendering are different.
+Two cases do not yet justify a generated experience format; the duplication is
+retained until A* supplies a third independent case.
+
+## Active experiment: A*
+
+Test whether a small editable grid can expose frontier expansion and final path
+from real incremental WASM execution. The test is falsified if Atlas cannot
+distinguish the registered algorithm claims from map-specific local observation,
+or if the demonstration requires graph-specific fields in the public schema.

@@ -6,8 +6,10 @@ use atlas_algorithms::reverse::reverse_in_place;
 use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 
+mod rle;
 mod union_find;
 
+pub use rle::{RleMachine, Run, encode_ascii};
 pub use union_find::UnionFindMachine;
 
 pub const MAX_INPUT_LENGTH: usize = 4_096;

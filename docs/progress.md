@@ -10,7 +10,7 @@ selection code or a premature public schema change.
 
 ## Demonstrated state
 
-- Phase 9 closes supported for an in-memory schema 0.2 migration dry run.
+- Schema 0.2 is authoritative under DEC-075; all existing consumers are migrated.
 - The registry contains 31 Problems, 39 Algorithms and 43 Implementations.
 - Graph reachability, priority-queue push and exact bounded top-k each have two
   candidates discovered through `solves` and `implements` alone.
@@ -21,24 +21,24 @@ selection code or a premature public schema change.
 
 ## Active experiment
 
-None. Phase 9 is closed; schema 0.1 remains authoritative.
+None. The schema 0.2 adoption slice is complete.
 
 ## Principal recent result
 
-Repeated full-corpus migrations are byte-identical and preserve all entity
-counts plus migrated bound, evidence and provenance. Three malformed knowledge
-fixtures are rejected without writing an artifact.
+Heap and hash-map conditioned requests now succeed from public facts. CLI,
+SQLite projection v2 and Web projection v1 preserve qualified profiles and
+condition provenance across the full corpus.
 
 ## Open uncertainty
 
-SQLite, CLI and Explorer consumers have not been exercised against the draft.
-Condition statements remain declarative rather than executable predicates.
+Condition statements remain declarative, and cost bounds remain exact opaque
+strings without asymptotic ordering.
 
 ## Next falsifiable action
 
-Choose whether to adopt schema 0.2 and migrate its consumers, or retain the
-validated draft while testing another missing fact class.
+Expose one bounded public selection request over the adopted facts without
+stabilizing the private overlay format.
 
 ## Blocking structural decisions
 
-Replacing schema 0.1 or stabilizing 0.2 remains blocked on human validation.
+A new public selection interface remains subject to human validation.

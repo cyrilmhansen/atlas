@@ -2,14 +2,15 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
 const projection = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-assert.equal(projection.format, "atlas-web-private-v0");
+assert.equal(projection.format, "atlas-web-private-v1");
 assert.match(projection.source_commit, /^[0-9a-f]{40}$/);
 assert.match(projection.registry_digest, /^[0-9a-f]{64}$/);
 assert.match(projection.build.rustc, /^rustc /);
 assert.equal(projection.build.wasm_bindgen, "wasm-bindgen 0.2.100");
 assert.equal(projection.build.target, "wasm32-unknown-unknown");
 assert.equal(projection.build.profile, "release");
-assert.deepEqual(projection.counts, { problems: 31, algorithms: 39, implementations: 43 });
+assert.deepEqual(projection.counts, { conditions: 2, problems: 31, algorithms: 39, implementations: 43 });
+assert.equal(projection.conditions[0].id, "state.spare_capacity");
 
 assert.equal(projection.datasets.length, 10);
 assert.deepEqual(
@@ -92,10 +93,14 @@ assert.match(
 const algorithm = projection.algorithms.find((item) => item.id === "order.is_sorted.adjacent");
 assert.ok(algorithm);
 assert.equal(algorithm.solves, "sequence.is_sorted");
-assert.equal(algorithm.time_worst.value, "O(n)");
-assert.ok(algorithm.time_worst.source);
-assert.equal(algorithm.auxiliary_memory.value, "O(1)");
-assert.ok(algorithm.auxiliary_memory.source);
+const worstTime = algorithm.costs.find((claim) => claim.value.metric === "time"
+  && claim.value.regime === "worst" && claim.value.requires.length === 0);
+const auxiliaryMemory = algorithm.costs.find((claim) => claim.value.metric === "auxiliary_memory"
+  && claim.value.regime === "worst" && claim.value.requires.length === 0);
+assert.equal(worstTime.value.bound, "O(n)");
+assert.ok(worstTime.source);
+assert.equal(auxiliaryMemory.value.bound, "O(1)");
+assert.ok(auxiliaryMemory.source);
 
 const graphProblem = projection.problems.find((item) => item.id === "graph.nonnegative_shortest_distances");
 assert.ok(graphProblem.requires);

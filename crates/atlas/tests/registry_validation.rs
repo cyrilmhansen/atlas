@@ -4,13 +4,52 @@ use std::path::Path;
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use atlas::registry::{Registry, load_registry};
+use atlas::registry::{
+    Algorithm, Claim, CostMetric, CostProfile, CostRegime, Registry, load_registry,
+};
+use serde_yaml::Value;
 
 const VALID_REGISTRY: &str = include_str!("../../../registry/atlas.yaml");
 static NEXT_DATABASE: AtomicUsize = AtomicUsize::new(0);
 
 fn parse(contents: &str) -> Registry {
     serde_yaml::from_str(contents).expect("test fixture must match the schema shape")
+}
+
+fn mutated_yaml(mutate: impl FnOnce(&mut Value)) -> String {
+    let mut document = serde_yaml::from_str::<Value>(VALID_REGISTRY).unwrap();
+    mutate(&mut document);
+    serde_yaml::to_string(&document).unwrap()
+}
+
+fn mutated_registry(mutate: impl FnOnce(&mut Value)) -> Registry {
+    parse(&mutated_yaml(mutate))
+}
+
+fn entity_mut<'a>(document: &'a mut Value, collection: &str, id: &str) -> &'a mut Value {
+    document[collection]
+        .as_sequence_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|entity| entity["id"] == id)
+        .unwrap()
+}
+
+fn cost<'a>(
+    algorithm: &'a Algorithm,
+    metric: CostMetric,
+    regime: CostRegime,
+    requires: &[&str],
+) -> &'a Claim<CostProfile> {
+    algorithm
+        .costs
+        .iter()
+        .find(|claim| {
+            claim.value.metric == metric
+                && claim.value.regime == regime
+                && claim.value.requires == requires
+        })
+        .expect("expected cost profile must exist")
 }
 
 fn expected_list(registry: &Registry, selected_kind: Option<&str>) -> String {
@@ -53,6 +92,7 @@ fn accepts_the_committed_registry() {
     assert_eq!(registry.problems.len(), 31);
     assert_eq!(registry.algorithms.len(), 39);
     assert_eq!(registry.implementations.len(), 43);
+    assert_eq!(registry.conditions.len(), 2);
     assert!(registry.executions.is_empty());
     let linear_search = registry
         .algorithms
@@ -80,7 +120,14 @@ fn accepts_the_committed_registry() {
         .find(|algorithm| algorithm.id == "deduplicate.hash.stable")
         .expect("hash deduplication algorithm must be present");
     assert_eq!(
-        hash_deduplication.time_expected.as_ref().unwrap().value,
+        cost(
+            hash_deduplication,
+            CostMetric::Time,
+            CostRegime::Expected,
+            &[]
+        )
+        .value
+        .bound,
         "O(n)"
     );
     for implementation in &registry.implementations {
@@ -253,7 +300,13 @@ fn committed_registry_keeps_dynamic_operations_and_cost_scopes_separate() {
         .find(|algorithm| algorithm.id == "disjoint_set.rank_path_halving.union")
         .expect("union operation must be present");
     assert_eq!(union.solves, "disjoint_set.union");
-    assert!(union.time_expected.is_none());
+    assert!(
+        !union
+            .costs
+            .iter()
+            .any(|claim| claim.value.metric == CostMetric::Time
+                && claim.value.regime == CostRegime::Expected)
+    );
 
     let heap_push = registry
         .algorithms
@@ -261,11 +314,15 @@ fn committed_registry_keeps_dynamic_operations_and_cost_scopes_separate() {
         .find(|algorithm| algorithm.id == "priority_queue.binary_heap.push")
         .expect("heap push operation must be present");
     assert_eq!(
-        heap_push.time_worst.value,
+        cost(heap_push, CostMetric::Time, CostRegime::Worst, &[])
+            .value
+            .bound,
         "O(n) for one call when capacity growth reallocates"
     );
     assert_eq!(
-        heap_push.time_expected.as_ref().unwrap().value,
+        cost(heap_push, CostMetric::Time, CostRegime::Expected, &[])
+            .value
+            .bound,
         "O(1) averaged over input order and sufficiently many pushes"
     );
 
@@ -289,7 +346,9 @@ fn committed_registry_distinguishes_exact_randomized_and_approximate_streams() {
         .expect("bounded top-k must be present");
     assert!(top_k.deterministic.value);
     assert_eq!(
-        top_k.auxiliary_memory.value,
+        cost(top_k, CostMetric::AuxiliaryMemory, CostRegime::Worst, &[])
+            .value
+            .bound,
         "O(k) persistent retained elements"
     );
 
@@ -392,8 +451,7 @@ fn rejects_an_unsupported_evidence_scheme() {
 
 #[test]
 fn rejects_an_unknown_schema_version() {
-    let registry =
-        parse(&VALID_REGISTRY.replacen("schema_version: \"0.1\"", "schema_version: \"9.9\"", 1));
+    let registry = mutated_registry(|document| document["schema_version"] = "9.9".into());
 
     let errors = registry.validate();
 
@@ -430,21 +488,25 @@ fn rejects_a_duplicate_id_across_entity_kinds() {
 
 #[test]
 fn rejects_a_claim_without_provenance() {
-    let contents = VALID_REGISTRY.replacen("      source: \"vision:0.1#6\"\n", "", 1);
+    let contents = mutated_yaml(|document| {
+        entity_mut(document, "problems", "sequence.sort")["input"]
+            .as_mapping_mut()
+            .unwrap()
+            .remove("source");
+    });
 
     let error = serde_yaml::from_str::<Registry>(&contents)
-        .expect_err("a claim without source must not match schema 0.1");
+        .expect_err("a claim without source must not match schema 0.2");
 
     assert!(error.to_string().contains("source"));
 }
 
 #[test]
 fn rejects_algorithm_requirements_without_provenance() {
-    let registry = parse(&VALID_REGISTRY.replacen(
-        "source: \"file:crates/atlas-algorithms/src/binary_search.rs\"",
-        "source: \"\"",
-        1,
-    ));
+    let registry = mutated_registry(|document| {
+        entity_mut(document, "algorithms", "search.binary.lower_bound")["requires"]["source"] =
+            "".into();
+    });
 
     let errors = registry.validate();
 
@@ -457,15 +519,10 @@ fn rejects_algorithm_requirements_without_provenance() {
 
 #[test]
 fn rejects_an_empty_algorithm_requirement_list() {
-    let registry = parse(&VALID_REGISTRY.replacen(
-        concat!(
-            "requires:\n",
-            "      value:\n",
-            "        - \"input.sequence is sorted according to the comparison order\"",
-        ),
-        "requires:\n      value: []",
-        1,
-    ));
+    let registry = mutated_registry(|document| {
+        entity_mut(document, "algorithms", "search.binary.lower_bound")["requires"]["value"] =
+            Value::Sequence(Vec::new());
+    });
 
     let errors = registry.validate();
 
@@ -478,11 +535,9 @@ fn rejects_an_empty_algorithm_requirement_list() {
 
 #[test]
 fn rejects_problem_requirements_without_provenance() {
-    let registry = parse(&VALID_REGISTRY.replacen(
-        "source: \"definition:sequence.merge_sorted\"",
-        "source: \"\"",
-        1,
-    ));
+    let registry = mutated_registry(|document| {
+        entity_mut(document, "problems", "sequence.merge_sorted")["requires"]["source"] = "".into();
+    });
 
     let errors = registry.validate();
 
@@ -495,16 +550,10 @@ fn rejects_problem_requirements_without_provenance() {
 
 #[test]
 fn rejects_an_empty_problem_requirement_list() {
-    let registry = parse(&VALID_REGISTRY.replacen(
-        concat!(
-            "requires:\n",
-            "      value:\n",
-            "        - \"input.left is sorted according to input.order\"\n",
-            "        - \"input.right is sorted according to input.order\"",
-        ),
-        "requires:\n      value: []",
-        1,
-    ));
+    let registry = mutated_registry(|document| {
+        entity_mut(document, "problems", "sequence.merge_sorted")["requires"]["value"] =
+            Value::Sequence(Vec::new());
+    });
 
     let errors = registry.validate();
 
@@ -516,34 +565,76 @@ fn rejects_an_empty_problem_requirement_list() {
 }
 
 #[test]
-fn rejects_expected_time_without_provenance() {
-    let registry = parse(&VALID_REGISTRY.replacen(
-        "source: \"docs:https://docs.rs/hashbrown/0.17.1/hashbrown/\"",
-        "source: \"\"",
-        1,
-    ));
+fn rejects_a_cost_profile_without_provenance() {
+    let registry = mutated_registry(|document| {
+        entity_mut(document, "algorithms", "deduplicate.hash.stable")["costs"][2]["source"] =
+            "".into();
+    });
 
     let errors = registry.validate();
 
     assert!(
         errors
             .iter()
-            .any(|error| error.field == "algorithm.deduplicate.hash.stable.time_expected.source")
+            .any(|error| error.field == "algorithm.deduplicate.hash.stable.costs[2].source")
     );
 }
 
 #[test]
+fn rejects_a_cost_with_an_unknown_condition() {
+    let registry = mutated_registry(|document| {
+        entity_mut(document, "algorithms", "priority_queue.binary_heap.push")["costs"][3]["value"]
+            ["requires"] = Value::Sequence(vec!["state.missing".into()]);
+    });
+
+    let errors = registry.validate();
+
+    assert!(errors.iter().any(|error| {
+        error.field == "algorithm.priority_queue.binary_heap.push.costs[3].value.requires[0]"
+            && error.message.contains("unknown condition")
+    }));
+}
+
+#[test]
+fn rejects_a_duplicate_cost_profile() {
+    let registry = mutated_registry(|document| {
+        let costs = entity_mut(document, "algorithms", "sort.merge.top_down")["costs"]
+            .as_sequence_mut()
+            .unwrap();
+        costs.push(costs[0].clone());
+    });
+
+    let errors = registry.validate();
+
+    assert!(errors.iter().any(|error| {
+        error.field == "algorithm.sort.merge.top_down.costs[2]"
+            && error.message.contains("duplicate")
+    }));
+}
+
+#[test]
+fn rejects_a_condition_statement_without_provenance() {
+    let contents = mutated_yaml(|document| {
+        entity_mut(document, "conditions", "state.spare_capacity")["statement"]
+            .as_mapping_mut()
+            .unwrap()
+            .remove("source");
+    });
+
+    let error = serde_yaml::from_str::<Registry>(&contents)
+        .expect_err("condition statement provenance is required");
+
+    assert!(error.to_string().contains("source"));
+}
+
+#[test]
 fn rejects_an_implementation_without_required_metadata() {
-    let contents = VALID_REGISTRY.replacen(
-        concat!(
-            "    version:\n",
-            "      value: \"0.1.0\"\n",
-            "      level: declared\n",
-            "      source: \"file:crates/atlas-algorithms/Cargo.toml\"\n",
-        ),
-        "",
-        1,
-    );
+    let contents = mutated_yaml(|document| {
+        entity_mut(document, "implementations", "sort.merge.rust.slice.v1")
+            .as_mapping_mut()
+            .unwrap()
+            .remove("version");
+    });
 
     let error = serde_yaml::from_str::<Registry>(&contents)
         .expect_err("implementation version metadata must be required");
@@ -553,11 +644,10 @@ fn rejects_an_implementation_without_required_metadata() {
 
 #[test]
 fn rejects_implementation_metadata_without_provenance() {
-    let registry = parse(&VALID_REGISTRY.replacen(
-        "source: \"definition:rust-api-contract\"",
-        "source: \"\"",
-        1,
-    ));
+    let registry = mutated_registry(|document| {
+        entity_mut(document, "implementations", "sort.merge.rust.slice.v1")["abi"]["source"] =
+            "".into();
+    });
 
     let errors = registry.validate();
 
@@ -1479,8 +1569,8 @@ fn cli_explains_hash_deduplication_costs_and_effects() {
         "    allocation: allocates an internal HashSet<&T>; reuses output capacity and may grow\n"
     ));
     assert!(stdout.contains("    - T implements Eq and Hash consistently\n"));
-    assert!(stdout.contains("time_worst:\n  value: O(n^2)\n"));
-    assert!(stdout.contains("time_expected:\n  value: O(n)\n"));
+    assert!(stdout.contains("  - metric: time\n    regime: worst\n    bound: O(n^2)\n"));
+    assert!(stdout.contains("  - metric: time\n    regime: expected\n    bound: O(n)\n"));
     assert!(stdout.contains("result retains the first input occurrence and relative order"));
 }
 
@@ -1529,7 +1619,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
     let first = run();
     assert!(first.status.success());
     let first_stdout = String::from_utf8(first.stdout).expect("UTF-8 CLI output");
-    assert!(first_stdout.contains("Indexed 113 entities, 82 relations,"));
+    assert!(first_stdout.contains("Indexed 115 entities,"));
     let first_digest = first_stdout
         .lines()
         .find(|line| line.starts_with("Logical SHA-256: "))
@@ -1561,7 +1651,7 @@ fn cli_rebuilds_a_deterministic_sqlite_index() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(entities, 113);
+    assert_eq!(entities, 115);
     assert_eq!(stale, 0);
     drop(connection);
     fs::remove_file(database).unwrap();

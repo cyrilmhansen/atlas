@@ -13,7 +13,8 @@ import {
 
 const projection = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 
-assert.equal(catalogRecords(projection).length, 113);
+assert.equal(catalogRecords(projection).length, 115);
+assert.equal(filterCatalog(projection, "", "condition").length, 2);
 assert.equal(filterCatalog(projection, "", "problem").length, 31);
 assert.equal(filterCatalog(projection, "graph", "problem").length, 4);
 
@@ -39,13 +40,22 @@ assert.equal(implementationClaims.get("effects").level, "tested");
 const hashDeduplicate = findRecord(projection, "deduplicate.hash.stable");
 const quadraticDeduplicate = findRecord(projection, "deduplicate.quadratic.stable");
 const comparison = new Map(comparableRows(hashDeduplicate, quadraticDeduplicate).map((row) => [row.key, row]));
-assert.equal(comparison.get("time_expected").left.value, "O(n)");
-assert.equal(comparison.get("time_expected").right, null);
+const expectedTime = [...comparison.values()].find((row) => row.left?.value.metric === "time"
+  && row.left?.value.regime === "expected");
+assert.equal(expectedTime.left.value.bound, "O(n)");
+assert.equal(expectedTime.right, null);
 assert.equal(comparison.get("stable").left.value, true);
 assert.equal(comparison.get("stable").right.value, true);
 
 const insertion = findRecord(projection, "sort.insertion");
 assert.equal(executablePresentation(projection, insertion).key, "insertion");
 assert.equal(executablePresentation(projection, algorithm), undefined);
+
+const spareCapacity = findRecord(projection, "state.spare_capacity");
+assert.equal(spareCapacity.kind, "condition");
+assert.deepEqual(
+  relatedRecords(projection, spareCapacity).map((record) => record.entity.id),
+  ["priority_queue.binary_heap.push", "priority_queue.quaternary_heap.push"],
+);
 
 console.log("Relational catalog, factual comparison and execution availability passed.");

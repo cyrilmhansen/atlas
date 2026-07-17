@@ -225,6 +225,12 @@ conservation checks. The dry run closes supported and rejects dangling
 conditions, duplicate profiles and incomplete provenance. It writes no registry
 or derived projection; consumer migration remains a separate adoption gate.
 
+DEC-075 passes that gate. Schema 0.2 is authoritative with first-class
+conditions and generic qualified costs. CLI, SQLite projection version 2 and
+private Web projection `atlas-web-private-v1` consume the new shape; heap and
+hash-map conditioned selections now succeed from registry facts. Bounds remain
+opaque and condition truth remains caller-supplied.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

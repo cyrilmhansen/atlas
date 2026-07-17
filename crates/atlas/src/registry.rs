@@ -1,20 +1,28 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fs;
 use std::path::Path;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-pub const SUPPORTED_SCHEMA_VERSION: &str = "0.1";
+pub const SUPPORTED_SCHEMA_VERSION: &str = "0.2";
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Registry {
     pub schema_version: String,
+    pub conditions: Vec<Condition>,
     pub problems: Vec<Problem>,
     pub algorithms: Vec<Algorithm>,
     pub implementations: Vec<Implementation>,
     pub executions: Vec<serde_yaml::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Condition {
+    pub id: String,
+    pub statement: Claim<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -37,9 +45,56 @@ pub struct Algorithm {
     pub stable: Option<Claim<bool>>,
     pub deterministic: Claim<bool>,
     pub in_place: Option<Claim<bool>>,
-    pub time_worst: Claim<String>,
-    pub time_expected: Option<Claim<String>>,
-    pub auxiliary_memory: Claim<String>,
+    pub costs: Vec<Claim<CostProfile>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CostProfile {
+    pub metric: CostMetric,
+    pub regime: CostRegime,
+    pub bound: String,
+    pub requires: Vec<String>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CostMetric {
+    Time,
+    AuxiliaryMemory,
+    RetainedMemory,
+    Allocation,
+}
+
+impl fmt::Display for CostMetric {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let value = match self {
+            Self::Time => "time",
+            Self::AuxiliaryMemory => "auxiliary_memory",
+            Self::RetainedMemory => "retained_memory",
+            Self::Allocation => "allocation",
+        };
+        formatter.write_str(value)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CostRegime {
+    Worst,
+    Expected,
+    Amortized,
+}
+
+impl fmt::Display for CostRegime {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let value = match self {
+            Self::Worst => "worst",
+            Self::Expected => "expected",
+            Self::Amortized => "amortized",
+        };
+        formatter.write_str(value)
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -162,9 +217,14 @@ impl Registry {
 
         let mut ids: HashMap<&str, &str> = HashMap::new();
         for (kind, id) in self
-            .problems
+            .conditions
             .iter()
-            .map(|item| ("problem", item.id.as_str()))
+            .map(|item| ("condition", item.id.as_str()))
+            .chain(
+                self.problems
+                    .iter()
+                    .map(|item| ("problem", item.id.as_str())),
+            )
             .chain(
                 self.algorithms
                     .iter()
@@ -191,6 +251,25 @@ impl Registry {
             .iter()
             .map(|item| item.id.as_str())
             .collect();
+        let condition_ids: HashSet<_> = self
+            .conditions
+            .iter()
+            .map(|condition| condition.id.as_str())
+            .collect();
+
+        for condition in &self.conditions {
+            validate_claim(
+                &format!("condition.{}.statement", condition.id),
+                &condition.statement,
+                &mut errors,
+            );
+            if condition.statement.value.trim().is_empty() {
+                errors.push(error(
+                    format!("condition.{}.statement.value", condition.id),
+                    "must not be empty",
+                ));
+            }
+        }
 
         for problem in &self.problems {
             validate_claim(
@@ -239,8 +318,6 @@ impl Registry {
             for (name, claim) in [
                 ("name", claim_ref(&algorithm.name)),
                 ("deterministic", claim_ref(&algorithm.deterministic)),
-                ("time_worst", claim_ref(&algorithm.time_worst)),
-                ("auxiliary_memory", claim_ref(&algorithm.auxiliary_memory)),
             ] {
                 validate_claim_parts(
                     &format!("algorithm.{}.{name}", algorithm.id),
@@ -248,12 +325,58 @@ impl Registry {
                     &mut errors,
                 );
             }
-            if let Some(time_expected) = &algorithm.time_expected {
-                validate_claim(
-                    &format!("algorithm.{}.time_expected", algorithm.id),
-                    time_expected,
-                    &mut errors,
+            if algorithm.costs.is_empty() {
+                errors.push(error(
+                    format!("algorithm.{}.costs", algorithm.id),
+                    "must contain at least one cost profile",
+                ));
+            }
+            let mut profiles = HashSet::new();
+            for (index, cost) in algorithm.costs.iter().enumerate() {
+                let path = format!("algorithm.{}.costs[{index}]", algorithm.id);
+                validate_claim(&path, cost, &mut errors);
+                if cost.value.bound.trim().is_empty() {
+                    errors.push(error(format!("{path}.value.bound"), "must not be empty"));
+                }
+                let mut requirements = HashSet::new();
+                for (requirement_index, requirement) in cost.value.requires.iter().enumerate() {
+                    if !condition_ids.contains(requirement.as_str()) {
+                        errors.push(error(
+                            format!("{path}.value.requires[{requirement_index}]"),
+                            format!("references unknown condition {requirement:?}"),
+                        ));
+                    }
+                    if !requirements.insert(requirement.as_str()) {
+                        errors.push(error(
+                            format!("{path}.value.requires[{requirement_index}]"),
+                            format!("duplicates condition {requirement:?}"),
+                        ));
+                    }
+                }
+                let identity = (
+                    cost.value.metric,
+                    cost.value.regime,
+                    cost.value.bound.as_str(),
+                    cost.value.requires.as_slice(),
                 );
+                if !profiles.insert(identity) {
+                    errors.push(error(path, "duplicates an existing cost profile"));
+                }
+            }
+            for (metric, regime) in [
+                (CostMetric::Time, CostRegime::Worst),
+                (CostMetric::AuxiliaryMemory, CostRegime::Worst),
+            ] {
+                if !algorithm
+                    .costs
+                    .iter()
+                    .any(|cost| cost.value.metric == metric && cost.value.regime == regime)
+                {
+                    errors.push(error(
+                        format!("algorithm.{}.costs", algorithm.id),
+                        format!("must contain a {regime} {metric} profile"),
+                    ));
+                }
             }
             for (name, claim) in [
                 ("stable", algorithm.stable.as_ref()),
@@ -321,7 +444,7 @@ impl Registry {
         if !self.executions.is_empty() {
             errors.push(error(
                 "executions",
-                "execution records are not defined by schema 0.1 yet; expected an empty list",
+                "execution records are not defined by schema 0.2 yet; expected an empty list",
             ));
         }
 
@@ -345,6 +468,13 @@ impl Registry {
                 &mut errors,
             );
         };
+
+        for condition in &self.conditions {
+            check(
+                format!("condition.{}.statement.source", condition.id),
+                &condition.statement.source,
+            );
+        }
 
         for problem in &self.problems {
             check(
@@ -370,11 +500,6 @@ impl Registry {
             for (name, source) in [
                 ("name", algorithm.name.source.as_str()),
                 ("deterministic", algorithm.deterministic.source.as_str()),
-                ("time_worst", algorithm.time_worst.source.as_str()),
-                (
-                    "auxiliary_memory",
-                    algorithm.auxiliary_memory.source.as_str(),
-                ),
             ] {
                 check(format!("algorithm.{}.{name}.source", algorithm.id), source);
             }
@@ -382,14 +507,16 @@ impl Registry {
                 ("requires", algorithm.requires.as_ref().map(claim_ref)),
                 ("stable", algorithm.stable.as_ref().map(claim_ref)),
                 ("in_place", algorithm.in_place.as_ref().map(claim_ref)),
-                (
-                    "time_expected",
-                    algorithm.time_expected.as_ref().map(claim_ref),
-                ),
             ] {
                 if let Some((_level, source)) = claim {
                     check(format!("algorithm.{}.{name}.source", algorithm.id), source);
                 }
+            }
+            for (index, cost) in algorithm.costs.iter().enumerate() {
+                check(
+                    format!("algorithm.{}.costs[{index}].source", algorithm.id),
+                    &cost.source,
+                );
             }
         }
         for implementation in &self.implementations {

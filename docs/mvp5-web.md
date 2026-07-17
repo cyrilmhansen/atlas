@@ -28,8 +28,9 @@ scripts/check-web.sh
 
 `build/web/data/atlas.json` is generated from the validated aggregate YAML. It
 records the source commit and the same logical digest used by the SQLite
-projection. Its `atlas-web-private-v0` shape is disposable and unversioned as a
-public contract. It also records the effective `rustc` and `wasm-bindgen`
+projection. DEC-075 updates its disposable shape to `atlas-web-private-v1` for
+schema 0.2 conditions and cost profiles; it remains unversioned as a public
+contract. It also records the effective `rustc` and `wasm-bindgen`
 versions, target and profile used to construct the bundle.
 
 `atlas-web-wasm` depends on the `no_std` native algorithm crate. The current

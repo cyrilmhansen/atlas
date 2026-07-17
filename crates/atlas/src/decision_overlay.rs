@@ -6,6 +6,7 @@ use std::path::Path;
 use serde::Deserialize;
 
 use crate::registry::Registry;
+pub use crate::registry::{CostMetric, CostRegime};
 
 pub const SUPPORTED_OVERLAY_VERSION: &str = "phase2-km5-0";
 const MAX_ATOMS: usize = 32;
@@ -98,23 +99,6 @@ pub struct CostFact {
     pub bound: String,
     pub requires: Vec<String>,
     pub evidence: Evidence,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
-#[serde(rename_all = "snake_case")]
-pub enum CostMetric {
-    Time,
-    AuxiliaryMemory,
-    RetainedMemory,
-    Allocation,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
-#[serde(rename_all = "snake_case")]
-pub enum CostRegime {
-    Worst,
-    Expected,
-    Amortized,
 }
 
 #[derive(Debug, Deserialize)]

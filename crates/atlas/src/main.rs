@@ -753,11 +753,22 @@ fn print_algorithm(algorithm: &Algorithm) {
     if let Some(in_place) = &algorithm.in_place {
         print_claim("in_place", in_place);
     }
-    print_claim("time_worst", &algorithm.time_worst);
-    if let Some(time_expected) = &algorithm.time_expected {
-        print_claim("time_expected", time_expected);
+    println!("costs:");
+    for cost in &algorithm.costs {
+        println!("  - metric: {}", cost.value.metric);
+        println!("    regime: {}", cost.value.regime);
+        println!("    bound: {}", cost.value.bound);
+        if cost.value.requires.is_empty() {
+            println!("    requires: []");
+        } else {
+            println!("    requires:");
+            for condition in &cost.value.requires {
+                println!("      - {condition}");
+            }
+        }
+        println!("    level: {}", cost.level);
+        println!("    source: {}", cost.source);
     }
-    print_claim("auxiliary_memory", &algorithm.auxiliary_memory);
 }
 
 fn print_implementation(implementation: &Implementation) {

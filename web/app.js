@@ -706,6 +706,10 @@ function generateFromControls() {
 function formatValue(value) {
   if (Array.isArray(value)) return value.length === 0 ? "None" : value.join("\n");
   if (value && typeof value === "object") {
+    if ("metric" in value && "regime" in value && "bound" in value) {
+      const conditions = value.requires.length === 0 ? "unconditional" : `requires ${value.requires.join(", ")}`;
+      return `${value.metric}; ${value.regime}; ${value.bound}; ${conditions}`;
+    }
     return [
       `mutates: ${value.mutates.length === 0 ? "none" : value.mutates.join(", ")}`,
       `I/O: ${value.io}`,
@@ -892,7 +896,7 @@ function renderCatalog() {
 }
 
 function applyProjection() {
-  const total = projection.counts.problems + projection.counts.algorithms + projection.counts.implementations;
+  const total = projection.counts.conditions + projection.counts.problems + projection.counts.algorithms + projection.counts.implementations;
   elements["entity-count"].textContent = `${total} entities from validated YAML`;
   elements["registry-digest"].textContent = projection.registry_digest;
   elements["source-commit"].textContent = `source ${projection.source_commit}`;
@@ -903,10 +907,13 @@ function applyProjection() {
   if (!algorithm) throw new Error(`derived projection is missing ${ui.id}`);
   elements["algorithm-id"].textContent = algorithm.id;
   elements["algorithm-name"].textContent = algorithm.name.value;
-  elements["time-complexity"].textContent = algorithm.time_worst.value;
-  renderClaimProvenance(elements["time-provenance"], algorithm.time_worst);
-  elements["space-complexity"].textContent = algorithm.auxiliary_memory.value;
-  renderClaimProvenance(elements["space-provenance"], algorithm.auxiliary_memory);
+  const time = findUnconditionalCost(algorithm, "time", "worst");
+  const space = findUnconditionalCost(algorithm, "auxiliary_memory", "worst");
+  if (!time || !space) throw new Error(`derived projection has incomplete costs for ${algorithm.id}`);
+  elements["time-complexity"].textContent = time.value.bound;
+  renderClaimProvenance(elements["time-provenance"], time);
+  elements["space-complexity"].textContent = space.value.bound;
+  renderClaimProvenance(elements["space-provenance"], space);
   elements["execution-boundary"].textContent = ui.boundary;
   elements["result-label"].textContent = ui.resultLabel;
   elements["comparison-label"].textContent = ui.comparisonLabel;
@@ -923,6 +930,12 @@ function applyProjection() {
     clearTrace("No validated semantic execution is exposed for this algorithm.");
   }
   renderCatalog();
+}
+
+function findUnconditionalCost(algorithm, metric, regime) {
+  return algorithm.costs.find((claim) => claim.value.metric === metric
+    && claim.value.regime === regime
+    && claim.value.requires.length === 0);
 }
 
 function setView(view) {

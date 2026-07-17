@@ -214,6 +214,6 @@ the existing decisions. This reinterpretation does not rewrite those decisions.
 
 | Program | Status | Reason |
 |---|---|---|
-| Atlas Knowledge | `maintained` through Phase 3 | preserve schema 0.1, provenance and correctness without active ontology growth |
+| Atlas Knowledge | `maintained`; schema 0.2 active under DEC-075 | preserve qualified costs, provenance and correctness without broad ontology growth |
 | Atlas Execution Lab | `frozen` | the five accepted visual programs are sufficient for the initial product workflows |
 | Atlas Explorer | `active` through Phase 3 | test whether existing knowledge and execution evidence form a useful human-facing product |

@@ -7,14 +7,16 @@ use crate::datasets::{
     DatasetClass, GenerationError, IntPredicate, PARTITION_DATASET_SPEC, SORT_DATASET_SPEC,
 };
 use crate::index::ProjectionSummary;
-use crate::registry::{Algorithm, Claim, Effects, Implementation, Problem, Registry};
+use crate::registry::{
+    Algorithm, Claim, Condition, CostProfile, Effects, Implementation, Problem, Registry,
+};
 use crate::visual_program::{
     VisualProgram, VisualProgramError, compile_insertion_visual_program,
     compile_is_sorted_visual_program, compile_minimum_visual_program,
     compile_partition_even_visual_program, compile_reverse_visual_program,
 };
 
-pub const WEB_PROJECTION_FORMAT: &str = "atlas-web-private-v0";
+pub const WEB_PROJECTION_FORMAT: &str = "atlas-web-private-v1";
 
 #[derive(Serialize)]
 pub struct WebProjection<'a> {
@@ -23,6 +25,7 @@ pub struct WebProjection<'a> {
     registry_digest: &'a str,
     build: WebBuildEnvironment<'a>,
     counts: WebCounts,
+    conditions: Vec<WebCondition<'a>>,
     problems: Vec<WebProblem<'a>>,
     algorithms: Vec<WebAlgorithm<'a>>,
     implementations: Vec<WebImplementation<'a>>,
@@ -40,9 +43,16 @@ pub struct WebBuildEnvironment<'a> {
 
 #[derive(Serialize)]
 struct WebCounts {
+    conditions: usize,
     problems: usize,
     algorithms: usize,
     implementations: usize,
+}
+
+#[derive(Serialize)]
+struct WebCondition<'a> {
+    id: &'a str,
+    statement: WebClaim<'a, String>,
 }
 
 #[derive(Serialize)]
@@ -63,9 +73,7 @@ struct WebAlgorithm<'a> {
     stable: Option<WebClaim<'a, bool>>,
     deterministic: WebClaim<'a, bool>,
     in_place: Option<WebClaim<'a, bool>>,
-    time_worst: WebClaim<'a, String>,
-    time_expected: Option<WebClaim<'a, String>>,
-    auxiliary_memory: WebClaim<'a, String>,
+    costs: Vec<WebClaim<'a, CostProfile>>,
 }
 
 #[derive(Serialize)]
@@ -181,10 +189,12 @@ impl<'a> WebProjection<'a> {
             registry_digest: &summary.digest,
             build,
             counts: WebCounts {
+                conditions: registry.conditions.len(),
                 problems: registry.problems.len(),
                 algorithms: registry.algorithms.len(),
                 implementations: registry.implementations.len(),
             },
+            conditions: registry.conditions.iter().map(WebCondition::from).collect(),
             problems: registry.problems.iter().map(WebProblem::from).collect(),
             algorithms: registry.algorithms.iter().map(WebAlgorithm::from).collect(),
             implementations: registry
@@ -370,6 +380,15 @@ impl<'a> From<&'a Problem> for WebProblem<'a> {
     }
 }
 
+impl<'a> From<&'a Condition> for WebCondition<'a> {
+    fn from(condition: &'a Condition) -> Self {
+        Self {
+            id: &condition.id,
+            statement: (&condition.statement).into(),
+        }
+    }
+}
+
 impl<'a> From<&'a Algorithm> for WebAlgorithm<'a> {
     fn from(algorithm: &'a Algorithm) -> Self {
         Self {
@@ -380,9 +399,7 @@ impl<'a> From<&'a Algorithm> for WebAlgorithm<'a> {
             stable: algorithm.stable.as_ref().map(Into::into),
             deterministic: (&algorithm.deterministic).into(),
             in_place: algorithm.in_place.as_ref().map(Into::into),
-            time_worst: (&algorithm.time_worst).into(),
-            time_expected: algorithm.time_expected.as_ref().map(Into::into),
-            auxiliary_memory: (&algorithm.auxiliary_memory).into(),
+            costs: algorithm.costs.iter().map(Into::into).collect(),
         }
     }
 }
@@ -519,9 +536,22 @@ mod tests {
         assert_eq!(value["build"]["wasm_bindgen"], "wasm-bindgen 0.2.100");
         assert_eq!(value["build"]["target"], "wasm32-unknown-unknown");
         assert_eq!(value["build"]["profile"], "release");
+        assert_eq!(value["counts"]["conditions"], 2);
         assert_eq!(value["counts"]["problems"], 31);
         assert_eq!(value["counts"]["algorithms"], 39);
         assert_eq!(value["counts"]["implementations"], 43);
+        assert_eq!(value["conditions"][0]["id"], "state.spare_capacity");
+        let heap = value["algorithms"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|algorithm| algorithm["id"] == "priority_queue.binary_heap.push")
+            .unwrap();
+        assert!(heap["costs"].as_array().unwrap().iter().any(|claim| {
+            claim["value"]["metric"] == "time"
+                && claim["value"]["bound"] == "O(log n)"
+                && claim["value"]["requires"][0] == "state.spare_capacity"
+        }));
         let graph_problem = value["problems"]
             .as_array()
             .unwrap()

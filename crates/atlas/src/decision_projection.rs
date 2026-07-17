@@ -2,13 +2,13 @@ use crate::decision_overlay::{
     Atom, AtomKind, Candidate, CostFact, CostMetric, CostRegime, CostRequirement, DecisionOverlay,
     Evidence, Fact, OverlayEvidenceLevel, Request, SUPPORTED_OVERLAY_VERSION,
 };
-use crate::registry::{Algorithm, Claim, EvidenceLevel, Implementation, Registry};
+use crate::registry::{Algorithm, EvidenceLevel, Implementation, Registry};
 
 const CONTRACT: &str = "capability.problem_contract";
 const ALLOCATES: &str = "effect.allocates_storage";
 const REQUEST_ID: &str = "request.consumer.exact_without_allocation";
-const SPARE_CAPACITY: &str = "condition.spare_capacity";
-const NONADVERSARIAL_HASHING: &str = "condition.nonadversarial_hash_distribution";
+const SPARE_CAPACITY: &str = "state.spare_capacity";
+const NONADVERSARIAL_HASHING: &str = "workload.nonadversarial_hash_distribution";
 const HEAP_COST_REQUEST_ID: &str = "request.consumer.log_push_with_spare_capacity";
 const MAP_COST_REQUEST_ID: &str = "request.consumer.expected_map_insert";
 
@@ -104,16 +104,20 @@ fn project_conditioned_time(
     let candidates = candidates_for_problem(registry, problem_id)?
         .into_iter()
         .map(|(implementation, algorithm)| {
-            let costs = time_claim(algorithm, request.regime)
+            let costs = algorithm
+                .costs
+                .iter()
+                .filter(|claim| {
+                    claim.value.metric == CostMetric::Time && claim.value.regime == request.regime
+                })
                 .map(|claim| CostFact {
                     operation: request.operation.into(),
                     metric: CostMetric::Time,
                     regime: request.regime,
-                    bound: claim.value.clone(),
-                    requires: Vec::new(),
+                    bound: claim.value.bound.clone(),
+                    requires: claim.value.requires.clone(),
                     evidence: evidence(claim.level, &claim.source),
                 })
-                .into_iter()
                 .collect();
             Candidate {
                 id: implementation.id.clone(),
@@ -218,14 +222,6 @@ fn candidates_for_problem<'a>(
         .collect())
 }
 
-fn time_claim(algorithm: &Algorithm, regime: CostRegime) -> Option<&Claim<String>> {
-    match regime {
-        CostRegime::Worst => Some(&algorithm.time_worst),
-        CostRegime::Expected => algorithm.time_expected.as_ref(),
-        CostRegime::Amortized => None,
-    }
-}
-
 fn evidence(level: EvidenceLevel, source: &str) -> Evidence {
     Evidence {
         level: match level {
@@ -314,10 +310,16 @@ mod tests {
             .clone();
         synthetic_algorithm["id"] = "test.stream.top_k.sorted_caller_buffer".into();
         synthetic_algorithm["name"]["value"] = "test-only sorted caller buffer".into();
-        synthetic_algorithm["time_worst"]["value"] = "O(nk)".into();
-        synthetic_algorithm["auxiliary_memory"]["value"] =
-            "O(k) caller-provided output storage".into();
-        for claim in ["name", "deterministic", "time_worst", "auxiliary_memory"] {
+        for cost in synthetic_algorithm["costs"].as_sequence_mut().unwrap() {
+            if cost["value"]["metric"] == "time" && cost["value"]["regime"] == "worst" {
+                cost["value"]["bound"] = "O(nk)".into();
+            }
+            if cost["value"]["metric"] == "auxiliary_memory" {
+                cost["value"]["bound"] = "O(k) caller-provided output storage".into();
+            }
+            cost["source"] = "file:crates/atlas/src/decision_projection.rs".into();
+        }
+        for claim in ["name", "deterministic"] {
             synthetic_algorithm[claim]["source"] =
                 "file:crates/atlas/src/decision_projection.rs".into();
         }
@@ -384,7 +386,7 @@ mod tests {
     }
 
     #[test]
-    fn conditioned_cost_projection_reports_public_schema_boundary() {
+    fn conditioned_cost_projection_selects_heap_with_spare_capacity() {
         let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let registry = load_registry(&workspace.join("registry/atlas.yaml")).unwrap();
         let overlay = project_conditioned_time(
@@ -420,14 +422,11 @@ mod tests {
 
         assert_eq!(actual, expected);
         assert_eq!(decisions.len(), 2);
-        assert!(decisions.iter().all(|decision| {
-            !decision.accepted
-                && decision.reasons == ["missing exact cost profile push Time Worst O(log n)"]
-        }));
+        assert!(decisions.iter().all(|decision| decision.accepted));
     }
 
     #[test]
-    fn conditioned_expected_cost_boundary_recurs_for_hash_map_insert() {
+    fn conditioned_expected_cost_selects_hash_map_under_declared_workload() {
         let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let registry = load_registry(&workspace.join("registry/atlas.yaml")).unwrap();
         let overlay = project_conditioned_time(
@@ -465,11 +464,8 @@ mod tests {
 
         assert_eq!(actual_candidates, expected_candidates);
         assert_eq!(decisions.len(), 1);
-        assert_eq!(
-            decisions[0].reasons,
-            ["missing exact cost profile insert Time Expected O(1)"]
-        );
-        assert!(!decisions[0].accepted);
+        assert!(decisions[0].accepted);
+        assert!(decisions[0].reasons.is_empty());
     }
 
     #[test]

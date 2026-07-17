@@ -6,9 +6,9 @@ use std::path::Path;
 use rusqlite::{Connection, Transaction, params};
 use sha2::{Digest, Sha256};
 
-use crate::registry::{Claim, Effects, Registry};
+use crate::registry::{Claim, CostProfile, Effects, Registry};
 
-pub const PROJECTION_VERSION: &str = "1";
+pub const PROJECTION_VERSION: &str = "2";
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct ProjectionSummary {
@@ -79,6 +79,20 @@ fn rebuild_connection(
     )?;
 
     let mut entity_ordinal = 0_i64;
+    for condition in &registry.conditions {
+        insert_entity(&transaction, &condition.id, "condition", entity_ordinal)?;
+        entity_ordinal += 1;
+        counts.entities += 1;
+        insert_claim(
+            &transaction,
+            &condition.id,
+            "statement",
+            encode_string(&condition.statement.value),
+            &condition.statement,
+            0,
+        )?;
+        counts.claims += 1;
+    }
     for problem in &registry.problems {
         insert_entity(&transaction, &problem.id, "problem", entity_ordinal)?;
         entity_ordinal += 1;
@@ -183,35 +197,29 @@ fn rebuild_connection(
             )?;
             ordinal += 1;
         }
-        insert_claim(
-            &transaction,
-            &algorithm.id,
-            "time_worst",
-            encode_string(&algorithm.time_worst.value),
-            &algorithm.time_worst,
-            ordinal,
-        )?;
-        ordinal += 1;
-        if let Some(time_expected) = &algorithm.time_expected {
+        for (cost_index, cost) in algorithm.costs.iter().enumerate() {
+            let path = format!("costs[{cost_index}]");
             insert_claim(
                 &transaction,
                 &algorithm.id,
-                "time_expected",
-                encode_string(&time_expected.value),
-                time_expected,
+                &path,
+                encode_cost(&cost.value),
+                cost,
                 ordinal,
             )?;
             ordinal += 1;
+            for (requirement_index, condition) in cost.value.requires.iter().enumerate() {
+                insert_relation(
+                    &transaction,
+                    &algorithm.id,
+                    &format!("{path}.requires"),
+                    condition,
+                    requirement_index as i64,
+                )?;
+                counts.relations += 1;
+            }
         }
-        insert_claim(
-            &transaction,
-            &algorithm.id,
-            "auxiliary_memory",
-            encode_string(&algorithm.auxiliary_memory.value),
-            &algorithm.auxiliary_memory,
-            ordinal,
-        )?;
-        counts.claims += ordinal as usize + 1;
+        counts.claims += ordinal as usize;
     }
 
     for implementation in &registry.implementations {
@@ -358,7 +366,7 @@ fn create_schema(transaction: &Transaction<'_>) -> rusqlite::Result<()> {
          ) STRICT;
          CREATE TABLE entities (
              id TEXT PRIMARY KEY,
-             kind TEXT NOT NULL CHECK(kind IN ('problem', 'algorithm', 'implementation')),
+             kind TEXT NOT NULL CHECK(kind IN ('condition', 'problem', 'algorithm', 'implementation')),
              ordinal INTEGER NOT NULL CHECK(ordinal >= 0)
          ) STRICT;
          CREATE TABLE relations (
@@ -461,6 +469,20 @@ fn encode_effects(effects: &Effects) -> String {
     encoded
 }
 
+fn encode_cost(cost: &CostProfile) -> String {
+    let fields = [
+        encode_string(&cost.metric.to_string()),
+        encode_string(&cost.regime.to_string()),
+        encode_string(&cost.bound),
+        encode_list(&cost.requires),
+    ];
+    let mut encoded = String::from("c:4");
+    for field in fields {
+        let _ = write!(encoded, ":{}:{field}", field.len());
+    }
+    encoded
+}
+
 fn logical_digest(transaction: &Transaction<'_>) -> rusqlite::Result<String> {
     let mut hasher = Sha256::new();
     hash_query(
@@ -545,8 +567,8 @@ mod tests {
 
         let summary = rebuild_connection(&registry(), &mut connection).unwrap();
 
-        assert_eq!(summary.entities, 113);
-        assert_eq!(summary.relations, 82);
+        assert_eq!(summary.entities, 115);
+        assert!(summary.relations > 82);
         assert!(summary.claims > 650);
         assert_eq!(summary.digest.len(), 64);
         let projection_version: String = connection
@@ -565,6 +587,14 @@ mod tests {
             )
             .unwrap();
         assert_eq!(versions, 43);
+        let cost_profiles: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM claims WHERE path LIKE 'costs[%]%'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert!(cost_profiles > 78);
     }
 
     #[test]

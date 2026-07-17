@@ -63,9 +63,10 @@ the dedicated GitHub Pages workflow. See `docs/phase3-explorer.md`,
 `docs/phase2/k-m7-phase-audit.md`. K-M4-W repaired the inaccessible
 online-moments source with two open primary reports while retaining a neutral
 algorithm identity. DEC-067 and DEC-068 accept the subsequent bounded ontology
-review without changing schema 0.1: a disposable decision-overlay experiment
-and an auditable meaning of `proven`. DEC-070 closes K-M5 mixed: the private
-evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged.
+review without changing schema 0.1 at that stage: a disposable decision-overlay
+experiment and an auditable meaning of `proven`. DEC-070 closes K-M5 mixed: the private
+evaluator is retained as historical evidence. DEC-075 later adopts schema 0.2
+generic cost profiles after two-family projection and migration experiments.
 
 ## Project map
 
@@ -76,7 +77,8 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `crates/atlas-web-wasm`: private curated browser execution facade;
 - `web`: static generated-execution workbench and catalog sources;
 - `.github/workflows/pages.yml`: verified static Explorer publication;
-- `docs/schema-0.1.md`: current public schema contract;
+- `docs/schema-0.2.md`: current public schema contract;
+- `docs/schema-0.1.md`: historical schema contract;
 - `docs/mir-integration.md`: exact MVP 4 MIR build and execution boundary;
 - `docs/mvp5-web.md`: static artifact build, authority and timing boundaries;
 - `docs/mvp6-visual-machine.md`: private generated-program and WASM-machine boundary;
@@ -119,7 +121,8 @@ evaluator is retained as evidence, while schema 0.1 and the CLI remain unchanged
 - `docs/mvp4-review.md`: current single-region MIR checkpoint audit;
 - `docs/mvp5-review.md`: static interactive artifact exit audit;
 - `docs/roadmap.md`: ordered project roadmap;
-- `docs/sqlite-projection-v1.md`: derived index format and digest;
+- `docs/sqlite-projection-v2.md`: current derived index format and digest;
+- `docs/sqlite-projection-v1.md`: historical derived index format;
 - `docs/decisions`: accepted architectural decisions.
 
 ## Use
@@ -298,7 +301,7 @@ See [the MVP status](docs/mvp-status.md), [the MVP 2 closure
 scope](docs/decisions/DEC-036-close-mvp2-scope.md), [the MVP 3
 activation](docs/decisions/DEC-037-activate-mvp3.md), [the MVP 3 closure
 scope](docs/decisions/DEC-038-close-mvp3-scope.md), [schema
-0.1](docs/schema-0.1.md), and [accepted decisions](docs/decisions/). The [MVP
+0.2](docs/schema-0.2.md), and [accepted decisions](docs/decisions/). The [MVP
 1 review](docs/mvp1-review.md), [MVP 3 review](docs/mvp3-review.md), [MVP 4
 review](docs/mvp4-review.md), [MIR integration](docs/mir-integration.md), and
 [roadmap](docs/roadmap.md) describe the next decisions.

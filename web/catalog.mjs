@@ -1,4 +1,7 @@
 const CLAIMS = {
+  condition: [
+    ["statement", "Statement"],
+  ],
   problem: [
     ["input", "Input"],
     ["requires", "Requirements"],
@@ -11,9 +14,6 @@ const CLAIMS = {
     ["stable", "Stable"],
     ["deterministic", "Deterministic"],
     ["in_place", "In place"],
-    ["time_worst", "Worst time"],
-    ["time_expected", "Expected time"],
-    ["auxiliary_memory", "Auxiliary memory"],
   ],
   implementation: [
     ["language", "Language"],
@@ -31,6 +31,7 @@ const CLAIMS = {
 
 export function catalogRecords(projection) {
   return [
+    ...projection.conditions.map((entity) => ({ kind: "condition", entity })),
     ...projection.problems.map((entity) => ({ kind: "problem", entity })),
     ...projection.algorithms.map((entity) => ({ kind: "algorithm", entity })),
     ...projection.implementations.map((entity) => ({ kind: "implementation", entity })),
@@ -42,18 +43,30 @@ export function findRecord(projection, id) {
 }
 
 export function claimEntries(record) {
-  return CLAIMS[record.kind]
+  const entries = CLAIMS[record.kind]
     .map(([key, label]) => ({ key, label, claim: record.entity[key] }))
     .filter((entry) => entry.claim !== null && entry.claim !== undefined);
+  if (record.kind !== "algorithm") return entries;
+  return entries.concat(record.entity.costs.map((claim) => ({
+    key: costKey(claim.value),
+    label: `${claim.value.metric} · ${claim.value.regime}`,
+    claim,
+  })));
 }
 
 export function displayName(record) {
+  if (record.kind === "condition") return record.entity.statement.value;
   if (record.kind === "algorithm") return record.entity.name.value;
   if (record.kind === "implementation") return record.entity.entrypoint.value;
   return record.entity.id.split(".").at(-1).replaceAll("_", " ");
 }
 
 export function relatedRecords(projection, record) {
+  if (record.kind === "condition") {
+    return projection.algorithms
+      .filter((algorithm) => algorithm.costs.some((claim) => claim.value.requires.includes(record.entity.id)))
+      .map((entity) => ({ kind: "algorithm", relation: "qualifies cost of", entity }));
+  }
   if (record.kind === "problem") {
     return projection.algorithms
       .filter((algorithm) => algorithm.solves === record.entity.id)
@@ -67,6 +80,10 @@ export function relatedRecords(projection, record) {
     return [
       ...(problem ? [{ kind: "problem", relation: "solves", entity: problem }] : []),
       ...implementations,
+      ...record.entity.costs.flatMap((claim) => claim.value.requires.map((conditionId) => {
+        const entity = projection.conditions.find((condition) => condition.id === conditionId);
+        return entity ? { kind: "condition", relation: "cost requires", entity } : null;
+      }).filter(Boolean)),
     ];
   }
   const algorithm = projection.algorithms.find((item) => item.id === record.entity.implements);
@@ -95,12 +112,21 @@ export function comparableRows(left, right) {
   if (left.kind !== right.kind) throw new Error("comparison requires entities of the same kind");
   const leftClaims = new Map(claimEntries(left).map((entry) => [entry.key, entry]));
   const rightClaims = new Map(claimEntries(right).map((entry) => [entry.key, entry]));
-  return CLAIMS[left.kind].map(([key, label]) => ({
+  const base = CLAIMS[left.kind].map(([key, label]) => ({ key, label }));
+  const dynamic = [...leftClaims.values(), ...rightClaims.values()]
+    .filter((entry) => !base.some((item) => item.key === entry.key))
+    .map(({ key, label }) => ({ key, label }));
+  const rows = [...base, ...new Map(dynamic.map((entry) => [entry.key, entry])).values()];
+  return rows.map(({ key, label }) => ({
     key,
     label,
     left: leftClaims.get(key)?.claim ?? null,
     right: rightClaims.get(key)?.claim ?? null,
   }));
+}
+
+function costKey(cost) {
+  return `cost:${cost.metric}:${cost.regime}:${cost.bound}:${[...cost.requires].sort().join(",")}`;
 }
 
 export function executablePresentation(projection, record) {

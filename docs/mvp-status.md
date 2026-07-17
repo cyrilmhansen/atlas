@@ -1,6 +1,6 @@
 # Project status
 
-- Active phase: **none**; Phase 9 schema 0.2 dry run closed supported
+- Active phase: **none**; schema 0.2 adopted under DEC-075
 - Phase 2: **closed mixed** at the K-M7 synthesis
 - Active work program: **none**
 - Atlas Knowledge: **maintained**

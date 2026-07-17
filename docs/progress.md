@@ -25,20 +25,20 @@ None. The bounded public selection slice is complete.
 
 ## Principal recent result
 
-`atlas qualify` now selects exact schema 0.2 cost profiles and prints their
-evidence. It distinguishes conditioned heap and hash-map facts and keeps the two
-opaque top-k memory bounds separate.
+An independent agent using only `atlas qualify` reproduced the frozen heap,
+hash-map and top-k candidate sets and their provenance. It did not infer an
+ordering between distinct opaque top-k bounds.
 
 ## Open uncertainty
 
-Condition statements remain declarative, and cost bounds remain exact opaque
-strings without asymptotic ordering.
+The successful requests already supplied Atlas IDs and exact bound strings;
+translation from an ordinary human requirement remains untested.
 
 ## Next falsifiable action
 
-Give an independent agent only the public Atlas CLI and three frozen requests
-across heap, hash-map and top-k, then compare its candidate choices with the
-known exact-profile results.
+Give an independent agent a natural-language heap requirement and only the
+public `search`, `show`, `explain` and `qualify` commands; require it to discover
+the relevant Atlas vocabulary and reproduce the known selection.
 
 ## Blocking structural decisions
 

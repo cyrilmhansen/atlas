@@ -471,4 +471,263 @@ mod tests {
         );
         assert!(!decisions[0].accepted);
     }
+
+    #[test]
+    fn generic_cost_fixture_covers_time_memory_and_allocation() {
+        let spare = "condition.state.spare_capacity";
+        let nonadversarial = "condition.workload.nonadversarial_hash_distribution";
+        let heap = "capability.priority_queue.push";
+        let map = "capability.associative_map.insert";
+        let sort = "capability.sequence.sort";
+        let cases = [
+            FixtureCase::accepted(
+                "request.heap.time.with_capacity",
+                heap,
+                Some(spare),
+                CostMetric::Time,
+                CostRegime::Worst,
+                "O(log n)",
+                Some(spare),
+            ),
+            FixtureCase::rejected(
+                "request.heap.time.without_capacity",
+                heap,
+                CostMetric::Time,
+                CostRegime::Worst,
+                "O(log n)",
+                Some(spare),
+            ),
+            FixtureCase::accepted(
+                "request.heap.allocation.with_capacity",
+                heap,
+                Some(spare),
+                CostMetric::Allocation,
+                CostRegime::Worst,
+                "none",
+                Some(spare),
+            ),
+            FixtureCase::accepted(
+                "request.map.time.nonadversarial",
+                map,
+                Some(nonadversarial),
+                CostMetric::Time,
+                CostRegime::Expected,
+                "O(1)",
+                Some(nonadversarial),
+            ),
+            FixtureCase::rejected(
+                "request.map.time.unspecified_distribution",
+                map,
+                CostMetric::Time,
+                CostRegime::Expected,
+                "O(1)",
+                Some(nonadversarial),
+            ),
+            FixtureCase::accepted(
+                "request.sort.time",
+                sort,
+                None,
+                CostMetric::Time,
+                CostRegime::Worst,
+                "O(n log n)",
+                None,
+            ),
+            FixtureCase::accepted(
+                "request.sort.memory",
+                sort,
+                None,
+                CostMetric::AuxiliaryMemory,
+                CostRegime::Worst,
+                "O(n)",
+                None,
+            ),
+        ];
+        let overlay = DecisionOverlay {
+            overlay_version: SUPPORTED_OVERLAY_VERSION.into(),
+            atoms: [
+                (heap, AtomKind::Capability),
+                (map, AtomKind::Capability),
+                (sort, AtomKind::Capability),
+                (spare, AtomKind::Condition),
+                (nonadversarial, AtomKind::Condition),
+            ]
+            .into_iter()
+            .map(|(id, kind)| Atom {
+                id: id.into(),
+                kind,
+            })
+            .collect(),
+            candidates: vec![
+                fixture_candidate(
+                    "fixture.heap",
+                    heap,
+                    vec![
+                        fixture_cost(CostMetric::Time, CostRegime::Worst, "O(n)", &[]),
+                        fixture_cost(CostMetric::Time, CostRegime::Worst, "O(log n)", &[spare]),
+                        fixture_cost(CostMetric::Allocation, CostRegime::Worst, "none", &[spare]),
+                    ],
+                ),
+                fixture_candidate(
+                    "fixture.map",
+                    map,
+                    vec![fixture_cost(
+                        CostMetric::Time,
+                        CostRegime::Expected,
+                        "O(1)",
+                        &[nonadversarial],
+                    )],
+                ),
+                fixture_candidate(
+                    "fixture.sort",
+                    sort,
+                    vec![
+                        fixture_cost(CostMetric::Time, CostRegime::Worst, "O(n log n)", &[]),
+                        fixture_cost(CostMetric::AuxiliaryMemory, CostRegime::Worst, "O(n)", &[]),
+                    ],
+                ),
+            ],
+            relations: Vec::new(),
+            equivalences: Vec::new(),
+            requests: cases.iter().map(fixture_request).collect(),
+        };
+
+        let validation_errors = overlay.validate();
+        assert!(
+            validation_errors.is_empty(),
+            "fixture validation failed: {validation_errors:#?}"
+        );
+        for case in &cases {
+            let accepted = evaluate_request(&overlay, case.id)
+                .unwrap()
+                .into_iter()
+                .filter(|decision| decision.accepted)
+                .count();
+            assert_eq!(accepted, usize::from(case.accepted), "case {}", case.id);
+        }
+        assert!(
+            overlay
+                .candidates
+                .iter()
+                .flat_map(|candidate| &candidate.costs)
+                .all(|cost| cost.evidence.level == OverlayEvidenceLevel::Inferred
+                    && cost.evidence.source == "fixture:phase8")
+        );
+    }
+
+    fn fixture_candidate(id: &str, capability: &str, costs: Vec<CostFact>) -> Candidate {
+        Candidate {
+            id: id.into(),
+            source: "worksheet:docs/phase8-qualified-time-design.md".into(),
+            provides: vec![Fact {
+                atom: capability.into(),
+                evidence: fixture_evidence(),
+            }],
+            requires: Vec::new(),
+            guarantees: Vec::new(),
+            effects: Vec::new(),
+            consumes_state: None,
+            produces_state: None,
+            costs,
+        }
+    }
+
+    fn fixture_cost(
+        metric: CostMetric,
+        regime: CostRegime,
+        bound: &str,
+        requires: &[&str],
+    ) -> CostFact {
+        CostFact {
+            operation: "solve".into(),
+            metric,
+            regime,
+            bound: bound.into(),
+            requires: requires
+                .iter()
+                .map(|condition| (*condition).into())
+                .collect(),
+            evidence: fixture_evidence(),
+        }
+    }
+
+    struct FixtureCase<'a> {
+        id: &'a str,
+        capability: &'a str,
+        condition: Option<&'a str>,
+        metric: CostMetric,
+        regime: CostRegime,
+        bound: &'a str,
+        requires: Option<&'a str>,
+        accepted: bool,
+    }
+
+    impl<'a> FixtureCase<'a> {
+        fn accepted(
+            id: &'a str,
+            capability: &'a str,
+            condition: Option<&'a str>,
+            metric: CostMetric,
+            regime: CostRegime,
+            bound: &'a str,
+            requires: Option<&'a str>,
+        ) -> Self {
+            Self {
+                id,
+                capability,
+                condition,
+                metric,
+                regime,
+                bound,
+                requires,
+                accepted: true,
+            }
+        }
+
+        fn rejected(
+            id: &'a str,
+            capability: &'a str,
+            metric: CostMetric,
+            regime: CostRegime,
+            bound: &'a str,
+            requires: Option<&'a str>,
+        ) -> Self {
+            Self {
+                id,
+                capability,
+                condition: None,
+                metric,
+                regime,
+                bound,
+                requires,
+                accepted: false,
+            }
+        }
+    }
+
+    fn fixture_request(case: &FixtureCase<'_>) -> Request {
+        Request {
+            id: case.id.into(),
+            accepts: case.capability.into(),
+            provides_conditions: case.condition.into_iter().map(String::from).collect(),
+            requires_guarantees: Vec::new(),
+            forbids_effects: Vec::new(),
+            consumes_state: None,
+            maximum_costs: vec![CostRequirement {
+                operation: "solve".into(),
+                metric: case.metric,
+                regime: case.regime,
+                bound: case.bound.into(),
+                requires: case.requires.into_iter().map(String::from).collect(),
+            }],
+            accepted_evidence: vec![OverlayEvidenceLevel::Inferred],
+        }
+    }
+
+    fn fixture_evidence() -> Evidence {
+        Evidence {
+            level: OverlayEvidenceLevel::Inferred,
+            source: "fixture:phase8".into(),
+            proof: None,
+        }
+    }
 }

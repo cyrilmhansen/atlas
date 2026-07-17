@@ -10,7 +10,7 @@ selection code or a premature public schema change.
 
 ## Demonstrated state
 
-- Phase 8 has a bounded qualified-time schema design awaiting adoption choice.
+- Phase 8 closes supported for a disposable generic-cost fixture.
 - The registry contains 31 Problems, 39 Algorithms and 43 Implementations.
 - Graph reachability, priority-queue push and exact bounded top-k each have two
   candidates discovered through `solves` and `implements` alone.
@@ -21,24 +21,24 @@ selection code or a premature public schema change.
 
 ## Active experiment
 
-Phase 8 design is complete; no schema change has been made.
+None. Phase 8 is closed; no schema change has been made.
 
 ## Principal recent result
 
-Qualified time profiles plus first-class condition identities express heap,
-hash-map and unconditional sorting costs without an expression language. A
-generic resource-cost model is not justified by the current experiment.
+Generic profiles express conditioned heap time/allocation, conditioned hash-map
+time, and unconditional sort time/auxiliary memory. The unchanged evaluator
+accepts five positive cases and rejects both when required conditions are absent.
 
 ## Open uncertainty
 
-Condition vocabulary may still hide ambiguous semantics. The deterministic
-schema 0.2 migration and downstream projection impact remain unexecuted.
+Condition vocabulary and cross-metric bound semantics remain deliberately
+opaque. Schema 0.2 migration and downstream projection remain unexecuted.
 
 ## Next falsifiable action
 
-If Option A is accepted, verify its five discriminants in a disposable fixture
-before any authoritative manifest migration.
+Choose whether to design the deterministic schema 0.2 migration or first test
+another missing fact class.
 
 ## Blocking structural decisions
 
-Adopting qualified time profiles as schema 0.2 requires human validation.
+Migrating the authoritative schema to generic cost profiles requires validation.

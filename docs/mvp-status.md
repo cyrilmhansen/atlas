@@ -1,6 +1,6 @@
 # Project status
 
-- Active phase: **Phase 8 design gate**; qualified-time schema choice pending
+- Active phase: **none**; Phase 8 generic-cost fixture closed supported
 - Phase 2: **closed mixed** at the K-M7 synthesis
 - Active work program: **none**
 - Atlas Knowledge: **maintained**

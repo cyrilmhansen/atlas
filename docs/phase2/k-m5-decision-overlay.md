@@ -105,8 +105,9 @@ Cost regimes:
 - `amortized`.
 
 Cost metrics in the first experiment are `time`, `retained_memory` and
-`allocation`. Bounds remain opaque normalized atoms or strings; the evaluator
-does exact matching and does not order asymptotic expressions.
+`allocation`. Phase 8 later adds `auxiliary_memory` only to its disposable
+fixture. Bounds remain opaque normalized atoms or strings; the evaluator does
+exact matching and does not order asymptotic expressions.
 
 Evidence levels retain schema 0.1 names but the experiment defines no total
 ordering among them. A request lists the exact accepted levels. A fact at
@@ -137,7 +138,7 @@ needing one of those features is an experiment failure, not permission to add it
 - at most 8 candidates;
 - at most 32 atoms;
 - exactly the 4 relation kinds above;
-- exactly the 3 cost regimes and 3 cost metrics above;
+- exactly the 3 cost regimes and 3 cost metrics above in the frozen K-M5 input;
 - one evaluator module below 300 non-test Rust lines;
 - no new runtime dependency;
 - no public CLI command in the first slice.

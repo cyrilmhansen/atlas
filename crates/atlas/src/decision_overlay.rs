@@ -104,6 +104,7 @@ pub struct CostFact {
 #[serde(rename_all = "snake_case")]
 pub enum CostMetric {
     Time,
+    AuxiliaryMemory,
     RetainedMemory,
     Allocation,
 }

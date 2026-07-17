@@ -1090,6 +1090,102 @@ fn cli_qualifies_exact_conditioned_heap_costs() {
 }
 
 #[test]
+fn cli_qualifies_conjunctive_conditioned_heap_costs() {
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "priority_queue.push",
+            "--cost",
+            "time",
+            "worst",
+            "O(log n)",
+            "--condition",
+            "state.spare_capacity",
+            "--cost",
+            "allocation",
+            "worst",
+            "none",
+            "--condition",
+            "state.spare_capacity",
+        ])
+        .current_dir(workspace_root())
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert_eq!(stdout.matches("implementation\t").count(), 2);
+    assert!(stdout.contains("implementation\tpriority_queue.push.rust.std.1_85\n"));
+    assert!(stdout.contains("implementation\tpriority_queue.push.dary_heap.quaternary.0_3_9\n"));
+    assert!(stdout.contains("cost\ttime\tworst\tO(log n)\tinferred\t"));
+    assert!(stdout.contains("cost\tallocation\tworst\tnone\tinferred\t"));
+    assert_eq!(
+        stdout.matches("condition\tstate.spare_capacity\t").count(),
+        4
+    );
+}
+
+#[test]
+fn cli_keeps_conditions_scoped_to_the_preceding_cost() {
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "associative_map.insert",
+            "--cost",
+            "time",
+            "expected",
+            "O(1)",
+            "--condition",
+            "workload.nonadversarial_hash_distribution",
+            "--cost",
+            "time",
+            "worst",
+            "O(n) under collisions or capacity growth",
+        ])
+        .current_dir(workspace_root())
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("implementation\tassociative_map.insert.hashbrown.0_17_1\n"));
+    assert!(stdout.contains("cost\ttime\texpected\tO(1)\tdeclared\t"));
+    assert!(
+        stdout.contains("cost\ttime\tworst\tO(n) under collisions or capacity growth\tinferred\t")
+    );
+    assert_eq!(
+        stdout
+            .matches("condition\tworkload.nonadversarial_hash_distribution\t")
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn cli_cost_conjunction_requires_one_algorithm_to_match_every_profile() {
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args([
+            "qualify",
+            "stream.top_k",
+            "--cost",
+            "time",
+            "worst",
+            "O(n log k)",
+            "--cost",
+            "auxiliary_memory",
+            "worst",
+            "O(k) retained elements, with capacity up to 2k",
+        ])
+        .current_dir(workspace_root())
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(output.stderr.is_empty());
+}
+
+#[test]
 fn cli_qualify_requires_an_exact_condition_set() {
     let workspace = workspace_root();
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))

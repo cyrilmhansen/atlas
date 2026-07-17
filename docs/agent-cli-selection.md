@@ -108,3 +108,26 @@ but the CLI cannot require their conjunction without external intersection or a
 semantically incorrect substitution. No evaluator or schema extension is
 needed; repeated exact cost constraints with AND semantics would close this
 interface gap.
+
+### Conjunction remediation
+
+Repeated `--cost` groups now use AND semantics, with each following
+`--condition` attached to its most recent group. The original heap request for
+conditional worst time `O(log n)` and conditional worst allocation `none`
+returns both implementations and prints both sourced profiles. A hash-map test
+shows that a condition on one profile does not leak to the following
+unconditional profile. A mixed top-k request whose profiles belong to different
+algorithms returns no candidate.
+
+Verdict: supported. The public query can require multiple exact facts from one
+Algorithm without changing the schema or using the private evaluator.
+
+A fresh consumer then received only the natural-language requirement for
+logarithmic worst-case time and no worst-case allocation when storage has room.
+Using public discovery commands, it produced one repeated-cost query, returned
+exactly both heap implementations, reported both inferred sources and kept the
+runtime capacity assertion with the caller.
+
+Final verdict: supported. Atlas can carry this bounded request from ordinary
+language through public knowledge discovery to a conservative conjunctive
+selection without private evaluator access or an inferred complexity ordering.

@@ -503,7 +503,7 @@ struct QualificationConstraints {
     stable: bool,
     in_place: bool,
     allocation_none: bool,
-    cost: Option<CostConstraint>,
+    costs: Vec<CostConstraint>,
 }
 
 struct CostConstraint {
@@ -541,7 +541,7 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
                     }
                 }
             }
-            Some("--cost") if constraints.cost.is_none() => {
+            Some("--cost") => {
                 let Some(metric) = arguments.next().and_then(|value| value.into_string().ok())
                 else {
                     eprintln!("--cost requires METRIC REGIME BOUND in valid UTF-8");
@@ -573,7 +573,7 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
                     eprintln!("--cost requires a non-empty BOUND after METRIC and REGIME");
                     return ExitCode::from(2);
                 }
-                constraints.cost = Some(CostConstraint {
+                constraints.costs.push(CostConstraint {
                     metric,
                     regime,
                     bound,
@@ -590,7 +590,7 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
                     eprintln!("--condition requires a non-empty condition ID");
                     return ExitCode::from(2);
                 }
-                let Some(cost) = constraints.cost.as_mut() else {
+                let Some(cost) = constraints.costs.last_mut() else {
                     eprintln!("--condition requires a preceding --cost METRIC REGIME BOUND");
                     return ExitCode::from(2);
                 };
@@ -615,7 +615,7 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
     if !constraints.stable
         && !constraints.in_place
         && !constraints.allocation_none
-        && constraints.cost.is_none()
+        && constraints.costs.is_empty()
     {
         eprintln!("qualify requires at least one constraint");
         return ExitCode::from(2);
@@ -631,7 +631,7 @@ fn qualify_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> E
                 eprintln!("problem {problem_id:?} not found in {DEFAULT_REGISTRY}");
                 return ExitCode::FAILURE;
             }
-            if let Some(cost) = &constraints.cost {
+            for cost in &constraints.costs {
                 for condition in &cost.conditions {
                     if !registry
                         .conditions
@@ -680,13 +680,14 @@ fn print_qualified_implementations(
         if constraints.allocation_none && implementation.effects.value.allocation != "none" {
             continue;
         }
-        let matched_cost = constraints
-            .cost
-            .as_ref()
-            .map(|constraint| matching_cost(algorithm, constraint));
-        if matches!(matched_cost, Some(None)) {
+        let Some(matched_costs) = constraints
+            .costs
+            .iter()
+            .map(|constraint| matching_cost(algorithm, constraint))
+            .collect::<Option<Vec<_>>>()
+        else {
             continue;
-        }
+        };
 
         println!("implementation\t{}", implementation.id);
         println!("algorithm\t{}", algorithm.id);
@@ -708,7 +709,7 @@ fn print_qualified_implementations(
             implementation.effects.level,
             implementation.effects.source
         );
-        if let Some(Some(cost)) = matched_cost {
+        for cost in matched_costs {
             println!(
                 "cost\t{}\t{}\t{}\t{}\t{}",
                 cost.value.metric, cost.value.regime, cost.value.bound, cost.level, cost.source
@@ -1088,6 +1089,6 @@ fn validate(path: &Path) -> ExitCode {
 
 fn print_usage() {
     eprintln!(
-        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none] [--cost METRIC REGIME BOUND] [--condition ID]...\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--force ID|--forbid ID] [--rust]\n  atlas compose find [--force ID|--forbid ID] [--rust]\n  atlas compose merge-sorted [--force ID|--forbid ID] [--rust]\n  atlas compose partition-sort [--force ID|--forbid ID] [--rust]\n  atlas compose unique-sort [--force ID|--forbid ID] [--rust]\n  atlas index [DB_PATH]"
+        "Usage:\n  atlas validate [PATH]\n  atlas list [problem|algorithm|implementation]\n  atlas show <id>\n  atlas search <term>\n  atlas explain <implementation-id>\n  atlas qualify <problem-id> [--stable] [--in-place] [--allocation none] [--cost METRIC REGIME BOUND [--condition ID]...]...\n  atlas replay <execution-id> [--cpu N]\n  atlas compare <execution-id> <execution-id>...\n  atlas compose cleanup [--goal expected-time] [--force ID|--forbid ID] [--rust]\n  atlas compose find [--force ID|--forbid ID] [--rust]\n  atlas compose merge-sorted [--force ID|--forbid ID] [--rust]\n  atlas compose partition-sort [--force ID|--forbid ID] [--rust]\n  atlas compose unique-sort [--force ID|--forbid ID] [--rust]\n  atlas index [DB_PATH]"
     );
 }

@@ -25,21 +25,22 @@ None. The bounded public selection slice is complete.
 
 ## Principal recent result
 
-The CLI selects the heap time and allocation profiles separately, but cannot
-express their conjunction. The legacy implementation-effect allocation filter
-is not a valid substitute and correctly yields no candidate.
+A fresh agent translated a natural-language time/allocation requirement into
+one repeated-cost query, returned both heaps with both sources and left the
+runtime capacity assertion with the caller.
 
 ## Open uncertainty
 
-The schema contains the necessary facts; only the public query cardinality is
-insufficient.
+Public search does not index cost metric or bound text directly; the successful
+consumer discovered those facts through implementation explanations.
 
 ## Next falsifiable action
 
-If approved, allow repeated exact `--cost` groups with AND semantics and
-per-profile conditions, then rerun the heap conjunction.
+Choose the next phase hypothesis. The strongest remaining selection test is to
+add a genuinely new manifest-derived candidate and verify automatic discovery
+without changing query logic.
 
 ## Blocking structural decisions
 
-Extending the public `qualify` syntax to repeated cost groups requires human
+Starting a new phase or importing a new structural candidate requires human
 validation.

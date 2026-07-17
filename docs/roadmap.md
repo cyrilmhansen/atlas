@@ -219,6 +219,12 @@ A disposable fixture covers conditioned heap time/allocation, conditioned
 hash-map time, and unconditional sort time/auxiliary memory with unchanged exact
 matching. Schema 0.1 remains unchanged; migration is a separate structural gate.
 
+Phase 9 performs that gate's non-authoritative precursor: a typed, deterministic
+whole-registry migration to ephemeral `0.2-draft`, with claim and provenance
+conservation checks. The dry run closes supported and rejects dangling
+conditions, duplicate profiles and incomplete provenance. It writes no registry
+or derived projection; consumer migration remains a separate adoption gate.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

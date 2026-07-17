@@ -1,6 +1,6 @@
 # Project status
 
-- Active phase: **none**; Phase 8 generic-cost fixture closed supported
+- Active phase: **none**; Phase 9 schema 0.2 dry run closed supported
 - Phase 2: **closed mixed** at the K-M7 synthesis
 - Active work program: **none**
 - Atlas Knowledge: **maintained**

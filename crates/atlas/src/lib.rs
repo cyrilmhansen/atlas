@@ -13,6 +13,8 @@ pub mod index;
 #[cfg(test)]
 mod pseudocode;
 pub mod registry;
+#[cfg(test)]
+mod schema02_migration;
 pub mod traces;
 pub mod visual_program;
 pub mod web_projection;

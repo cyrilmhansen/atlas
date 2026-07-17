@@ -10,7 +10,7 @@ selection code or a premature public schema change.
 
 ## Demonstrated state
 
-- Phase 7 confirms the conditioned-cost boundary in a second family.
+- Phase 8 has a bounded qualified-time schema design awaiting adoption choice.
 - The registry contains 31 Problems, 39 Algorithms and 43 Implementations.
 - Graph reachability, priority-queue push and exact bounded top-k each have two
   candidates discovered through `solves` and `implements` alone.
@@ -21,26 +21,24 @@ selection code or a premature public schema change.
 
 ## Active experiment
 
-None. Phase 7 is closed.
+Phase 8 design is complete; no schema change has been made.
 
 ## Principal recent result
 
-The projector discovers hash-map insertion and its declared expected `O(1)`
-cost, but correctly rejects a request conditioned on nonadversarial hashing.
-Together with heap push under spare capacity, two independent families now
-expose the same missing association between a cost and its validity condition.
+Qualified time profiles plus first-class condition identities express heap,
+hash-map and unconditional sorting costs without an expression language. A
+generic resource-cost model is not justified by the current experiment.
 
 ## Open uncertainty
 
-The smallest durable representation for conditioned costs and its migration
-cost are unknown. Concrete state and negative evidence remain unprojected.
+Condition vocabulary may still hide ambiguous semantics. The deterministic
+schema 0.2 migration and downstream projection impact remain unexecuted.
 
 ## Next falsifiable action
 
-Decide whether the two-family result warrants designing a schema proposal, or
-whether the next experiment should project a different missing fact class.
+If Option A is accepted, verify its five discriminants in a disposable fixture
+before any authoritative manifest migration.
 
 ## Blocking structural decisions
 
-None for maintenance. Another phase, public selection interface, stable
-qualification format or schema change requires human validation.
+Adopting qualified time profiles as schema 0.2 requires human validation.

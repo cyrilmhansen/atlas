@@ -214,6 +214,12 @@ claim cannot be matched to a request requiring a nonadversarial hash
 distribution. The recurrence across independent families supports a general
 conditioned-cost need, while leaving the smallest public representation open.
 
+Phase 8 narrows the resulting design to qualified time profiles backed by
+first-class condition identities. This is sufficient for heap, hash-map and
+unconditional sorting cases without introducing a predicate language or generic
+resource metrics. Schema 0.1 remains unchanged pending the public adoption
+choice recorded in `docs/phase8-qualified-time-design.md`.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

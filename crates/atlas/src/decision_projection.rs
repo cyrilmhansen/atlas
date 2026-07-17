@@ -2,13 +2,23 @@ use crate::decision_overlay::{
     Atom, AtomKind, Candidate, CostFact, CostMetric, CostRegime, CostRequirement, DecisionOverlay,
     Evidence, Fact, OverlayEvidenceLevel, Request, SUPPORTED_OVERLAY_VERSION,
 };
-use crate::registry::{Algorithm, EvidenceLevel, Implementation, Registry};
+use crate::registry::{Algorithm, Claim, EvidenceLevel, Implementation, Registry};
 
 const CONTRACT: &str = "capability.problem_contract";
 const ALLOCATES: &str = "effect.allocates_storage";
 const REQUEST_ID: &str = "request.consumer.exact_without_allocation";
 const SPARE_CAPACITY: &str = "condition.spare_capacity";
-const CONDITIONED_COST_REQUEST_ID: &str = "request.consumer.log_push_with_spare_capacity";
+const NONADVERSARIAL_HASHING: &str = "condition.nonadversarial_hash_distribution";
+const HEAP_COST_REQUEST_ID: &str = "request.consumer.log_push_with_spare_capacity";
+const MAP_COST_REQUEST_ID: &str = "request.consumer.expected_map_insert";
+
+struct ConditionedTimeRequest<'a> {
+    id: &'a str,
+    operation: &'a str,
+    regime: CostRegime,
+    bound: &'a str,
+    condition: &'a str,
+}
 
 pub(crate) fn project_exact_without_allocation(
     registry: &Registry,
@@ -86,36 +96,43 @@ pub(crate) fn project_exact_without_allocation(
     }
 }
 
-pub(crate) fn project_conditioned_worst_time(
+fn project_conditioned_time(
     registry: &Registry,
     problem_id: &str,
+    request: ConditionedTimeRequest<'_>,
 ) -> Result<DecisionOverlay, String> {
     let candidates = candidates_for_problem(registry, problem_id)?
         .into_iter()
-        .map(|(implementation, algorithm)| Candidate {
-            id: implementation.id.clone(),
-            source: format!("registry:{}", implementation.id),
-            provides: vec![Fact {
-                atom: CONTRACT.into(),
-                evidence: Evidence {
-                    level: OverlayEvidenceLevel::Declared,
-                    source: format!("registry:{}", algorithm.id),
-                    proof: None,
-                },
-            }],
-            requires: Vec::new(),
-            guarantees: Vec::new(),
-            effects: Vec::new(),
-            consumes_state: None,
-            produces_state: None,
-            costs: vec![CostFact {
-                operation: "push".into(),
-                metric: CostMetric::Time,
-                regime: CostRegime::Worst,
-                bound: algorithm.time_worst.value.clone(),
+        .map(|(implementation, algorithm)| {
+            let costs = time_claim(algorithm, request.regime)
+                .map(|claim| CostFact {
+                    operation: request.operation.into(),
+                    metric: CostMetric::Time,
+                    regime: request.regime,
+                    bound: claim.value.clone(),
+                    requires: Vec::new(),
+                    evidence: evidence(claim.level, &claim.source),
+                })
+                .into_iter()
+                .collect();
+            Candidate {
+                id: implementation.id.clone(),
+                source: format!("registry:{}", implementation.id),
+                provides: vec![Fact {
+                    atom: CONTRACT.into(),
+                    evidence: Evidence {
+                        level: OverlayEvidenceLevel::Declared,
+                        source: format!("registry:{}", algorithm.id),
+                        proof: None,
+                    },
+                }],
                 requires: Vec::new(),
-                evidence: evidence(algorithm.time_worst.level, &algorithm.time_worst.source),
-            }],
+                guarantees: Vec::new(),
+                effects: Vec::new(),
+                consumes_state: None,
+                produces_state: None,
+                costs,
+            }
         })
         .collect();
 
@@ -127,7 +144,7 @@ pub(crate) fn project_conditioned_worst_time(
                 kind: AtomKind::Capability,
             },
             Atom {
-                id: SPARE_CAPACITY.into(),
+                id: request.condition.into(),
                 kind: AtomKind::Condition,
             },
         ],
@@ -135,18 +152,18 @@ pub(crate) fn project_conditioned_worst_time(
         relations: Vec::new(),
         equivalences: Vec::new(),
         requests: vec![Request {
-            id: CONDITIONED_COST_REQUEST_ID.into(),
+            id: request.id.into(),
             accepts: CONTRACT.into(),
-            provides_conditions: vec![SPARE_CAPACITY.into()],
+            provides_conditions: vec![request.condition.into()],
             requires_guarantees: Vec::new(),
             forbids_effects: Vec::new(),
             consumes_state: None,
             maximum_costs: vec![CostRequirement {
-                operation: "push".into(),
+                operation: request.operation.into(),
                 metric: CostMetric::Time,
-                regime: CostRegime::Worst,
-                bound: "O(log n)".into(),
-                requires: vec![SPARE_CAPACITY.into()],
+                regime: request.regime,
+                bound: request.bound.into(),
+                requires: vec![request.condition.into()],
             }],
             accepted_evidence: vec![
                 OverlayEvidenceLevel::Declared,
@@ -171,10 +188,6 @@ pub(crate) fn project_conditioned_worst_time(
 
 pub(crate) fn consumer_request_id() -> &'static str {
     REQUEST_ID
-}
-
-pub(crate) fn conditioned_cost_request_id() -> &'static str {
-    CONDITIONED_COST_REQUEST_ID
 }
 
 fn candidates_for_problem<'a>(
@@ -203,6 +216,14 @@ fn candidates_for_problem<'a>(
                 .map(|algorithm| (implementation, *algorithm))
         })
         .collect())
+}
+
+fn time_claim(algorithm: &Algorithm, regime: CostRegime) -> Option<&Claim<String>> {
+    match regime {
+        CostRegime::Worst => Some(&algorithm.time_worst),
+        CostRegime::Expected => algorithm.time_expected.as_ref(),
+        CostRegime::Amortized => None,
+    }
 }
 
 fn evidence(level: EvidenceLevel, source: &str) -> Evidence {
@@ -366,8 +387,19 @@ mod tests {
     fn conditioned_cost_projection_reports_public_schema_boundary() {
         let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let registry = load_registry(&workspace.join("registry/atlas.yaml")).unwrap();
-        let overlay = project_conditioned_worst_time(&registry, "priority_queue.push").unwrap();
-        let decisions = evaluate_request(&overlay, conditioned_cost_request_id()).unwrap();
+        let overlay = project_conditioned_time(
+            &registry,
+            "priority_queue.push",
+            ConditionedTimeRequest {
+                id: HEAP_COST_REQUEST_ID,
+                operation: "push",
+                regime: CostRegime::Worst,
+                bound: "O(log n)",
+                condition: SPARE_CAPACITY,
+            },
+        )
+        .unwrap();
+        let decisions = evaluate_request(&overlay, HEAP_COST_REQUEST_ID).unwrap();
 
         let algorithms = registry
             .algorithms
@@ -392,5 +424,51 @@ mod tests {
             !decision.accepted
                 && decision.reasons == ["missing exact cost profile push Time Worst O(log n)"]
         }));
+    }
+
+    #[test]
+    fn conditioned_expected_cost_boundary_recurs_for_hash_map_insert() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let registry = load_registry(&workspace.join("registry/atlas.yaml")).unwrap();
+        let overlay = project_conditioned_time(
+            &registry,
+            "associative_map.insert",
+            ConditionedTimeRequest {
+                id: MAP_COST_REQUEST_ID,
+                operation: "insert",
+                regime: CostRegime::Expected,
+                bound: "O(1)",
+                condition: NONADVERSARIAL_HASHING,
+            },
+        )
+        .unwrap();
+        let decisions = evaluate_request(&overlay, MAP_COST_REQUEST_ID).unwrap();
+
+        let related_algorithm_ids = registry
+            .algorithms
+            .iter()
+            .filter(|algorithm| algorithm.solves == "associative_map.insert")
+            .map(|algorithm| algorithm.id.as_str())
+            .collect::<BTreeSet<_>>();
+        let expected_candidates = registry
+            .implementations
+            .iter()
+            .filter(|implementation| {
+                related_algorithm_ids.contains(implementation.implements.as_str())
+            })
+            .map(|implementation| implementation.id.as_str())
+            .collect::<BTreeSet<_>>();
+        let actual_candidates = decisions
+            .iter()
+            .map(|decision| decision.candidate_id.as_str())
+            .collect::<BTreeSet<_>>();
+
+        assert_eq!(actual_candidates, expected_candidates);
+        assert_eq!(decisions.len(), 1);
+        assert_eq!(
+            decisions[0].reasons,
+            ["missing exact cost profile insert Time Expected O(1)"]
+        );
+        assert!(!decisions[0].accepted);
     }
 }

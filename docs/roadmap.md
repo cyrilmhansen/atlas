@@ -209,6 +209,11 @@ their unconditioned `O(n)` growth case, not the `O(log n)` cost under spare
 capacity. Conservative rejection is correct; this one-family boundary does not
 justify a schema extension.
 
+Phase 7 repeats the test for hash-map insertion. Its declared expected `O(1)`
+claim cannot be matched to a request requiring a nonadversarial hash
+distribution. The recurrence across independent families supports a general
+conditioned-cost need, while leaving the smallest public representation open.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

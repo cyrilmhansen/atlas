@@ -10,7 +10,7 @@ selection code or a premature public schema change.
 
 ## Demonstrated state
 
-- Phase 6 is closed with an informative unsupported conditioned-cost result.
+- Phase 7 confirms the conditioned-cost boundary in a second family.
 - The registry contains 31 Problems, 39 Algorithms and 43 Implementations.
 - Graph reachability, priority-queue push and exact bounded top-k each have two
   candidates discovered through `solves` and `implements` alone.
@@ -21,24 +21,24 @@ selection code or a premature public schema change.
 
 ## Active experiment
 
-None. Phase 6 is closed.
+None. Phase 7 is closed.
 
 ## Principal recent result
 
-A private projector discovers both `priority_queue.push` implementations and
-projects their declared worst time. The unchanged evaluator rejects both for a
-request requiring `O(log n)` under spare capacity: schema 0.1 contains only the
-unconditioned `O(n)` growth case and cannot attach a condition to a cost.
+The projector discovers hash-map insertion and its declared expected `O(1)`
+cost, but correctly rejects a request conditioned on nonadversarial hashing.
+Together with heap push under spare capacity, two independent families now
+expose the same missing association between a cost and its validity condition.
 
 ## Open uncertainty
 
-Conditioned-cost selection remains unsupported by public facts. Concrete state,
-negative evidence and complexity comparison also remain outside projection.
+The smallest durable representation for conditioned costs and its migration
+cost are unknown. Concrete state and negative evidence remain unprojected.
 
 ## Next falsifiable action
 
-Before starting another phase, choose whether to test another absent fact class
-or gather a second-family conditioned-cost case before any schema proposal.
+Decide whether the two-family result warrants designing a schema proposal, or
+whether the next experiment should project a different missing fact class.
 
 ## Blocking structural decisions
 

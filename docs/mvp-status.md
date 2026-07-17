@@ -1,6 +1,6 @@
 # Project status
 
-- Active phase: **none**; Phase 6 closed informative and unsupported
+- Active phase: **none**; Phase 7 confirmed a recurring conditioned-cost boundary
 - Phase 2: **closed mixed** at the K-M7 synthesis
 - Active work program: **none**
 - Atlas Knowledge: **maintained**

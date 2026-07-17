@@ -34,6 +34,7 @@
               <button class="algorithm-option" type="button" data-algorithm="reverse" aria-pressed="false">Reverse</button>
               <button class="algorithm-option" type="button" data-algorithm="union_find" aria-pressed="false">Union-find</button>
               <button class="algorithm-option" type="button" data-algorithm="rle" aria-pressed="false">RLE</button>
+              <button class="algorithm-option" type="button" data-algorithm="astar" aria-pressed="false">A*</button>
             </div>
             <div class="algorithm-heading">
               <div>
@@ -219,6 +220,54 @@
               <span>Reads <strong id="rle-reads">0</strong></span>
               <span>Comparisons <strong id="rle-comparisons">0</strong></span>
               <span>Emitted runs <strong id="rle-runs">0</strong></span>
+            </div>
+          </div>
+        </section>
+
+        <section id="astar-panel" class="astar-panel" aria-labelledby="astar-heading" hidden>
+          <div class="astar-code">
+            <div class="section-heading">
+              <div><p class="section-index">Algorithm</p><h3 id="astar-heading">A* with a binary-heap frontier</h3></div>
+              <code>live WASM state</code>
+            </div>
+            <div class="pseudocode-code" aria-label="A star pseudocode">
+              <div class="pseudo-line is-control" data-astar-operation="expand_frontier">while frontier is not empty</div>
+              <div class="pseudo-line is-operation" data-astar-operation="expand_frontier" style="--indent: 1">current &lt;- pop lowest g + h</div>
+              <div class="pseudo-line is-return" data-astar-operation="reconstruct_path" style="--indent: 1">if current == goal return path</div>
+              <div class="pseudo-line is-operation" data-astar-operation="expand_frontier" style="--indent: 1">relax passable neighbors</div>
+              <div class="pseudo-line is-return" data-astar-operation="frontier_exhausted">return no path</div>
+            </div>
+          </div>
+          <div class="astar-execution">
+            <div class="section-heading">
+              <div><p class="section-index">Execution</p><h3>Frontier and path evolution</h3></div>
+              <span id="astar-status" class="trace-progress">Ready</span>
+            </div>
+            <div class="astar-toolbar" role="group" aria-label="Map editing mode">
+              <span>Edit map</span>
+              <button class="is-active" type="button" data-astar-mode="wall" aria-pressed="true">Walls</button>
+              <button type="button" data-astar-mode="source" aria-pressed="false">Start</button>
+              <button type="button" data-astar-mode="goal" aria-pressed="false">Goal</button>
+              <button id="astar-clear" type="button">Clear walls</button>
+              <button id="astar-map-reset" type="button">Reset map</button>
+            </div>
+            <div id="astar-grid" class="astar-grid" aria-label="Editable pathfinding grid"></div>
+            <div class="astar-legend" aria-label="Grid legend">
+              <span><i class="is-frontier"></i>Frontier</span><span><i class="is-closed"></i>Visited</span><span><i class="is-path"></i>Path</span><span><i class="is-wall"></i>Wall</span>
+            </div>
+            <p id="astar-event" class="trace-event">Ready to expand the start cell.</p>
+            <div class="astar-controls">
+              <button id="astar-next" type="button">Next expansion</button>
+              <button id="astar-play" class="primary-command" type="button">Play</button>
+              <button id="astar-search-reset" type="button">Reset search</button>
+              <label for="astar-speed">Speed
+                <select id="astar-speed"><option value="900">0.5x</option><option value="450" selected>1x</option><option value="225">2x</option><option value="110">4x</option><option value="55">8x</option></select>
+              </label>
+            </div>
+            <div class="union-counters">
+              <span>Expansions <strong id="astar-expansions">0</strong></span>
+              <span>Relaxations <strong id="astar-relaxations">0</strong></span>
+              <span>Path length <strong id="astar-path-length">-</strong></span>
             </div>
           </div>
         </section>

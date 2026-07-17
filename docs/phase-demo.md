@@ -49,9 +49,28 @@ small control cycle with union-find, but its state and rendering are different.
 Two cases do not yet justify a generated experience format; the duplication is
 retained until A* supplies a third independent case.
 
-## Active experiment: A*
+## A* result
 
-Test whether a small editable grid can expose frontier expansion and final path
-from real incremental WASM execution. The test is falsified if Atlas cannot
-distinguish the registered algorithm claims from map-specific local observation,
-or if the demonstration requires graph-specific fields in the public schema.
+`graph.astar.binary_heap` and its bounded grid implementation are registered
+separately from the existing all-destinations Dijkstra contracts. The interactive
+grid lets users paint walls, move start and goal, and inspect frontier, closed
+cells and the final path one expansion at a time. The incremental implementation
+is checked against `petgraph::algo::astar`, including an unreachable goal.
+
+The map is explicitly a local unit-cost specialization. Generic A* requirements
+and inferred costs remain registry claims; frontier size and expansions are local
+observations. Desktop and mobile renders were checked at 1440x1000 and 390x1000.
+
+## Verdict
+
+The phase is conclusive. Three structurally different demonstrations execute real
+WASM state and reuse registry identity, claims, provenance and evidence handoff
+without a public schema change, stored presentation traces or a universal visual
+runtime.
+
+One scalability insufficiency is now demonstrated in the private Explorer: each
+domain experience repeats registration, playback lifecycle and catalog routing,
+while its state model and renderer remain legitimately specific. The next work
+should factor only the common private experience shell and keep union-find, RLE
+and A* steppers/renderers explicit. This does not yet justify a stable experience
+format or an extension of the sequence visual bytecode.

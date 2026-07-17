@@ -133,6 +133,34 @@ h3 { margin: 0; font-size: 1rem; letter-spacing: 0; }
 .rle-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
 .rle-controls .primary-command { border-color: #056c4d; background: var(--green); color: white; }
 .rle-controls label { display: grid; gap: 4px; margin-left: auto; }
+.astar-panel { position: relative; left: 50%; width: 100vw; display: grid; grid-template-columns: minmax(280px, 0.27fr) minmax(0, 1fr); margin: 0 0 22px -50vw; border-block: 1px solid var(--line); background: var(--paper); }
+.astar-code, .astar-execution { min-width: 0; padding: 24px clamp(22px, 4vw, 72px); }
+.astar-code { background: var(--ink); color: white; }
+.astar-code .section-index { color: #7dd8b8; }
+.astar-code .section-heading code { color: #ffd878; font-size: 0.68rem; }
+.astar-toolbar, .astar-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.astar-toolbar > span { color: var(--muted); font-size: 0.72rem; font-weight: 750; text-transform: uppercase; }
+.astar-toolbar button, .astar-controls button { min-height: 36px; padding: 0 11px; border: 1px solid #9ca9a2; background: white; color: var(--ink); cursor: pointer; font-size: 0.75rem; font-weight: 700; }
+.astar-toolbar button.is-active { border-color: var(--ink); background: var(--ink); color: white; }
+.astar-toolbar #astar-clear { margin-left: auto; }
+.astar-grid { display: grid; grid-template-columns: repeat(var(--astar-columns), minmax(25px, 1fr)); gap: 3px; width: min(100%, 920px); margin: 0 auto; padding: 10px; border: 1px solid var(--line); background: #e7ebe8; }
+.astar-cell { aspect-ratio: 1; min-width: 0; padding: 0; border: 1px solid #aab5af; border-radius: 2px; background: white; color: var(--ink); cursor: pointer; font: 800 0.8rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+.astar-cell.is-closed { background: #dff2e9; border-color: var(--green); }
+.astar-cell.is-frontier { background: #e5f0fb; border-color: var(--blue); }
+.astar-cell.is-path { background: #fff1c7; border-color: #b77900; }
+.astar-cell.is-current { outline: 3px solid var(--coral); outline-offset: -3px; }
+.astar-cell.is-wall { background: var(--ink); border-color: var(--ink); }
+.astar-cell.is-source, .astar-cell.is-goal { background: var(--coral-soft); border: 3px solid var(--coral); }
+.astar-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 9px; color: var(--muted); font-size: 0.7rem; }
+.astar-legend span { display: flex; align-items: center; gap: 5px; }
+.astar-legend i { width: 12px; height: 12px; border: 1px solid; }
+.astar-legend .is-frontier { background: #e5f0fb; border-color: var(--blue); }
+.astar-legend .is-closed { background: #dff2e9; border-color: var(--green); }
+.astar-legend .is-path { background: #fff1c7; border-color: #b77900; }
+.astar-legend .is-wall { background: var(--ink); border-color: var(--ink); }
+.astar-controls { align-items: end; margin-bottom: 0; }
+.astar-controls .primary-command { border-color: #056c4d; background: var(--green); color: white; }
+.astar-controls label { display: grid; gap: 4px; margin-left: auto; }
 .union-find-code { background: var(--ink); color: white; }
 .union-find-code .section-index { color: #7dd8b8; }
 .union-find-code .section-heading code { color: #ffd878; font-size: 0.68rem; }
@@ -334,6 +362,9 @@ footer { min-height: 58px; padding: 16px clamp(20px, 5vw, 72px); background: #e4
   .dynamics-panel { grid-template-columns: 1fr; }
   .union-find-panel { grid-template-columns: 1fr; }
   .rle-panel { grid-template-columns: 1fr; }
+  .astar-panel { grid-template-columns: 1fr; }
+  .astar-code { order: 2; }
+  .astar-execution { min-height: 62svh; padding: 20px clamp(10px, 3vw, 20px); }
   .rle-code { order: 2; }
   .rle-execution { min-height: 58svh; padding: 20px clamp(16px, 5vw, 28px); }
   .union-find-code { order: 2; }
@@ -374,6 +405,8 @@ footer { min-height: 58px; padding: 16px clamp(20px, 5vw, 72px); background: #e4
   .rle-state-grid { grid-template-columns: 1fr; }
   .rle-state-grid > div + div { border-left: 0; border-top: 1px solid var(--line); }
   .rle-controls label { width: 100%; margin-left: 0; }
+  .astar-toolbar #astar-clear { margin-left: 0; }
+  .astar-controls label { width: 100%; margin-left: 0; }
   .catalog-controls, .entity-detail-header, .entity-actions, .algorithm-heading { align-items: stretch; flex-direction: column; }
   .entity-claim { grid-template-columns: 1fr; gap: 6px; }
   .comparison-row { grid-template-columns: 1fr; }

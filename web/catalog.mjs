@@ -139,5 +139,6 @@ export function executablePresentation(projection, record) {
     return { key: "union_find" };
   }
   if (record.entity.id === "codec.rle.adjacent_runs") return { key: "rle" };
+  if (record.entity.id === "graph.astar.binary_heap") return { key: "astar" };
   return undefined;
 }

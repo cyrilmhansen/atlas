@@ -1,4 +1,4 @@
-import init, { RleMachine, UnionFindMachine, VisualMachine } from "./pkg/atlas_web.js";
+import init, { AstarMachine, RleMachine, UnionFindMachine, VisualMachine } from "./pkg/atlas_web.js";
 import {
   catalogRecords,
   claimEntries,
@@ -57,6 +57,11 @@ function hydrateGeneratedAlgorithms() {
     boundary: "ASCII input and incremental encoded output stay inside WASM; the visible state is a current snapshot, not a stored trace.",
     experience: "rle",
   };
+  algorithmUi.astar = {
+    id: "graph.astar.binary_heap",
+    boundary: "The editable unit-cost grid is a local WASM specialization; generic A* claims and implementation evidence remain in the registry.",
+    experience: "astar",
+  };
 }
 
 function selectAlgorithm(key) {
@@ -93,6 +98,9 @@ const elements = Object.fromEntries(
     "rle-panel", "rle-status", "rle-input", "rle-apply", "rle-source", "rle-output",
     "rle-event", "rle-next", "rle-play", "rle-reset", "rle-speed", "rle-reads",
     "rle-comparisons", "rle-runs",
+    "astar-panel", "astar-status", "astar-grid", "astar-event", "astar-clear", "astar-map-reset",
+    "astar-next", "astar-play", "astar-search-reset", "astar-speed", "astar-expansions",
+    "astar-relaxations", "astar-path-length",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -107,6 +115,15 @@ let unionSelectionTarget = "left";
 let rleMachine = null;
 let rleTimer = null;
 let rleAppliedInput = null;
+let astarMachine = null;
+let astarTimer = null;
+let astarMode = "wall";
+const ASTAR_WIDTH = 12;
+const ASTAR_HEIGHT = 7;
+const ASTAR_DEFAULT_WALLS = [15, 16, 17, 29, 41, 42, 43, 44, 56, 68];
+let astarBlocked = new Uint8Array(ASTAR_WIDTH * ASTAR_HEIGHT);
+let astarSource = 12;
+let astarGoal = 71;
 const tracePlayback = {
   algorithm: null,
   values: [],
@@ -255,24 +272,105 @@ function playUnion() {
 function setExecutionExperience(experience) {
   const unionFind = experience === "union_find";
   const rle = experience === "rle";
+  const astar = experience === "astar";
   elements["union-find-panel"].hidden = !unionFind;
   elements["rle-panel"].hidden = !rle;
-  elements["dynamics-panel"].hidden = unionFind || rle;
-  elements["sequence-workbench"].hidden = unionFind || rle;
-  elements["scale-panel"].hidden = unionFind || rle || elements["scale-panel"].hidden;
-  elements["sequence-panel"].hidden = unionFind || rle;
+  elements["astar-panel"].hidden = !astar;
+  elements["dynamics-panel"].hidden = unionFind || rle || astar;
+  elements["sequence-workbench"].hidden = unionFind || rle || astar;
+  elements["scale-panel"].hidden = unionFind || rle || astar || elements["scale-panel"].hidden;
+  elements["sequence-panel"].hidden = unionFind || rle || astar;
   if (unionFind) {
     stopTracePlayback();
     stopRlePlayback();
+    stopAstarPlayback();
     if (!unionMachine) initializeUnionFind();
   } else if (rle) {
     stopTracePlayback();
     stopUnionPlayback();
+    stopAstarPlayback();
     if (!rleMachine) initializeRle();
+  } else if (astar) {
+    stopTracePlayback(); stopUnionPlayback(); stopRlePlayback();
+    if (!astarMachine) resetAstarMap();
   } else {
     stopUnionPlayback();
     stopRlePlayback();
+    stopAstarPlayback();
   }
+}
+
+function stopAstarPlayback() {
+  if (astarTimer !== null) window.clearTimeout(astarTimer);
+  astarTimer = null;
+  elements["astar-play"].textContent = "Play";
+}
+
+function astarSnapshot() { return JSON.parse(astarMachine.snapshot_json()); }
+
+function initializeAstar() {
+  stopAstarPlayback();
+  const next = new AstarMachine(ASTAR_WIDTH, ASTAR_HEIGHT, astarBlocked, astarSource, astarGoal);
+  astarMachine?.free();
+  astarMachine = next;
+  renderAstar(astarSnapshot());
+}
+
+function resetAstarMap() {
+  astarBlocked = new Uint8Array(ASTAR_WIDTH * ASTAR_HEIGHT);
+  for (const cell of ASTAR_DEFAULT_WALLS) astarBlocked[cell] = 1;
+  astarSource = 12;
+  astarGoal = 71;
+  initializeAstar();
+}
+
+function renderAstar(snapshot) {
+  const path = new Set(snapshot.path);
+  elements["astar-grid"].style.setProperty("--astar-columns", snapshot.width);
+  elements["astar-grid"].replaceChildren(...snapshot.blocked.map((blocked, cell) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.astarCell = String(cell);
+    button.className = "astar-cell";
+    button.classList.toggle("is-wall", blocked);
+    button.classList.toggle("is-closed", snapshot.closed[cell]);
+    button.classList.toggle("is-frontier", snapshot.frontier[cell]);
+    button.classList.toggle("is-path", path.has(cell));
+    button.classList.toggle("is-current", snapshot.current === cell);
+    button.classList.toggle("is-source", snapshot.source === cell);
+    button.classList.toggle("is-goal", snapshot.goal === cell);
+    button.textContent = snapshot.source === cell ? "S" : snapshot.goal === cell ? "G" : "";
+    button.setAttribute("aria-label", `Grid cell ${cell % snapshot.width + 1}, ${Math.floor(cell / snapshot.width) + 1}`);
+    return button;
+  }));
+  const complete = snapshot.phase === "complete";
+  elements["astar-status"].textContent = complete ? snapshot.found ? "Path found" : "No path" : "Searching";
+  elements["astar-event"].textContent = snapshot.last_operation === "reconstruct_path"
+    ? `Reached the goal; shortest path has ${snapshot.path.length - 1} edges.`
+    : snapshot.last_operation === "frontier_exhausted"
+      ? "The frontier is empty; the goal is unreachable."
+      : snapshot.current === null ? "Ready to expand the start cell." : `Expanded cell ${snapshot.current}; frontier updated.`;
+  elements["astar-expansions"].textContent = String(snapshot.expansions);
+  elements["astar-relaxations"].textContent = String(snapshot.relaxations);
+  elements["astar-path-length"].textContent = snapshot.found ? String(snapshot.path.length - 1) : "-";
+  elements["astar-next"].disabled = complete;
+  document.querySelectorAll("[data-astar-operation]").forEach((line) => line.classList.toggle("is-active", line.dataset.astarOperation === snapshot.last_operation));
+}
+
+function stepAstar() { astarMachine.step(); renderAstar(astarSnapshot()); }
+
+function playAstar() {
+  if (astarTimer !== null) { stopAstarPlayback(); return; }
+  if (astarSnapshot().phase === "complete") initializeAstar();
+  elements["astar-play"].textContent = "Pause";
+  const advance = () => {
+    astarMachine.step();
+    const snapshot = astarSnapshot();
+    renderAstar(snapshot);
+    if (snapshot.phase === "complete") { stopAstarPlayback(); return; }
+    astarTimer = window.setTimeout(advance, Number(elements["astar-speed"].value));
+  };
+  astarTimer = window.setTimeout(advance, Number(elements["astar-speed"].value));
 }
 
 function stopRlePlayback() {
@@ -1187,9 +1285,10 @@ function applyProjection() {
   renderClaimProvenance(elements["space-provenance"], space);
   elements["execution-boundary"].textContent = ui.boundary;
   setExecutionExperience(ui.experience);
-  if (ui.experience === "union_find" || ui.experience === "rle") {
+  if (ui.experience) {
     if (ui.experience === "union_find") renderUnionFind(unionSnapshot());
-    else renderRle(rleSnapshot());
+    else if (ui.experience === "rle") renderRle(rleSnapshot());
+    else renderAstar(astarSnapshot());
     renderCatalog();
     return;
   }
@@ -1264,6 +1363,30 @@ elements["rle-input"].addEventListener("input", () => {
   elements["rle-status"].textContent = "Edited input pending";
   elements["rle-apply"].disabled = false;
 });
+document.querySelector(".astar-toolbar").addEventListener("click", (event) => {
+  const mode = event.target.closest("[data-astar-mode]");
+  if (!mode) return;
+  astarMode = mode.dataset.astarMode;
+  document.querySelectorAll("[data-astar-mode]").forEach((button) => {
+    const selected = button.dataset.astarMode === astarMode;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+});
+elements["astar-grid"].addEventListener("click", (event) => {
+  const target = event.target.closest("[data-astar-cell]");
+  if (!target) return;
+  const cell = Number(target.dataset.astarCell);
+  if (astarMode === "wall" && cell !== astarSource && cell !== astarGoal) astarBlocked[cell] ^= 1;
+  if (astarMode === "source" && !astarBlocked[cell] && cell !== astarGoal) astarSource = cell;
+  if (astarMode === "goal" && !astarBlocked[cell] && cell !== astarSource) astarGoal = cell;
+  initializeAstar();
+});
+elements["astar-clear"].addEventListener("click", () => { astarBlocked.fill(0); initializeAstar(); });
+elements["astar-map-reset"].addEventListener("click", resetAstarMap);
+elements["astar-next"].addEventListener("click", stepAstar);
+elements["astar-play"].addEventListener("click", playAstar);
+elements["astar-search-reset"].addEventListener("click", initializeAstar);
 
 document.querySelectorAll("[data-view]").forEach((tab) => {
   tab.addEventListener("click", () => setView(tab.dataset.view));

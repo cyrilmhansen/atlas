@@ -6,9 +6,11 @@ use atlas_algorithms::reverse::reverse_in_place;
 use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 
+mod astar;
 mod rle;
 mod union_find;
 
+pub use astar::{AstarMachine, astar_grid};
 pub use rle::{RleMachine, Run, encode_ascii};
 pub use union_find::UnionFindMachine;
 

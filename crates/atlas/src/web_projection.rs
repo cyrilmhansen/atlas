@@ -537,9 +537,9 @@ mod tests {
         assert_eq!(value["build"]["target"], "wasm32-unknown-unknown");
         assert_eq!(value["build"]["profile"], "release");
         assert_eq!(value["counts"]["conditions"], 2);
-        assert_eq!(value["counts"]["problems"], 32);
-        assert_eq!(value["counts"]["algorithms"], 40);
-        assert_eq!(value["counts"]["implementations"], 44);
+        assert_eq!(value["counts"]["problems"], 33);
+        assert_eq!(value["counts"]["algorithms"], 41);
+        assert_eq!(value["counts"]["implementations"], 45);
         assert_eq!(value["conditions"][0]["id"], "state.spare_capacity");
         let heap = value["algorithms"]
             .as_array()

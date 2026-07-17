@@ -13,10 +13,10 @@ import {
 
 const projection = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 
-assert.equal(catalogRecords(projection).length, 118);
+assert.equal(catalogRecords(projection).length, 121);
 assert.equal(filterCatalog(projection, "", "condition").length, 2);
-assert.equal(filterCatalog(projection, "", "problem").length, 32);
-assert.equal(filterCatalog(projection, "graph", "problem").length, 4);
+assert.equal(filterCatalog(projection, "", "problem").length, 33);
+assert.equal(filterCatalog(projection, "graph", "problem").length, 5);
 
 const problem = findRecord(projection, "graph.reachable_traversal");
 assert.equal(problem.kind, "problem");
@@ -53,6 +53,8 @@ const unionFind = findRecord(projection, "disjoint_set.rank_path_halving.union")
 assert.equal(executablePresentation(projection, unionFind).key, "union_find");
 const rle = findRecord(projection, "codec.rle.adjacent_runs");
 assert.equal(executablePresentation(projection, rle).key, "rle");
+const astar = findRecord(projection, "graph.astar.binary_heap");
+assert.equal(executablePresentation(projection, astar).key, "astar");
 assert.equal(executablePresentation(projection, algorithm), undefined);
 
 const spareCapacity = findRecord(projection, "state.spare_capacity");

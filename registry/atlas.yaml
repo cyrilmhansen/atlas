@@ -567,6 +567,27 @@ problems:
     - empty input produces no runs
     level: tested
     source: file:crates/atlas-web-wasm/src/rle.rs
+- id: graph.nonnegative_shortest_path
+  input:
+    value: 'graph: FiniteGraph<Node, NonNegativeCost>; source: Node; goal: Node'
+    level: declared
+    source: docs:phase-demo.md
+  requires:
+    value:
+    - source and goal are valid nodes in graph
+    - cost addition and ordering preserve shortest-path comparisons
+    level: declared
+    source: docs:phase-demo.md
+  output:
+    value: 'result: Option<(MinimumPathCost, Path<source, goal>)>'
+    level: declared
+    source: docs:phase-demo.md
+  ensures:
+    value:
+    - a returned path joins source to goal and has minimum total cost
+    - none is returned exactly when goal is unreachable from source
+    level: tested
+    source: file:crates/atlas-web-wasm/src/astar.rs
 algorithms:
 - id: sort.merge.top_down
   solves: sequence.sort
@@ -1781,6 +1802,37 @@ algorithms:
       metric: auxiliary_memory
       regime: worst
       bound: O(1) excluding output runs
+      requires: []
+- id: graph.astar.binary_heap
+  solves: graph.nonnegative_shortest_path
+  name:
+    value: A* search with a binary-heap frontier
+    level: declared
+    source: docs:phase-demo.md
+  requires:
+    value:
+    - the heuristic never overestimates remaining path cost
+    - the heuristic is consistent across every edge
+    level: declared
+    source: docs:phase-demo.md
+  deterministic:
+    value: true
+    level: declared
+    source: docs:phase-demo.md
+  costs:
+  - source: file:crates/atlas-web-wasm/src/astar.rs
+    level: inferred
+    value:
+      metric: time
+      regime: worst
+      bound: O((V + E) log V)
+      requires: []
+  - source: file:crates/atlas-web-wasm/src/astar.rs
+    level: inferred
+    value:
+      metric: auxiliary_memory
+      regime: worst
+      bound: O(V)
       requires: []
 implementations:
 - id: sort.merge.rust.slice.v1
@@ -3940,6 +3992,55 @@ implementations:
     value:
     - rle::tests::incremental_machine_matches_direct_encoding
     - rle::tests::empty_single_and_alternating_inputs_are_exact
+    level: tested
+    source: command:cargo test -p atlas-web-wasm
+- id: graph.astar.rust.grid.v1
+  implements: graph.astar.binary_heap
+  language:
+    value: rust
+    level: declared
+    source: file:crates/atlas-web-wasm/src/astar.rs
+  version:
+    value: 0.1.0
+    level: declared
+    source: file:crates/atlas-web-wasm/Cargo.toml
+  license:
+    value: MIT
+    level: declared
+    source: file:Cargo.toml
+  target:
+    value: Rust target with std; browser experience uses wasm32-unknown-unknown
+    level: tested
+    source: file:crates/atlas-web-wasm/src/astar.rs
+  dependencies:
+    value:
+    - petgraph 0.8.3 oracle
+    level: tested
+    source: file:Cargo.lock
+  abi:
+    value: Rust calling convention; no stable ABI
+    level: declared
+    source: definition:rust-api-contract
+  entrypoint:
+    value: atlas_web_wasm::astar_grid
+    level: declared
+    source: file:crates/atlas-web-wasm/src/astar.rs
+  signature:
+    value: 'fn astar_grid(width: usize, height: usize, blocked: &[u8], source: usize, goal: usize) -> Option<(u32, Vec<usize>)>'
+    level: declared
+    source: file:crates/atlas-web-wasm/src/astar.rs
+  effects:
+    value:
+      mutates: []
+      io: none
+      blocking: false
+      allocation: allocates graph, frontier, distance, predecessor and output path storage
+    level: tested
+    source: file:crates/atlas-web-wasm/src/astar.rs
+  tests:
+    value:
+    - astar::tests::incremental_search_matches_petgraph_oracle
+    - astar::tests::unreachable_goal_is_reported_exactly
     level: tested
     source: command:cargo test -p atlas-web-wasm
 executions: []

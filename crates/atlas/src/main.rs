@@ -18,8 +18,8 @@ use atlas::composition::{
 use atlas::executions::{ExecutionMode, ExecutionRecord};
 use atlas::index::rebuild_database;
 use atlas::registry::{
-    Algorithm, Claim, CostMetric, CostProfile, CostRegime, Effects, Implementation, Problem,
-    Registry, load_registry,
+    Algorithm, Claim, Condition, CostMetric, CostProfile, CostRegime, Effects, Implementation,
+    Problem, Registry, load_registry,
 };
 
 const DEFAULT_REGISTRY: &str = "registry/atlas.yaml";
@@ -801,6 +801,13 @@ fn search_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> Ex
 
 fn print_search_results(registry: &Registry, term: &str) {
     let term = term.to_lowercase();
+    for condition in &registry.conditions {
+        if contains_ignoring_case(&condition.id, &term)
+            || contains_ignoring_case(&condition.statement.value, &term)
+        {
+            print_entity_id("condition", &condition.id);
+        }
+    }
     for problem in &registry.problems {
         if contains_ignoring_case(&problem.id, &term) {
             print_entity_id("problem", &problem.id);
@@ -858,7 +865,9 @@ fn show_command(mut arguments: impl Iterator<Item = std::ffi::OsString>) -> Exit
 }
 
 fn print_entity(registry: &Registry, id: &str) -> bool {
-    if let Some(problem) = registry.problems.iter().find(|entity| entity.id == id) {
+    if let Some(condition) = registry.conditions.iter().find(|entity| entity.id == id) {
+        print_condition(condition);
+    } else if let Some(problem) = registry.problems.iter().find(|entity| entity.id == id) {
         print_problem(problem);
     } else if let Some(algorithm) = registry.algorithms.iter().find(|entity| entity.id == id) {
         print_algorithm(algorithm);
@@ -872,6 +881,12 @@ fn print_entity(registry: &Registry, id: &str) -> bool {
         return false;
     }
     true
+}
+
+fn print_condition(condition: &Condition) {
+    println!("type: condition");
+    println!("id: {}", condition.id);
+    print_claim("statement", &condition.statement);
 }
 
 fn print_problem(problem: &Problem) {

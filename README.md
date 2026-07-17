@@ -133,6 +133,7 @@ cargo run -p atlas -- validate registry/atlas.yaml
 cargo run -p atlas -- list
 cargo run -p atlas -- list algorithm
 cargo run -p atlas -- show search.linear
+cargo run -p atlas -- show state.spare_capacity
 cargo run -p atlas -- search "merge sort"
 cargo run -p atlas -- explain search.binary.rust.slice.v1
 cargo run -p atlas -- qualify sequence.sort --stable --in-place --allocation none
@@ -239,6 +240,10 @@ It deliberately never retries a measurement.
 The YAML files committed to Git are authoritative. The validator loads the
 aggregate registry in memory and checks its schema, cross-references, local
 files, implementation evidence, and Rust test symbols.
+
+`search` and `show` include schema 0.2 Condition entities and their sourced
+statements. `list` retains its original Problem, Algorithm and Implementation
+surface.
 
 `qualify` is intentionally narrow: it filters recorded properties and prints
 their evidence; it does not rank implementations or infer missing metadata.

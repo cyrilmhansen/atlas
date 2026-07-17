@@ -743,6 +743,23 @@ fn cli_shows_a_problem_with_evidence() {
 }
 
 #[test]
+fn cli_shows_a_condition_with_evidence() {
+    let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+        .args(["show", "state.spare_capacity"])
+        .current_dir(workspace_root())
+        .output()
+        .expect("atlas binary must run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 CLI output");
+    assert!(stdout.contains("type: condition\nid: state.spare_capacity\n"));
+    assert!(stdout.contains(
+        "statement:\n  value: the destination state can accept the operation without growth\n"
+    ));
+    assert!(stdout.contains("  level: declared\n  source: definition:state.spare_capacity\n"));
+}
+
+#[test]
 fn cli_shows_only_present_algorithm_properties() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
@@ -844,6 +861,24 @@ fn cli_searches_entity_ids() {
             "implementation\tsearch.binary.rust.slice.v1\n",
         )
     );
+}
+
+#[test]
+fn cli_searches_condition_ids_and_statements() {
+    let workspace = workspace_root();
+    for term in ["state.spare_capacity", "without growth"] {
+        let output = Command::new(env!("CARGO_BIN_EXE_atlas"))
+            .args(["search", term])
+            .current_dir(&workspace)
+            .output()
+            .expect("atlas binary must run");
+
+        assert!(output.status.success());
+        assert_eq!(
+            String::from_utf8(output.stdout).expect("UTF-8 CLI output"),
+            "condition\tstate.spare_capacity\n"
+        );
+    }
 }
 
 #[test]

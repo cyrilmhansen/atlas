@@ -203,6 +203,12 @@ allocating top-k candidates and automatically accepts an executed test-only
 caller-storage implementation added only to the manifest fixture. The phase closes supported
 for this request; no generic projector or schema change follows.
 
+Phase 6 tests conditioned-cost projection without changing the evaluator. Both
+`priority_queue.push` candidates are discovered, but schema 0.1 exposes only
+their unconditioned `O(n)` growth case, not the `O(log n)` cost under spare
+capacity. Conservative rejection is correct; this one-family boundary does not
+justify a schema extension.
+
 MVP 4 closed under DEC-052. It established a pinned upstream MIR
 interpreter boundary, a standard RV64 LP64 compiler/QEMU-user probe, an
 independent comparison of three compact guest-reference candidates, and a

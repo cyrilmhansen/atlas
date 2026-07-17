@@ -10,7 +10,7 @@ selection code or a premature public schema change.
 
 ## Demonstrated state
 
-- Phase 5 is closed supported for one bounded consumer projection.
+- Phase 6 is closed with an informative unsupported conditioned-cost result.
 - The registry contains 31 Problems, 39 Algorithms and 43 Implementations.
 - Graph reachability, priority-queue push and exact bounded top-k each have two
   candidates discovered through `solves` and `implements` alone.
@@ -21,26 +21,24 @@ selection code or a premature public schema change.
 
 ## Active experiment
 
-None. No new phase is active.
+None. Phase 6 is closed.
 
 ## Principal recent result
 
-A private test-only projector derives exact-problem capability and allocation
-effects from schema 0.1. It rejects both allocating top-k implementations, then
-discovers and accepts an executed test-only caller-storage implementation added
-only to the manifest fixture. No candidate identifier, handwritten overlay or
-format is required for this request.
+A private projector discovers both `priority_queue.push` implementations and
+projects their declared worst time. The unchanged evaluator rejects both for a
+request requiring `O(log n)` under spare capacity: schema 0.1 contains only the
+unconditioned `O(n)` growth case and cannot attach a condition to a cost.
 
 ## Open uncertainty
 
-Projection is demonstrated only for declared problem compatibility and one
-structured effect. Conditioned costs, concrete state, negative evidence and
-complexity comparison remain outside the result.
+Conditioned-cost selection remains unsupported by public facts. Concrete state,
+negative evidence and complexity comparison also remain outside projection.
 
 ## Next falsifiable action
 
-Before starting another phase, choose one consumer request that requires a fact
-class not projected in Phase 5 and state its expected unsupported boundary.
+Before starting another phase, choose whether to test another absent fact class
+or gather a second-family conditioned-cost case before any schema proposal.
 
 ## Blocking structural decisions
 

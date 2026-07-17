@@ -1,39 +1,21 @@
 use crate::decision_overlay::{
-    Atom, AtomKind, Candidate, DecisionOverlay, Evidence, Fact, OverlayEvidenceLevel, Request,
-    SUPPORTED_OVERLAY_VERSION,
+    Atom, AtomKind, Candidate, CostFact, CostMetric, CostRegime, CostRequirement, DecisionOverlay,
+    Evidence, Fact, OverlayEvidenceLevel, Request, SUPPORTED_OVERLAY_VERSION,
 };
-use crate::registry::{EvidenceLevel, Registry};
+use crate::registry::{Algorithm, EvidenceLevel, Implementation, Registry};
 
 const CONTRACT: &str = "capability.problem_contract";
 const ALLOCATES: &str = "effect.allocates_storage";
 const REQUEST_ID: &str = "request.consumer.exact_without_allocation";
+const SPARE_CAPACITY: &str = "condition.spare_capacity";
+const CONDITIONED_COST_REQUEST_ID: &str = "request.consumer.log_push_with_spare_capacity";
 
 pub(crate) fn project_exact_without_allocation(
     registry: &Registry,
     problem_id: &str,
 ) -> Result<DecisionOverlay, String> {
-    if !registry
-        .problems
-        .iter()
-        .any(|problem| problem.id == problem_id)
-    {
-        return Err(format!("unknown problem {problem_id:?}"));
-    }
-
-    let algorithms = registry
-        .algorithms
-        .iter()
-        .filter(|algorithm| algorithm.solves == problem_id)
-        .collect::<Vec<_>>();
-    let candidates = registry
-        .implementations
-        .iter()
-        .filter_map(|implementation| {
-            algorithms
-                .iter()
-                .find(|algorithm| algorithm.id == implementation.implements)
-                .map(|algorithm| (implementation, algorithm))
-        })
+    let candidates = candidates_for_problem(registry, problem_id)?
+        .into_iter()
         .map(|(implementation, algorithm)| {
             let allocation = (implementation.effects.value.allocation != "none").then(|| Fact {
                 atom: ALLOCATES.into(),
@@ -104,8 +86,123 @@ pub(crate) fn project_exact_without_allocation(
     }
 }
 
+pub(crate) fn project_conditioned_worst_time(
+    registry: &Registry,
+    problem_id: &str,
+) -> Result<DecisionOverlay, String> {
+    let candidates = candidates_for_problem(registry, problem_id)?
+        .into_iter()
+        .map(|(implementation, algorithm)| Candidate {
+            id: implementation.id.clone(),
+            source: format!("registry:{}", implementation.id),
+            provides: vec![Fact {
+                atom: CONTRACT.into(),
+                evidence: Evidence {
+                    level: OverlayEvidenceLevel::Declared,
+                    source: format!("registry:{}", algorithm.id),
+                    proof: None,
+                },
+            }],
+            requires: Vec::new(),
+            guarantees: Vec::new(),
+            effects: Vec::new(),
+            consumes_state: None,
+            produces_state: None,
+            costs: vec![CostFact {
+                operation: "push".into(),
+                metric: CostMetric::Time,
+                regime: CostRegime::Worst,
+                bound: algorithm.time_worst.value.clone(),
+                requires: Vec::new(),
+                evidence: evidence(algorithm.time_worst.level, &algorithm.time_worst.source),
+            }],
+        })
+        .collect();
+
+    let overlay = DecisionOverlay {
+        overlay_version: SUPPORTED_OVERLAY_VERSION.into(),
+        atoms: vec![
+            Atom {
+                id: CONTRACT.into(),
+                kind: AtomKind::Capability,
+            },
+            Atom {
+                id: SPARE_CAPACITY.into(),
+                kind: AtomKind::Condition,
+            },
+        ],
+        candidates,
+        relations: Vec::new(),
+        equivalences: Vec::new(),
+        requests: vec![Request {
+            id: CONDITIONED_COST_REQUEST_ID.into(),
+            accepts: CONTRACT.into(),
+            provides_conditions: vec![SPARE_CAPACITY.into()],
+            requires_guarantees: Vec::new(),
+            forbids_effects: Vec::new(),
+            consumes_state: None,
+            maximum_costs: vec![CostRequirement {
+                operation: "push".into(),
+                metric: CostMetric::Time,
+                regime: CostRegime::Worst,
+                bound: "O(log n)".into(),
+                requires: vec![SPARE_CAPACITY.into()],
+            }],
+            accepted_evidence: vec![
+                OverlayEvidenceLevel::Declared,
+                OverlayEvidenceLevel::Inferred,
+                OverlayEvidenceLevel::Tested,
+                OverlayEvidenceLevel::Observed,
+                OverlayEvidenceLevel::Proven,
+            ],
+        }],
+    };
+    let errors = overlay.validate();
+    if errors.is_empty() {
+        Ok(overlay)
+    } else {
+        Err(errors
+            .into_iter()
+            .map(|error| error.to_string())
+            .collect::<Vec<_>>()
+            .join("; "))
+    }
+}
+
 pub(crate) fn consumer_request_id() -> &'static str {
     REQUEST_ID
+}
+
+pub(crate) fn conditioned_cost_request_id() -> &'static str {
+    CONDITIONED_COST_REQUEST_ID
+}
+
+fn candidates_for_problem<'a>(
+    registry: &'a Registry,
+    problem_id: &str,
+) -> Result<Vec<(&'a Implementation, &'a Algorithm)>, String> {
+    if !registry
+        .problems
+        .iter()
+        .any(|problem| problem.id == problem_id)
+    {
+        return Err(format!("unknown problem {problem_id:?}"));
+    }
+    let algorithms = registry
+        .algorithms
+        .iter()
+        .filter(|algorithm| algorithm.solves == problem_id)
+        .collect::<Vec<_>>();
+    Ok(registry
+        .implementations
+        .iter()
+        .filter_map(|implementation| {
+            algorithms
+                .iter()
+                .find(|algorithm| algorithm.id == implementation.implements)
+                .map(|algorithm| (implementation, *algorithm))
+        })
+        .collect())
 }
 
 fn evidence(level: EvidenceLevel, source: &str) -> Evidence {
@@ -263,5 +360,37 @@ mod tests {
             project_exact_without_allocation(&registry, "missing.problem").unwrap_err(),
             "unknown problem \"missing.problem\""
         );
+    }
+
+    #[test]
+    fn conditioned_cost_projection_reports_public_schema_boundary() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let registry = load_registry(&workspace.join("registry/atlas.yaml")).unwrap();
+        let overlay = project_conditioned_worst_time(&registry, "priority_queue.push").unwrap();
+        let decisions = evaluate_request(&overlay, conditioned_cost_request_id()).unwrap();
+
+        let algorithms = registry
+            .algorithms
+            .iter()
+            .filter(|algorithm| algorithm.solves == "priority_queue.push")
+            .map(|algorithm| algorithm.id.as_str())
+            .collect::<BTreeSet<_>>();
+        let expected = registry
+            .implementations
+            .iter()
+            .filter(|implementation| algorithms.contains(implementation.implements.as_str()))
+            .map(|implementation| implementation.id.as_str())
+            .collect::<BTreeSet<_>>();
+        let actual = decisions
+            .iter()
+            .map(|decision| decision.candidate_id.as_str())
+            .collect::<BTreeSet<_>>();
+
+        assert_eq!(actual, expected);
+        assert_eq!(decisions.len(), 2);
+        assert!(decisions.iter().all(|decision| {
+            !decision.accepted
+                && decision.reasons == ["missing exact cost profile push Time Worst O(log n)"]
+        }));
     }
 }

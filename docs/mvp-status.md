@@ -1,6 +1,6 @@
 # Project status
 
-- Active phase: **none**; Phase 5 closed supported for one bounded projection
+- Active phase: **none**; Phase 6 closed informative and unsupported
 - Phase 2: **closed mixed** at the K-M7 synthesis
 - Active work program: **none**
 - Atlas Knowledge: **maintained**

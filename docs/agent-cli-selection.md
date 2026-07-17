@@ -90,3 +90,21 @@ candidates and again assigned capacity truth to the caller.
 
 Verdict: supported. Conditions are now directly inspectable without changing
 the historical three-kind `list` surface or the exact selection semantics.
+
+## Conjunctive-cost follow-up
+
+Question: can one public request require both worst time `O(log n)` and worst
+allocation `none` under `state.spare_capacity`?
+
+Each exact profile queried separately returns both heap implementations. A
+second `--cost` in the same command is rejected because the current syntax
+accepts only one profile. Combining the time profile with legacy
+`--allocation none` returns no candidate: that flag correctly checks the
+Implementation's unconditional effect, which says storage may grow, rather than
+the Algorithm's conditional allocation-cost profile.
+
+Verdict: unsupported. The two public facts exist and select the same candidates,
+but the CLI cannot require their conjunction without external intersection or a
+semantically incorrect substitution. No evaluator or schema extension is
+needed; repeated exact cost constraints with AND semantics would close this
+interface gap.

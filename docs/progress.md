@@ -25,21 +25,21 @@ None. The bounded public selection slice is complete.
 
 ## Principal recent result
 
-Public `search` and `show` now expose Condition entities. A fresh agent used
-them to translate the heap requirement, inspect `state.spare_capacity` directly
-and reproduce the same two candidates.
+The CLI selects the heap time and allocation profiles separately, but cannot
+express their conjunction. The legacy implementation-effect allocation filter
+is not a valid substitute and correctly yields no candidate.
 
 ## Open uncertainty
 
-One `qualify` request currently carries only one exact cost profile; conjunctions
-such as logarithmic time plus no allocation have not been exercised publicly.
+The schema contains the necessary facts; only the public query cardinality is
+insufficient.
 
 ## Next falsifiable action
 
-Attempt one request requiring exact time and allocation profiles under the same
-condition, and determine whether the current CLI can express it without
-approximating either requirement.
+If approved, allow repeated exact `--cost` groups with AND semantics and
+per-profile conditions, then rerun the heap conjunction.
 
 ## Blocking structural decisions
 
-None.
+Extending the public `qualify` syntax to repeated cost groups requires human
+validation.

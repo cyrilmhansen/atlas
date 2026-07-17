@@ -1,4 +1,4 @@
-import init, { VisualMachine } from "./pkg/atlas_web.js";
+import init, { UnionFindMachine, VisualMachine } from "./pkg/atlas_web.js";
 import {
   catalogRecords,
   claimEntries,
@@ -47,6 +47,11 @@ function hydrateGeneratedAlgorithms() {
     option.textContent = presentation.selector_label;
     document.querySelector(".algorithm-selector").append(option);
   }
+  algorithmUi.union_find = {
+    id: "disjoint_set.rank_path_halving.union",
+    boundary: "Persistent disjoint-set state stays inside WASM; each operation exposes representative inspection before mutation.",
+    experience: "union_find",
+  };
 }
 
 function selectAlgorithm(key) {
@@ -76,6 +81,10 @@ const elements = Object.fromEntries(
     "entity-execute", "entity-relation-list", "entity-claim-list", "comparison-panel",
     "compare-left", "compare-right", "comparison-close", "comparison-grid",
     "entity-execution-status", "execution-evidence-link",
+    "union-find-panel", "union-components", "union-status", "union-event", "union-size",
+    "union-left", "union-right", "union-prepare", "union-next", "union-play", "union-reset",
+    "union-speed", "union-attempts", "union-successes", "union-steps", "sequence-workbench",
+    "sequence-panel",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -84,6 +93,9 @@ let wasmReady = false;
 let activeAlgorithm = "is_sorted";
 let generatedInput = null;
 let selectedEntityId;
+let unionMachine = null;
+let unionTimer = null;
+let unionSelectionTarget = "left";
 const tracePlayback = {
   algorithm: null,
   values: [],
@@ -99,6 +111,149 @@ function stopTracePlayback() {
   if (tracePlayback.timer !== null) window.clearTimeout(tracePlayback.timer);
   tracePlayback.timer = null;
   elements["trace-play"].textContent = "Play";
+}
+
+function stopUnionPlayback() {
+  if (unionTimer !== null) window.clearTimeout(unionTimer);
+  unionTimer = null;
+  elements["union-play"].textContent = "Play union";
+}
+
+function unionSnapshot() {
+  return JSON.parse(unionMachine.snapshot_json());
+}
+
+function populateUnionElements(size) {
+  const previousLeft = Number(elements["union-left"].value || 0);
+  const previousRight = Number(elements["union-right"].value || 1);
+  for (const select of [elements["union-left"], elements["union-right"]]) {
+    select.replaceChildren(...Array.from({ length: size }, (_, index) => {
+      const option = document.createElement("option");
+      option.value = String(index);
+      option.textContent = String(index);
+      return option;
+    }));
+  }
+  elements["union-left"].value = String(Math.min(previousLeft, size - 1));
+  elements["union-right"].value = String(Math.min(previousRight, size - 1));
+}
+
+function initializeUnionFind() {
+  stopUnionPlayback();
+  const size = Number(elements["union-size"].value);
+  unionMachine?.free();
+  unionMachine = new UnionFindMachine(size);
+  populateUnionElements(size);
+  unionSelectionTarget = "left";
+  renderUnionFind(unionSnapshot());
+}
+
+function unionEventText(snapshot) {
+  if (snapshot.phase === "inspect") return `Pending: inspect representatives of ${snapshot.left} and ${snapshot.right}.`;
+  if (snapshot.phase === "merge") {
+    return `Representatives: ${snapshot.left} -> ${snapshot.left_representative}, ${snapshot.right} -> ${snapshot.right_representative}. Components are unchanged.`;
+  }
+  if (snapshot.phase === "complete") {
+    return snapshot.merged
+      ? `Merged the components containing ${snapshot.left} and ${snapshot.right}.`
+      : `${snapshot.left} and ${snapshot.right} were already in the same component.`;
+  }
+  return "Choose two elements, then prepare a union.";
+}
+
+function renderUnionFind(snapshot) {
+  const groups = new Map();
+  snapshot.components.forEach((component, element) => {
+    if (!groups.has(component)) groups.set(component, []);
+    groups.get(component).push(element);
+  });
+  const selected = new Set(snapshot.left === null
+    ? [Number(elements["union-left"].value), Number(elements["union-right"].value)]
+    : [snapshot.left, snapshot.right]);
+  elements["union-components"].replaceChildren(...[...groups.entries()].map(([component, members], groupIndex) => {
+    const group = document.createElement("section");
+    group.className = `union-component union-color-${groupIndex % 6}`;
+    const heading = document.createElement("span");
+    heading.textContent = `Component ${component}`;
+    const nodes = document.createElement("div");
+    nodes.className = "union-nodes";
+    for (const member of members) {
+      const node = document.createElement("button");
+      node.type = "button";
+      node.className = "union-node";
+      node.classList.toggle("is-selected", selected.has(member));
+      node.dataset.unionElement = String(member);
+      node.setAttribute("aria-label", `Select element ${member}`);
+      node.textContent = String(member);
+      nodes.append(node);
+    }
+    group.append(heading, nodes);
+    return group;
+  }));
+  const status = snapshot.phase === "ready" ? "Ready" : snapshot.phase === "inspect" ? "Union prepared" : snapshot.phase === "merge" ? "Representatives inspected" : "Union complete";
+  elements["union-status"].textContent = status;
+  elements["union-event"].textContent = unionEventText(snapshot);
+  elements["union-attempts"].textContent = String(snapshot.union_attempts);
+  elements["union-successes"].textContent = String(snapshot.successful_unions);
+  elements["union-steps"].textContent = String(snapshot.steps);
+  elements["union-next"].disabled = snapshot.phase === "ready" || snapshot.phase === "complete";
+  elements["union-prepare"].disabled = snapshot.phase === "inspect" || snapshot.phase === "merge";
+  document.querySelectorAll("[data-union-phase]").forEach((line) => {
+    const active = line.dataset.unionPhase === snapshot.phase
+      || (snapshot.phase === "merge" && line.dataset.unionPhase === "inspect");
+    line.classList.toggle("is-active", active);
+  });
+}
+
+function prepareUnion() {
+  stopUnionPlayback();
+  unionMachine.begin_union(Number(elements["union-left"].value), Number(elements["union-right"].value));
+  renderUnionFind(unionSnapshot());
+}
+
+function stepUnion() {
+  unionMachine.step();
+  renderUnionFind(unionSnapshot());
+}
+
+function playUnion() {
+  if (unionTimer !== null) {
+    stopUnionPlayback();
+    return;
+  }
+  let snapshot = unionSnapshot();
+  if (snapshot.phase === "ready" || snapshot.phase === "complete") {
+    unionMachine.begin_union(Number(elements["union-left"].value), Number(elements["union-right"].value));
+    snapshot = unionSnapshot();
+    renderUnionFind(snapshot);
+  }
+  elements["union-play"].textContent = "Pause";
+  const advance = () => {
+    unionMachine.step();
+    const current = unionSnapshot();
+    renderUnionFind(current);
+    if (current.phase === "complete") {
+      stopUnionPlayback();
+      return;
+    }
+    unionTimer = window.setTimeout(advance, Number(elements["union-speed"].value));
+  };
+  unionTimer = window.setTimeout(advance, Number(elements["union-speed"].value));
+}
+
+function setExecutionExperience(experience) {
+  const unionFind = experience === "union_find";
+  elements["union-find-panel"].hidden = !unionFind;
+  elements["dynamics-panel"].hidden = unionFind;
+  elements["sequence-workbench"].hidden = unionFind;
+  elements["scale-panel"].hidden = unionFind || elements["scale-panel"].hidden;
+  elements["sequence-panel"].hidden = unionFind;
+  if (unionFind) {
+    stopTracePlayback();
+    if (!unionMachine) initializeUnionFind();
+  } else {
+    stopUnionPlayback();
+  }
 }
 
 function clearTrace(message) {
@@ -915,6 +1070,12 @@ function applyProjection() {
   elements["space-complexity"].textContent = space.value.bound;
   renderClaimProvenance(elements["space-provenance"], space);
   elements["execution-boundary"].textContent = ui.boundary;
+  setExecutionExperience(ui.experience);
+  if (ui.experience === "union_find") {
+    renderUnionFind(unionSnapshot());
+    renderCatalog();
+    return;
+  }
   elements["result-label"].textContent = ui.resultLabel;
   elements["comparison-label"].textContent = ui.comparisonLabel;
   elements["secondary-label"].textContent = ui.secondaryLabel;
@@ -955,9 +1116,27 @@ document.querySelector(".algorithm-selector").addEventListener("click", (event) 
   if (!option) return;
   selectAlgorithm(option.dataset.algorithm);
   if (!projection) return;
+  if (algorithmUi[activeAlgorithm].experience === "union_find") {
+    applyProjection();
+    return;
+  }
   populateDatasets();
   applyProjection();
   runObservation();
+});
+
+elements["union-size"].addEventListener("change", initializeUnionFind);
+elements["union-prepare"].addEventListener("click", prepareUnion);
+elements["union-next"].addEventListener("click", stepUnion);
+elements["union-play"].addEventListener("click", playUnion);
+elements["union-reset"].addEventListener("click", initializeUnionFind);
+elements["union-components"].addEventListener("click", (event) => {
+  const node = event.target.closest("[data-union-element]");
+  if (!node) return;
+  const target = unionSelectionTarget === "left" ? elements["union-left"] : elements["union-right"];
+  target.value = node.dataset.unionElement;
+  unionSelectionTarget = unionSelectionTarget === "left" ? "right" : "left";
+  renderUnionFind(unionSnapshot());
 });
 
 document.querySelectorAll("[data-view]").forEach((tab) => {
@@ -1057,9 +1236,9 @@ elements["entity-execute"].addEventListener("click", () => {
   const key = elements["entity-execute"].dataset.presentationKey;
   if (!algorithmUi[key]) return;
   selectAlgorithm(key);
-  populateDatasets();
+  if (algorithmUi[key].experience !== "union_find") populateDatasets();
   applyProjection();
-  runObservation();
+  if (algorithmUi[key].experience !== "union_find") runObservation();
   setView("execute");
   document.getElementById("execute-view").scrollIntoView({ block: "start" });
 });
@@ -1088,7 +1267,8 @@ try {
   hydrateGeneratedAlgorithms();
   if (requestedAlgorithm && algorithmUi[requestedAlgorithm]) selectAlgorithm(requestedAlgorithm);
   if (requestedEntity && findRecord(projection, requestedEntity)) selectedEntityId = requestedEntity;
-  populateDatasets();
+  const unionFindRequested = algorithmUi[activeAlgorithm].experience === "union_find";
+  if (!unionFindRequested) populateDatasets();
   applyProjection();
   if (requestedEntity) {
     setView("catalog");
@@ -1103,14 +1283,14 @@ try {
     .some((option) => option.value === requestedProfile);
   const sizeExists = [...elements["generator-size"].options]
     .some((option) => option.value === requestedSize);
-  if (profileExists && sizeExists && /^\d+$/.test(requestedSeed ?? "")) {
+  if (!unionFindRequested && profileExists && sizeExists && /^\d+$/.test(requestedSeed ?? "")) {
     elements["generator-profile"].value = requestedProfile;
     elements["generator-size"].value = requestedSize;
     elements["generator-seed"].value = requestedSeed;
     elements["generator-random-seed"].checked = false;
     syncSeedMode(false);
     generateFromControls();
-  } else {
+  } else if (!unionFindRequested) {
     runObservation();
   }
 } catch (error) {

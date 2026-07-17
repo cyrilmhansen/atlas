@@ -32,6 +32,7 @@
               <button class="algorithm-option is-active" type="button" data-algorithm="is_sorted" aria-pressed="true">Is sorted</button>
               <button class="algorithm-option" type="button" data-algorithm="insertion" aria-pressed="false">Insertion sort</button>
               <button class="algorithm-option" type="button" data-algorithm="reverse" aria-pressed="false">Reverse</button>
+              <button class="algorithm-option" type="button" data-algorithm="union_find" aria-pressed="false">Union-find</button>
             </div>
             <div class="algorithm-heading">
               <div>
@@ -93,7 +94,71 @@
           </div>
         </section>
 
-        <div class="workbench">
+        <section id="union-find-panel" class="union-find-panel" aria-labelledby="union-find-heading" hidden>
+          <div class="union-find-code">
+            <div class="section-heading">
+              <div>
+                <p class="section-index">Algorithm</p>
+                <h3 id="union-find-heading">Union by rank with path-halving lookup</h3>
+              </div>
+              <code>live WASM state</code>
+            </div>
+            <div class="pseudocode-code" aria-label="Union-find pseudocode">
+              <div class="pseudo-line is-operation" data-union-phase="inspect">left_root &lt;- find(left)</div>
+              <div class="pseudo-line is-operation" data-union-phase="inspect">right_root &lt;- find(right)</div>
+              <div class="pseudo-line is-control" data-union-phase="merge">if left_root != right_root</div>
+              <div class="pseudo-line is-operation" data-union-phase="merge" style="--indent: 1">union_by_rank(left_root, right_root)</div>
+              <div class="pseudo-line is-return" data-union-phase="complete">return merged</div>
+            </div>
+          </div>
+          <div class="union-find-execution">
+            <div class="section-heading">
+              <div>
+                <p class="section-index">Execution</p>
+                <h3>Components merge in place</h3>
+              </div>
+              <span id="union-status" class="trace-progress">Ready</span>
+            </div>
+            <div id="union-components" class="union-components" aria-live="polite"></div>
+            <p id="union-event" class="trace-event">Choose two elements, then prepare a union.</p>
+            <div class="union-find-controls">
+              <label for="union-size">Elements
+                <select id="union-size">
+                  <option value="6">6</option>
+                  <option value="8" selected>8</option>
+                  <option value="10">10</option>
+                  <option value="12">12</option>
+                </select>
+              </label>
+              <label for="union-left">Left
+                <select id="union-left"></select>
+              </label>
+              <label for="union-right">Right
+                <select id="union-right"></select>
+              </label>
+              <button id="union-prepare" type="button">Prepare union</button>
+              <button id="union-next" type="button" disabled>Next step</button>
+              <button id="union-play" class="primary-command" type="button">Play union</button>
+              <button id="union-reset" type="button">Reset</button>
+              <label for="union-speed">Speed
+                <select id="union-speed">
+                  <option value="1200">0.5x</option>
+                  <option value="600" selected>1x</option>
+                  <option value="300">2x</option>
+                  <option value="150">4x</option>
+                  <option value="75">8x</option>
+                </select>
+              </label>
+            </div>
+            <div class="union-counters">
+              <span>Attempts <strong id="union-attempts">0</strong></span>
+              <span>Successful unions <strong id="union-successes">0</strong></span>
+              <span>Semantic steps <strong id="union-steps">0</strong></span>
+            </div>
+          </div>
+        </section>
+
+        <div id="sequence-workbench" class="workbench">
           <section class="input-panel" aria-labelledby="input-heading">
             <div class="section-heading">
               <div>
@@ -196,7 +261,7 @@
           <p id="scale-note" class="runtime-context"></p>
         </section>
 
-        <section class="sequence-panel" aria-labelledby="sequence-heading">
+        <section id="sequence-panel" class="sequence-panel" aria-labelledby="sequence-heading">
           <div class="section-heading">
             <div>
               <p class="section-index">03</p>

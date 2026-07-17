@@ -131,7 +131,12 @@ function costKey(cost) {
 
 export function executablePresentation(projection, record) {
   if (record.kind !== "algorithm") return undefined;
-  return projection.dynamics
+  const generated = projection.dynamics
     .find((dynamics) => dynamics.algorithm_id === record.entity.id && dynamics.presentation)
     ?.presentation;
+  if (generated) return generated;
+  if (record.entity.id === "disjoint_set.rank_path_halving.union") {
+    return { key: "union_find" };
+  }
+  return undefined;
 }

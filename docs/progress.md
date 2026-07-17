@@ -4,43 +4,37 @@ Updated: 2026-07-17
 
 ## Objective
 
-Determine whether Atlas can discover and conservatively adjudicate foreign
-algorithm implementations across unrelated families without candidate-specific
-selection code or a premature public schema change.
+Demonstrate union-find, run-length encoding and A* as useful local WASM
+experiences, recording only Atlas limitations that materially block them.
 
 ## Demonstrated state
 
 - Schema 0.2 is authoritative under DEC-075; all existing consumers are migrated.
 - The registry contains 31 Problems, 39 Algorithms and 43 Implementations.
-- Graph reachability, priority-queue push and exact bounded top-k each have two
-  candidates discovered through `solves` and `implements` alone.
-- The unchanged private evaluator handles guarantees, forbidden effects,
-  conditioned costs, retained memory and concrete state across all families.
-- Missing or incomparable knowledge produces an unsupported result rather than
-  an invented selection.
+- Public schema 0.2 and the selection CLI remain unchanged.
+- The Web Explorer derives sequence demonstrations from five generated programs.
+- Union-find now has a bounded real WASM stepper and full-width component view.
+- Catalog identity, costs and evidence handoff remain registry-derived.
 
 ## Active experiment
 
-None. The bounded public selection slice is complete.
+Run-length encoding with visible incremental input and encoded output.
 
 ## Principal recent result
 
-A fresh agent translated a natural-language time/allocation requirement into
-one repeated-cost query, returned both heaps with both sources and left the
-runtime capacity assertion with the caller.
+Union-find exposes representative inspection before mutation, supports repeated
+and redundant unions, and requires no public schema or visual-bytecode change.
 
 ## Open uncertainty
 
-Public search does not index cost metric or bound text directly; the successful
-consumer discovered those facts through implementation explanations.
+It is not yet known whether three unrelated experiences share enough real
+structure to justify a private generated experience description.
 
 ## Next falsifiable action
 
-Choose the next phase hypothesis. The strongest remaining selection test is to
-add a genuinely new manifest-derived candidate and verify automatic discovery
-without changing query logic.
+Implement incremental RLE in WASM and verify that input consumption and output
+emission remain inspectable without stored presentation traces.
 
 ## Blocking structural decisions
 
-Starting a new phase or importing a new structural candidate requires human
-validation.
+None.

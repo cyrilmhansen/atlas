@@ -6,6 +6,10 @@ use atlas_algorithms::reverse::reverse_in_place;
 use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 
+mod union_find;
+
+pub use union_find::UnionFindMachine;
+
 pub const MAX_INPUT_LENGTH: usize = 4_096;
 pub const MAX_TRACE_INPUT_LENGTH: usize = 64;
 pub const MAX_INSERTION_TRACE_INPUT_LENGTH: usize = 32;

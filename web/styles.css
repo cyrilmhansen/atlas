@@ -100,6 +100,41 @@ h3 { margin: 0; font-size: 1rem; letter-spacing: 0; }
   background: var(--paper);
 }
 .dynamics-panel:focus-visible { outline: 3px solid rgba(36, 99, 167, 0.3); outline-offset: 2px; }
+.union-find-panel {
+  position: relative;
+  left: 50%;
+  width: 100vw;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.32fr) minmax(0, 1fr);
+  margin: 0 0 22px -50vw;
+  border-block: 1px solid var(--line);
+  background: var(--paper);
+}
+.union-find-code, .union-find-execution { min-width: 0; padding: 24px clamp(22px, 4vw, 72px); }
+.union-find-code { background: var(--ink); color: white; }
+.union-find-code .section-index { color: #7dd8b8; }
+.union-find-code .section-heading code { color: #ffd878; font-size: 0.68rem; }
+.union-find-execution { min-height: 420px; }
+.union-components { min-height: 210px; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 12px; padding: 18px 0; border-block: 1px solid var(--line); }
+.union-component { min-width: 116px; padding: 10px; border: 2px solid var(--component-color); background: var(--component-soft); }
+.union-component > span { color: var(--muted); font-size: 0.67rem; font-weight: 750; text-transform: uppercase; }
+.union-nodes { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.union-node { width: 42px; height: 42px; padding: 0; border: 2px solid var(--component-color); border-radius: 50%; background: white; color: var(--ink); cursor: pointer; font: 750 0.85rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+.union-node.is-selected { outline: 3px solid var(--ink); outline-offset: 2px; }
+.union-color-0 { --component-color: #087f5b; --component-soft: #dff2e9; }
+.union-color-1 { --component-color: #2463a7; --component-soft: #e5f0fb; }
+.union-color-2 { --component-color: #b77900; --component-soft: #fff1c7; }
+.union-color-3 { --component-color: #bd3f2b; --component-soft: #fae6e1; }
+.union-color-4 { --component-color: #7950a3; --component-soft: #eee6f5; }
+.union-color-5 { --component-color: #0b7285; --component-soft: #dff3f6; }
+.union-find-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+.union-find-controls label { display: grid; gap: 4px; }
+.union-find-controls button { min-height: 36px; padding: 0 11px; border: 1px solid #9ca9a2; background: white; color: var(--ink); cursor: pointer; font-size: 0.75rem; font-weight: 700; }
+.union-find-controls .primary-command { border-color: #056c4d; background: var(--green); color: white; }
+.union-find-controls button:disabled { cursor: default; opacity: 0.45; }
+.union-find-controls label:last-child { margin-left: auto; }
+.union-counters { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 18px; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; }
+.union-counters strong { margin-left: 5px; color: var(--ink); font: 750 0.85rem ui-monospace, SFMono-Regular, Menlo, monospace; }
 .dynamics-code, .dynamics-state { min-width: 0; padding: 24px clamp(22px, 4vw, 72px); }
 .dynamics-code { background: var(--ink); color: white; }
 .dynamics-code .section-index { color: #7dd8b8; }
@@ -275,6 +310,10 @@ footer { min-height: 58px; padding: 16px clamp(20px, 5vw, 72px); background: #e4
   .complexity-strip { width: 100%; }
   .workbench { grid-template-columns: 1fr; }
   .dynamics-panel { grid-template-columns: 1fr; }
+  .union-find-panel { grid-template-columns: 1fr; }
+  .union-find-code { order: 2; }
+  .union-find-execution { min-height: 58svh; padding: 20px clamp(16px, 5vw, 28px); }
+  .union-components { min-height: 30svh; }
   .dynamics-code, .dynamics-state { padding: 20px clamp(16px, 5vw, 28px); }
   .dynamics-state { order: -1; min-height: 50svh; border-left: 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; }
   .dynamics-state .trace-sequence { flex: 1; min-height: clamp(180px, 30svh, 320px); }
@@ -306,6 +345,7 @@ footer { min-height: 58px; padding: 16px clamp(20px, 5vw, 72px); background: #e4
   .source-control, .generator-controls { grid-template-columns: 1fr; }
   .trace-controls { flex-wrap: wrap; }
   .trace-controls label { width: 100%; margin-left: 0; }
+  .union-find-controls label:last-child { width: 100%; margin-left: 0; }
   .catalog-controls, .entity-detail-header, .entity-actions, .algorithm-heading { align-items: stretch; flex-direction: column; }
   .entity-claim { grid-template-columns: 1fr; gap: 6px; }
   .comparison-row { grid-template-columns: 1fr; }

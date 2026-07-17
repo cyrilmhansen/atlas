@@ -49,6 +49,8 @@ assert.equal(comparison.get("stable").right.value, true);
 
 const insertion = findRecord(projection, "sort.insertion");
 assert.equal(executablePresentation(projection, insertion).key, "insertion");
+const unionFind = findRecord(projection, "disjoint_set.rank_path_halving.union");
+assert.equal(executablePresentation(projection, unionFind).key, "union_find");
 assert.equal(executablePresentation(projection, algorithm), undefined);
 
 const spareCapacity = findRecord(projection, "state.spare_capacity");
